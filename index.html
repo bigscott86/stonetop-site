@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Stonetop</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="./GLTFLoader.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#000;font-family:Georgia,serif;overflow:hidden;width:100vw;height:100vh;}
+  #cc{width:100%;height:100%;position:relative;}
+  canvas{display:block;}
+  #ui{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
+  #inst{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:#444;font-size:11px;letter-spacing:2px;text-align:center;pointer-events:none;}
+  #hl{position:absolute;display:none;background:#000;border:1px solid #555;color:#e8e0d0;font-size:13px;letter-spacing:1px;padding:6px 14px;border-radius:2px;pointer-events:none;line-height:1.6;}
+  #hl .hl-sub{font-size:10px;letter-spacing:2px;color:#8b6940;text-transform:uppercase;display:block;}
+  #load{position:absolute;top:0;left:0;width:100%;height:100%;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;transition:opacity 0.8s;}
+  #load h2{color:#e8e0d0;font-weight:normal;letter-spacing:8px;font-size:22px;margin-bottom:12px;}
+  #load p{color:#555;letter-spacing:3px;font-size:12px;}
+  #lbw{width:200px;height:1px;background:#222;margin-top:20px;}
+  #lb{height:100%;width:0%;background:#888;transition:width 0.3s;}
+  /* splash */
+  #splash{position:absolute;inset:0;background:rgba(0,0,0,0.5);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:90;transition:opacity 0.4s;pointer-events:all;cursor:pointer;}
+  #splash.hidden{opacity:0;pointer-events:none;}
+  #splash-inner{display:flex;align-items:center;justify-content:center;gap:64px;}
+  .splash-item{display:flex;flex-direction:column;align-items:center;gap:20px;min-width:200px;}
+  .splash-icon{display:flex;flex-direction:column;align-items:center;gap:10px;}
+  .splash-or{font-size:11px;letter-spacing:2px;color:#5a4e3e;text-transform:uppercase;}
+  .splash-divider-v{width:1px;height:160px;background:rgba(212,184,150,0.15);}
+  .splash-label{font-size:12px;letter-spacing:2px;color:#a89070;text-transform:uppercase;text-align:center;line-height:1.8;}
+  #splash-hint{margin-top:48px;font-size:10px;letter-spacing:3px;color:#3a2e1e;text-transform:uppercase;}
+  /* modals */
+  #shrine-modal,#smithy-modal,#building-modal{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:50;}
+  #shrine-modal.open,#smithy-modal.open,#building-modal.open{pointer-events:all;}
+  #shrine-backdrop,#smithy-backdrop,#building-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0.5);opacity:0;transition:opacity 0.4s;}
+  #shrine-modal.open #shrine-backdrop,#smithy-modal.open #smithy-backdrop,#building-modal.open #building-backdrop{opacity:1;}
+  #shrine-box,#smithy-box,#building-box{position:relative;width:80%;height:80%;background:rgba(8,6,4,0.92);border:1px solid #3a2e1e;display:flex;flex-direction:column;transform:translateY(12px);opacity:0;transition:opacity 0.4s,transform 0.4s;overflow:hidden;}
+  #shrine-modal.open #shrine-box,#smithy-modal.open #smithy-box,#building-modal.open #building-box{opacity:1;transform:none;}
+  #shrine-header,#smithy-header,#building-header{padding:20px 24px 0;border-bottom:1px solid #2a2018;flex-shrink:0;}
+  #shrine-title,#smithy-title{font-size:18px;font-weight:normal;letter-spacing:4px;color:#d4b896;text-transform:uppercase;margin-bottom:14px;}
+  #shrine-tabs{display:flex;gap:0;border-top:1px solid #2a2018;}
+  .stab{font-family:Georgia,serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#5a4e3e;background:transparent;border:none;border-right:1px solid #2a2018;padding:10px 18px;cursor:pointer;transition:background 0.15s,color 0.15s;}
+  .stab:last-child{border-right:none;}
+  .stab:hover{color:#d4b896;background:rgba(255,255,255,0.04);}
+  .stab.active{background:rgba(212,184,150,0.12);color:#d4b896;border-bottom:2px solid #8b6940;}
+  #shrine-body,#smithy-body,#building-body{flex:1;overflow:hidden;position:relative;}
+  .spanel{position:absolute;inset:0;overflow-y:auto;padding:28px 32px 40px;display:none;color:#a89070;font-size:13.5px;line-height:1.75;}
+  .spanel::-webkit-scrollbar{width:4px;}
+  .spanel::-webkit-scrollbar-thumb{background:rgba(212,184,150,0.2);}
+  .spanel.active{display:block;}
+  .spanel h2{font-size:20px;font-weight:normal;letter-spacing:3px;color:#d4b896;text-transform:uppercase;border-bottom:1px solid #3a2e1e;padding-bottom:8px;margin-bottom:4px;}
+  .spanel .pageref{font-size:10px;letter-spacing:2px;color:#5a4e3e;display:block;margin-bottom:24px;text-transform:uppercase;}
+  .spanel h3{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#8b6940;margin:28px 0 10px;display:flex;align-items:center;gap:10px;white-space:nowrap;}
+  .spanel h3::before,.spanel h3::after{content:'';flex:1;height:1px;background:#2a2018;min-width:10px;}
+  .spanel p{margin-bottom:12px;}
+  .spanel em{font-style:italic;opacity:0.8;}
+  .spanel strong{color:#d4b896;}
+  .spanel ul,.spanel ol{margin:0 0 14px 20px;}
+  .spanel li{margin-bottom:5px;}
+  .sref{font-size:10px;opacity:0.4;border:1px solid rgba(212,184,150,0.2);padding:1px 5px;font-family:monospace;white-space:nowrap;}
+  .scallout{border:1px solid #3a2e1e;padding:14px 18px;margin:18px 0;font-size:13px;}
+  .scallout .slabel{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#5a4e3e;display:block;margin-bottom:6px;}
+  .sloop{display:flex;align-items:stretch;margin:18px 0;border:1px solid #3a2e1e;flex-wrap:wrap;}
+  .sloop .sstep{padding:12px 14px;font-size:12px;flex:1;min-width:100px;border-right:1px solid #2a2018;}
+  .sloop .sstep:last-child{border-right:none;}
+  .sloop .sstep b{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#5a4e3e;display:block;margin-bottom:4px;font-weight:normal;}
+  .sladder{border:1px solid #3a2e1e;margin:14px 0;}
+  .srung{display:grid;grid-template-columns:64px 1fr;border-bottom:1px solid #2a2018;}
+  .srung:last-child{border-bottom:none;}
+  .srung .sband{font-size:14px;font-weight:bold;display:flex;align-items:center;justify-content:center;padding:8px 4px;border-right:1px solid #2a2018;color:#d4b896;}
+  .srung .sdesc{padding:10px 14px;font-size:13px;background:rgba(0,0,0,0.3);}
+  .srung.hit10 .sband{background:#d4b896;color:#0a0800;}
+  .srung.miss .sband{color:#3a3020;}
+  .smove-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1px;background:#2a2018;border:1px solid #3a2e1e;margin:14px 0;}
+  .smove-card{background:#0d0a06;padding:12px 14px;}
+  .smove-card h4{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8b6940;display:flex;justify-content:space-between;border-bottom:1px solid #2a2018;padding-bottom:4px;margin-bottom:4px;font-weight:normal;}
+  .smove-card .strigg{font-style:italic;color:#5a4e3e;font-size:12px;margin-bottom:5px;}
+  .smove-card p{font-size:12px;margin-bottom:3px;}
+  .stalk{border-left:2px solid #5a4e3e;padding:10px 14px;margin:16px 0;background:rgba(0,0,0,0.3);font-size:13px;}
+  .stalk .sspk{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#5a4e3e;display:block;margin:6px 0 2px;}
+  .stalk .sspk:first-child{margin-top:0;}
+  .spb-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#2a2018;border:1px solid #3a2e1e;margin:16px 0;}
+  .spb-cell{background:#0d0a06;color:#5a4e3e;cursor:pointer;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;border:none;transition:background 0.1s,color 0.1s;}
+  .spb-cell svg{width:24px;height:24px;}
+  .spb-cell-name{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#a89070;}
+  .spb-cell-epi{font-size:9px;color:#5a4e3e;font-style:italic;}
+  .spb-cell:hover{background:rgba(212,184,150,0.06);}
+  .spb-cell.selected{background:rgba(212,184,150,0.12);border:1px solid #8b6940;}
+  .spb-detail{border:1px solid #3a2e1e;border-top:2px solid #8b6940;padding:16px 20px;background:rgba(0,0,0,0.4);font-size:13px;margin-top:1px;}
+  .spb-detail .spb-name{font-size:16px;font-weight:normal;letter-spacing:3px;color:#d4b896;text-transform:uppercase;}
+  .spb-detail .spb-epi{font-style:italic;color:#5a4e3e;margin:2px 0 8px;font-size:12px;}
+  .spb-detail .spb-meta{font-size:9px;letter-spacing:2px;color:#3a2e1e;text-transform:uppercase;margin-bottom:10px;}
+  .spb-bg{border-left:1px solid #3a2e1e;padding:4px 0 4px 12px;margin-bottom:6px;}
+  .spb-bg b{display:block;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#8b6940;margin-bottom:1px;}
+  .spb-bg span{font-size:11.5px;color:#5a4e3e;}
+  .sroller{border:1px solid #3a2e1e;padding:18px;margin:18px 0;text-align:center;background:rgba(0,0,0,0.4);}
+  .sroller .slabel{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#5a4e3e;display:block;margin-bottom:12px;}
+  .sroller-ctrls{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;font-size:13px;}
+  .sroller select{font-size:12px;background:#0a0800;color:#a89070;border:1px solid #3a2e1e;padding:4px 8px;}
+  .sroller label{font-size:12px;color:#5a4e3e;cursor:pointer;}
+  .sroll-btn{font-size:10px;letter-spacing:3px;text-transform:uppercase;background:#8b6940;color:#0a0800;border:none;padding:8px 22px;cursor:pointer;font-family:Georgia,serif;font-weight:bold;}
+  .sroll-btn:hover{opacity:0.85;}
+  .sdice-row{display:flex;justify-content:center;align-items:center;gap:8px;margin:14px 0 6px;min-height:44px;}
+  .sdie{width:40px;height:40px;background:#d4b896;color:#0a0800;font-size:18px;font-weight:bold;display:flex;align-items:center;justify-content:center;}
+  .sdie.dropped{opacity:0.2;text-decoration:line-through;}
+  .sdie-op{color:#5a4e3e;font-size:14px;}
+  .sroll-total{font-size:13px;color:#5a4e3e;}
+  .sroll-total b{color:#d4b896;font-size:17px;}
+  .sroll-verdict{margin-top:6px;font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;min-height:18px;}
+  .sroll-verdict.hit10{color:#d4b896;}
+  .sroll-verdict.hit79{color:#8b6940;}
+  .sroll-verdict.miss{color:#3a2e1e;}
+  .sroll-note{font-size:11px;color:#5a4e3e;font-style:italic;margin-top:2px;}
+  .sstabs{display:flex;gap:0;margin-bottom:20px;border:1px solid #2a2018;}
+  .sstab{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#5a4e3e;background:transparent;border:none;border-right:1px solid #2a2018;padding:7px 12px;cursor:pointer;transition:background 0.1s,color 0.1s;font-family:Georgia,serif;}
+  .sstab:last-child{border-right:none;}
+  .sstab:hover{color:#d4b896;}
+  .sstab.active{background:rgba(212,184,150,0.1);color:#d4b896;}
+  .sstab-panel{display:none;}
+  .sstab-panel.active{display:block;}
+  #shrine-close,#smithy-close,#building-close{position:absolute;top:16px;right:16px;background:none;border:1px solid #3a2e1e;color:#5a4e3e;font-size:16px;cursor:pointer;width:30px;height:30px;display:flex;align-items:center;justify-content:center;z-index:10;}
+  #shrine-close:hover,#smithy-close:hover,#building-close:hover{border-color:#8b6940;color:#d4b896;}
+  #building-icon{font-size:28px;margin-bottom:8px;color:#8b6940;}
+  #building-title{font-size:18px;font-weight:normal;letter-spacing:4px;color:#d4b896;text-transform:uppercase;margin-bottom:4px;}
+  #building-sub{font-size:10px;letter-spacing:3px;color:#5a4e3e;text-transform:uppercase;margin-bottom:14px;}
+</style>
+</head>
+<body>
+<div id="cc">
+  <div id="ui">
+    <div id="inst">A / D to orbit &nbsp;·&nbsp; W / S to zoom &nbsp;·&nbsp; Click a building to learn more</div>
+    <div id="hl"></div>
+
+    <!-- SPLASH -->
+    <div id="splash">
+      <div id="splash-inner">
+        <div class="splash-item">
+          <div class="splash-icon">
+            <svg viewBox="0 0 80 40" width="120" height="60" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="1" y="1" width="36" height="36" rx="5" stroke="#d4b896" stroke-width="1.5" fill="rgba(0,0,0,0.4)"/>
+              <text x="19" y="25" text-anchor="middle" font-family="Georgia,serif" font-size="18" fill="#d4b896">A</text>
+              <rect x="43" y="1" width="36" height="36" rx="5" stroke="#d4b896" stroke-width="1.5" fill="rgba(0,0,0,0.4)"/>
+              <text x="61" y="25" text-anchor="middle" font-family="Georgia,serif" font-size="18" fill="#d4b896">D</text>
+            </svg>
+            <div class="splash-or">or</div>
+            <svg viewBox="0 0 80 40" width="120" height="60" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="1" y="1" width="36" height="36" rx="5" stroke="#d4b896" stroke-width="1.5" fill="rgba(0,0,0,0.4)"/>
+              <polygon points="19,10 10,26 28,26" fill="#d4b896"/>
+              <rect x="43" y="1" width="36" height="36" rx="5" stroke="#d4b896" stroke-width="1.5" fill="rgba(0,0,0,0.4)"/>
+              <polygon points="61,28 52,12 70,12" fill="#d4b896"/>
+            </svg>
+          </div>
+          <div class="splash-label">A &amp; D or ← → to orbit</div>
+        </div>
+        <div class="splash-divider-v"></div>
+        <div class="splash-item">
+          <div class="splash-icon">
+            <svg viewBox="0 0 80 40" width="120" height="60" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="1" y="1" width="36" height="36" rx="5" stroke="#d4b896" stroke-width="1.5" fill="rgba(0,0,0,0.4)"/>
+              <text x="19" y="25" text-anchor="middle" font-family="Georgia,serif" font-size="18" fill="#d4b896">W</text>
+              <rect x="43" y="1" width="36" height="36" rx="5" stroke="#d4b896" stroke-width="1.5" fill="rgba(0,0,0,0.4)"/>
+              <text x="61" y="25" text-anchor="middle" font-family="Georgia,serif" font-size="18" fill="#d4b896">S</text>
+            </svg>
+            <div class="splash-or">or</div>
+            <svg viewBox="0 0 80 40" width="120" height="60" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="1" y="1" width="36" height="36" rx="5" stroke="#d4b896" stroke-width="1.5" fill="rgba(0,0,0,0.4)"/>
+              <polygon points="19,10 10,26 28,26" fill="#d4b896"/>
+              <rect x="43" y="1" width="36" height="36" rx="5" stroke="#d4b896" stroke-width="1.5" fill="rgba(0,0,0,0.4)"/>
+              <polygon points="61,28 52,12 70,12" fill="#d4b896"/>
+            </svg>
+          </div>
+          <div class="splash-label">W &amp; S or ↑ ↓ to zoom</div>
+        </div>
+        <div class="splash-divider-v"></div>
+        <div class="splash-item">
+          <div class="splash-icon">
+            <svg viewBox="0 0 44 52" width="66" height="78" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10 6 L10 32 L16 26 L20 38 L24 36 L20 24 L28 24 Z" stroke="#d4b896" stroke-width="1.5" stroke-linejoin="round" fill="rgba(0,0,0,0.4)"/>
+            </svg>
+          </div>
+          <div class="splash-label">Click to explore<br>points of interest</div>
+        </div>
+      </div>
+      <div id="splash-hint">Press any key or click to continue</div>
+    </div>
+
+    <!-- SHRINE MODAL -->
+    <div id="shrine-modal">
+      <div id="shrine-backdrop"></div>
+      <div id="shrine-box">
+        <button id="shrine-close">✕</button>
+        <div id="shrine-header">
+          <div id="shrine-title">✦ The Stone — A New Player's Guide</div>
+          <div id="shrine-tabs">
+            <button class="stab active" data-tab="s-game">The Game</button>
+            <button class="stab" data-tab="s-moves">Moves</button>
+            <button class="stab" data-tab="s-combat">Combat</button>
+          </div>
+        </div>
+        <div id="shrine-body">
+          <div class="spanel active" id="s-game">
+            <h2>What Kind of Game Is This?</h2>
+            <span class="pageref">Book I · The Players' Guide &amp; GM Reference · pp. 36–41</span>
+            <p><em>Stonetop</em> is a tabletop RPG about a small Iron Age village and the heroes who protect it. Unlike games where you're wandering adventurers, your characters <em>live</em> somewhere. Stonetop is your home — its people, its fields, its old secrets — and the campaign is the story of you defending it, providing for it, and making it better, while a wide and dangerous world presses in.</p>
+            <p>Mechanically it descends from <em>Apocalypse World</em> and <em>Dungeon World</em> ("Powered by the Apocalypse"). There is no initiative, no action economy, no turn order — and the GM never rolls dice. The whole game runs on a structured conversation.</p>
+            <h3>The Conversation</h3>
+            <p>Play moves in a loop. The GM describes the situation, raises tension, and asks: <strong>"What do you do?"</strong></p>
+            <div class="sloop">
+              <div class="sstep"><b>1 · GM Describes</b>The situation, the tension, the danger.</div>
+              <div class="sstep"><b>2 · You Act</b>Say what your character actually does.</div>
+              <div class="sstep"><b>3 · Resolve</b>Move triggers, or GM says what happens.</div>
+            </div>
+            <p>If your action triggers a <strong>player move</strong>, follow that move's procedure — usually rolling dice. Roll a 6 or less and the GM says what <em>bad</em> thing happens. <span class="sref">pp. 37–38</span></p>
+            <h3>Scenes and Loose Play</h3>
+            <p><strong>Scenes</strong> are moment-to-moment: a specific place and time, actions resolved one by one. <strong>Loose play</strong> is zoomed out: covering hours or days in broad strokes. <span class="sref">p. 38</span></p>
+            <h3>No Turns — A Shared Spotlight</h3>
+            <p>Even in a fight, nobody "takes turns." The GM moves a spotlight around the table. You're welcome to interject — just be polite and share it. <span class="sref">p. 38</span></p>
+            <div class="scallout">
+              <span class="slabel">The Golden Thread</span>
+              <p>Everything in Stonetop starts and ends with the fiction. Dice and rules exist to resolve what your character <em>actually does</em>, never to replace it.</p>
+            </div>
+          </div>
+          <div class="spanel" id="s-moves">
+            <h2>The Moves System</h2>
+            <span class="pageref">Book I · pp. 38–41 · pp. 70–73 · p. 207+</span>
+            <p>A <strong>move</strong> is a small packet of rules that kicks in when something specific happens in the fiction. Almost everything risky or contested runs through one.</p>
+            <div class="sstabs">
+              <button class="sstab active" data-stab="sm-basic">Basic Moves</button>
+              <button class="sstab" data-stab="sm-rolling">Rolling</button>
+              <button class="sstab" data-stab="sm-triggers">Triggers</button>
+            </div>
+            <div class="sstab-panel active" id="sm-basic">
+              <p>These nine moves are shared by every character. Your playbook adds its own on top.</p>
+              <div class="smove-grid">
+                <div class="smove-card"><h4>Clash <span>roll +STR</span></h4><p class="strigg">When you fight in melee or close quarters…</p><p>On any hit deal your damage. On 10+ choose to protect yourself or deal +1d6 and suffer the attack. On 7–9 you succeed but suffer the enemy's attack.</p></div>
+                <div class="smove-card"><h4>Let Fly <span>roll +DEX</span></h4><p class="strigg">When you attack with a ranged weapon…</p><p>An easy shot just deals damage — no roll. If tricky or under pressure: 10+ is a clean hit; 7–9 hits but forces a choice.</p></div>
+                <div class="smove-card"><h4>Defy Danger <span>roll +varies</span></h4><p class="strigg">When danger looms and you do something chancy…</p><p>Roll the stat matching your approach. 10+: you pull it off. 7–9: lesser success, cost, or consequence.</p></div>
+                <div class="smove-card"><h4>Defend <span>roll +CON</span></h4><p class="strigg">When you take a defensive stance or protect others…</p><p>Build a pool of <strong>Readiness</strong> and spend it 1-for-1 to absorb attacks, halve effects, or strike back.</p></div>
+                <div class="smove-card"><h4>Seek Insight <span>roll +WIS</span></h4><p class="strigg">When you study a situation or person for insight…</p><p>Ask the GM questions from a fixed list (3 on 10+, 1 on 7–9). Take advantage on your next move acting on answers.</p></div>
+                <div class="smove-card"><h4>Know Things <span>roll +INT</span></h4><p class="strigg">When you consult your accumulated knowledge…</p><p>On 10+ something interesting <em>and</em> useful. On 7–9, something interesting — making it useful is on you.</p></div>
+                <div class="smove-card"><h4>Persuade <span>roll +CHA</span></h4><p class="strigg">When you press or entice someone who has reason to resist…</p><p>10+: they do it or reveal the easiest way. 7–9: reveals a costly or distasteful way. PCs always have a veto.</p></div>
+                <div class="smove-card"><h4>Aid <span>no roll</span></h4><p class="strigg">When you help someone who hasn't rolled yet…</p><p>The GM picks the benefit: they accomplish more, or gain advantage. You share in whatever risk comes from it.</p></div>
+                <div class="smove-card"><h4>Interfere <span>roll +varies</span></h4><p class="strigg">When you try to foil another PC's action…</p><p>On a hit: the other player pushes on at disadvantage, or relents. On 7–9 you also end up exposed.</p></div>
+              </div>
+            </div>
+            <div class="sstab-panel" id="sm-rolling">
+              <p>When a move says <strong>"roll +STAT"</strong>: roll 2d6, add them, add the named stat (range −1 to +3). <span class="sref">p. 40</span></p>
+              <p><strong>Advantage:</strong> roll an extra d6, discard the lowest. <strong>Disadvantage:</strong> discard the highest. Both cancel out.</p>
+              <div class="sladder">
+                <div class="srung hit10"><div class="sband">10+</div><div class="sdesc"><strong>Strong hit.</strong> The best you can hope for — you get what you were after.</div></div>
+                <div class="srung hit79"><div class="sband">7–9</div><div class="sdesc"><strong>Weak hit.</strong> You get only part of what you wanted, or all of it at a cost.</div></div>
+                <div class="srung miss"><div class="sband">6−</div><div class="sdesc"><strong>Miss.</strong> Mark XP. The GM says what happens — and it will be bad.</div></div>
+              </div>
+              <div class="sroller">
+                <span class="slabel">Roll a Move</span>
+                <div class="sroller-ctrls">
+                  <span>2d6 +</span>
+                  <select id="s-stat-pick"><option value="-1">STAT −1</option><option value="0">STAT +0</option><option value="1" selected>STAT +1</option><option value="2">STAT +2</option><option value="3">STAT +3</option></select>
+                  <label><input type="checkbox" id="s-adv"> advantage</label>
+                  <label><input type="checkbox" id="s-dis"> disadvantage</label>
+                </div>
+                <button class="sroll-btn" id="s-roll-btn">Roll</button>
+                <div class="sdice-row" id="s-dice-row"></div>
+                <div class="sroll-total" id="s-roll-total"></div>
+                <div class="sroll-verdict" id="s-roll-verdict"></div>
+                <div class="sroll-note" id="s-roll-note"></div>
+              </div>
+            </div>
+            <div class="sstab-panel" id="sm-triggers">
+              <p>Every move has a <strong>trigger</strong> — a fictional condition like <em>fighting in melee or close quarters</em>. You trigger the move by describing your character doing that thing.</p>
+              <p>It cuts both ways: <strong>if you do the thing, the move happens.</strong> Watching for triggers is everyone's job. <span class="sref">p. 39</span></p>
+              <div class="scallout">
+                <span class="slabel">When You're Stuck</span>
+                <p>Visualize the situation, think about what your character wants, and describe what they'd actually try. Don't go hunting through your move list for a button to press. The fiction comes first. <span class="sref">p. 47</span></p>
+              </div>
+            </div>
+          </div>
+          <div class="spanel" id="s-combat">
+            <h2>Running Combat</h2>
+            <span class="pageref">Book I · "Dangers" chapter · pp. 406–419</span>
+            <p>Combat isn't a separate mode of play. There's no initiative roll, no rounds, no turn order. A fight is a conversation that happens to involve knives. <span class="sref">p. 408</span></p>
+            <h3>Monsters Never Roll Dice</h3>
+            <p>Enemies don't Clash or Let Fly. Instead the GM makes <strong>GM moves</strong> — describing an attack <em>coming</em>, stopping short of it connecting, then asking the player what they do.</p>
+            <div class="stalk">
+              <span class="sspk">GM — soft move</span>
+              <p>"He grabs your hair and pulls back — you just know he's about to smash your face into that wall. What do you do?"</p>
+              <span class="sspk">Player</span>
+              <p>"My left arm's free — I quick-draw my dagger and stab behind me."</p>
+              <span class="sspk">GM</span>
+              <p>"That's a fight in close quarters. Roll Clash!"</p>
+            </div>
+            <h3>When Do You Get Hit?</h3>
+            <ol>
+              <li>The GM set up the attack and you <strong>ignored</strong> it;</li>
+              <li>The result of one of your moves says you do (Clash's 7–9); or</li>
+              <li>You roll a <strong>6−</strong> on pretty much any move.</li>
+            </ol>
+            <h3>Fictional Positioning</h3>
+            <p>Where you are, what you're holding, terrain, momentum, reach — this is <strong>fictional positioning</strong>, and it governs combat more than any number on your sheet. <span class="sref">p. 409</span></p>
+            <h3>Fighting Many</h3>
+            <ul>
+              <li><strong>Ganging up:</strong> one PC rolls; the others Aid.</li>
+              <li><strong>Combined damage:</strong> roll the best attacker's damage, add +1 per additional attacker.</li>
+              <li><strong>Groups:</strong> outnumbering grants +1 damage and armor per multiplier past 1:1.</li>
+            </ul>
+            <div class="scallout">
+              <span class="slabel">Fair Warning</span>
+              <p>Stonetop does not balance encounters. Fights aren't tuned to be winnable. Running away is a supported, honorable option. <span class="sref">pp. 47, 406</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SMITHY MODAL -->
+    <div id="smithy-modal">
+      <div id="smithy-backdrop"></div>
+      <div id="smithy-box">
+        <button id="smithy-close">✕</button>
+        <div id="smithy-header">
+          <div id="smithy-title">⚒ The Smithy — Classes &amp; Characters</div>
+        </div>
+        <div id="smithy-body">
+          <div class="spanel active" id="sm-playbooks">
+            <h2>The Playbooks</h2>
+            <span class="pageref">Book I · "Playbooks &amp; Inserts" · pp. 103–140 · One per character · No duplicates</span>
+            <p>Stonetop's "classes" are called <strong>playbooks</strong> — each containing everything that character can do: concept, stats, moves, gear, and questions tying them to the village. Every playbook opens with a choice of <strong>three backgrounds</strong>.</p>
+            <div class="spb-grid" id="spb-grid">
+              <button class="spb-cell" data-pb="blessed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c0-7 2-12 8-16-1 7-3 12-8 16z"/><path d="M12 21c0-7-2-12-8-16 1 7 3 12 8 16z"/><line x1="12" y1="21" x2="12" y2="13"/></svg><span class="spb-cell-name">The Blessed</span><span class="spb-cell-epi">Danu's chosen</span></button>
+              <button class="spb-cell" data-pb="fox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5l4 4h8l4-4v6c0 5-3.5 8-8 8s-8-3-8-8V5z"/><circle cx="9" cy="12" r="0.6" fill="currentColor"/><circle cx="15" cy="12" r="0.6" fill="currentColor"/></svg><span class="spb-cell-name">The Fox</span><span class="spb-cell-epi">trickster &amp; scoundrel</span></button>
+              <button class="spb-cell" data-pb="heavy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M14 4l6 6-2 2-6-6 2-2z"/><path d="M7 17l-3 3"/><path d="M5 14l5 5"/></svg><span class="spb-cell-name">The Heavy</span><span class="spb-cell-epi">muscle &amp; shield</span></button>
+              <button class="spb-cell" data-pb="judge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3.5" width="8" height="5" rx="1"/><path d="M12 8.5V20"/><path d="M9 20h6"/></svg><span class="spb-cell-name">The Judge</span><span class="spb-cell-epi">Aratis's hammer</span></button>
+              <button class="spb-cell" data-pb="lightbearer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg><span class="spb-cell-name">The Lightbearer</span><span class="spb-cell-epi">Helior's flame</span></button>
+              <button class="spb-cell" data-pb="marshal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v18"/><path d="M6 4h12l-3 3.5L18 11H6"/></svg><span class="spb-cell-name">The Marshal</span><span class="spb-cell-epi">commander</span></button>
+              <button class="spb-cell" data-pb="ranger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20L18 6"/><path d="M18 6h-5M18 6v5"/><path d="M4 20l3-1M4 20l1-3"/></svg><span class="spb-cell-name">The Ranger</span><span class="spb-cell-epi">guide of the wild</span></button>
+              <button class="spb-cell" data-pb="seeker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg><span class="spb-cell-name">The Seeker</span><span class="spb-cell-epi">scholar of arcana</span></button>
+              <button class="spb-cell" data-pb="hero"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.2 5.3 5.8.5-4.4 3.8 1.3 5.7-4.9-3-4.9 3 1.3-5.7L4 8.8l5.8-.5L12 3z"/></svg><span class="spb-cell-name">The Would-Be Hero</span><span class="spb-cell-epi">unproven, undaunted</span></button>
+            </div>
+            <div class="spb-detail" id="spb-detail" hidden></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUILDING MODAL -->
+    <div id="building-modal">
+      <div id="building-backdrop"></div>
+      <div id="building-box">
+        <button id="building-close">✕</button>
+        <div id="building-header">
+          <div id="building-icon"></div>
+          <div id="building-title"></div>
+          <div id="building-sub"></div>
+        </div>
+        <div id="building-body">
+          <div class="spanel active" style="display:flex;align-items:center;justify-content:center;">
+            <div style="text-align:center;">
+              <div style="font-size:48px;margin-bottom:24px;opacity:0.2;">⧖</div>
+              <div style="font-size:22px;letter-spacing:4px;color:#5a4e3e;text-transform:uppercase;font-weight:normal;">Content Coming Soon</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="load"><h2>Stonetop</h2><p id="lm">Preparing the village...</p><div id="lbw"><div id="lb"></div></div></div>
+  </div>
+</div>
+
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+
+// ============================================================
+//  BUILDING DATA
+// ============================================================
+var BLDGS = {
+  Mesh_Forge:      { title:"The Smithy",       sub:"Classes & Characters",     icon:"⚒",  desc:"The heart of Stonetop's craft.", npcs:[], notes:"" },
+  Mesh_Barrow:     { title:"The Granary",      sub:"The Homefront",            icon:"🌾", desc:"A grassy mound older than Stonetop itself.", npcs:[], notes:"" },
+  Mesh_Longhouse:  { title:"The Common House", sub:"Townsfolk & Relationships", icon:"🏠", desc:"The communal soul of Stonetop.", npcs:[{name:"Mama Odie",role:"Elder, keeper of village memory"},{name:"Brand",role:"Young headman, uncertain of himself"}], notes:"Brand is worried about the missing hunters." },
+  Mesh_Shrine:     { title:"The Stone",        sub:"How to Play",              icon:"✦",  desc:"A quiet grove at the village edge.", npcs:[], notes:"" },
+  Mesh_Market:     { title:"The Stables",      sub:"Travel Info",              icon:"🐴", desc:"On fair days, traders from the lowlands bring salt, cloth, and news.", npcs:[], notes:"" },
+  Mesh_Watchtower: { title:"The Watchtower",   sub:"The Wider World",          icon:"🗼", desc:"A tall wooden tower at the edge of the village.", npcs:[], notes:"" },
+  Mesh_Well:       { title:"The Chronicle",    sub:"Session Recaps",           icon:"📜", desc:"A record of all that has passed in Stonetop.", npcs:[], notes:"" }
+};
+
+// ============================================================
+//  SCENE
+// ============================================================
+var scene = new THREE.Scene();
+scene.background = new THREE.Color(0x111008);
+scene.fog = new THREE.Fog(0x111008, 40, 100);
+
+var camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 1000);
+camera.position.set(0, 18, 30);
+camera.lookAt(0, 0, 0);
+
+var renderer = new THREE.WebGLRenderer({antialias:false});
+renderer.setPixelRatio(devicePixelRatio);
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.LinearToneMapping;
+renderer.toneMappingExposure = 1.0;
+document.getElementById('cc').prepend(renderer.domElement);
+
+// ============================================================
+//  LIGHTS
+// ============================================================
+var ambient = new THREE.AmbientLight(0xffffff, 1.0);
+scene.add(ambient);
+var sun = new THREE.DirectionalLight(0xffffff, 2.5);
+sun.position.set(20, 30, 15);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.near=0.5; sun.shadow.camera.far=100;
+sun.shadow.camera.left=-30; sun.shadow.camera.right=30;
+sun.shadow.camera.top=30; sun.shadow.camera.bottom=-30;
+scene.add(sun);
+
+// ============================================================
+//  DITHER POST-PROCESS
+// ============================================================
+var MAX_RADIUS = 60;
+var rt = new THREE.WebGLRenderTarget(innerWidth, innerHeight, {minFilter:THREE.LinearFilter, magFilter:THREE.LinearFilter, format:THREE.RGBAFormat});
+var b4 = new Uint8Array([0,136,34,170,204,68,238,102,51,187,17,153,255,119,221,85]);
+var bTex = new THREE.DataTexture(b4, 4, 4, THREE.LuminanceFormat, THREE.UnsignedByteType);
+bTex.wrapS=bTex.wrapT=THREE.RepeatWrapping;
+bTex.magFilter=bTex.minFilter=THREE.NearestFilter;
+bTex.needsUpdate=true;
+
+var dMat = new THREE.ShaderMaterial({
+  uniforms:{
+    tDiffuse:{value:rt.texture}, tDither:{value:bTex},
+    resolution:{value:new THREE.Vector2(innerWidth,innerHeight)},
+    ditherScale:{value:4.0}, contrast:{value:2.8}, brightness:{value:-0.05},
+    useCustom:{value:0}, customSize:{value:new THREE.Vector2(4,4)},
+    lightColor:{value:new THREE.Vector3(0.82,0.76,0.65)},
+    vigStrength:{value:0.0}
+  },
+  vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position,1.0);}',
+  fragmentShader:[
+    'uniform sampler2D tDiffuse,tDither;',
+    'uniform vec2 resolution,customSize;',
+    'uniform float ditherScale,contrast,brightness,vigStrength;',
+    'uniform int useCustom;',
+    'uniform vec3 lightColor;',
+    'varying vec2 vUv;',
+    'void main(){',
+    '  vec4 c=texture2D(tDiffuse,vUv);',
+    '  float lum=dot(c.rgb,vec3(0.299,0.587,0.114));',
+    '  lum=clamp((lum-0.5)*contrast+0.5+brightness,0.0,1.0);',
+    '  vec2 uv2=useCustom==1?mod(gl_FragCoord.xy,customSize)/customSize:mod(gl_FragCoord.xy,ditherScale)/ditherScale;',
+    '  float th=texture2D(tDither,uv2).r;',
+    '  vec2 vCoord=vUv*2.0-1.0;',
+    '  float vig=1.0-vigStrength*pow(dot(vCoord,vCoord),1.5);',
+    '  lum=clamp(lum*vig,0.0,1.0);',
+    '  float bit=lum>th?1.0:0.0;',
+    '  vec3 dark=vec3(0.10,0.09,0.08);',
+    '  gl_FragColor=vec4(mix(dark,lightColor,bit),1.0);',
+    '}'
+  ].join('\n'),
+  depthTest:false, depthWrite:false
+});
+var dScene=new THREE.Scene();
+dScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),dMat));
+var dCam=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+
+// ============================================================
+//  PLACEHOLDER VILLAGE
+// ============================================================
+function buildPlaceholder(){
+  var gnd=new THREE.Mesh(new THREE.PlaneGeometry(60,60,20,20),new THREE.MeshLambertMaterial({color:0x3a3530}));
+  gnd.rotation.x=-Math.PI/2; gnd.receiveShadow=true; scene.add(gnd);
+  var pm=new THREE.MeshLambertMaterial({color:0x4a4540});
+  [[3,20],[20,3]].forEach(function(s){var m=new THREE.Mesh(new THREE.PlaneGeometry(s[0],s[1]),pm);m.rotation.x=-Math.PI/2;m.position.y=0.01;scene.add(m);});
+  [{name:'Mesh_Longhouse',x:0,z:0,w:5,d:3,h:3.5,roof:1.8,col:0x6a5840},
+   {name:'Mesh_Forge',x:-7,z:3,w:3,d:3,h:3,roof:1.5,col:0x5a4830},
+   {name:'Mesh_Market',x:6,z:4,w:4,d:4,h:0.3,roof:0,col:0x3e3828},
+   {name:'Mesh_Shrine',x:5,z:-6,w:2,d:2,h:3,roof:2,col:0x5a5040}].forEach(function(b){
+    var g=new THREE.Group();
+    var body=new THREE.Mesh(new THREE.BoxGeometry(b.w,b.h,b.d),new THREE.MeshLambertMaterial({color:b.col}));
+    body.position.y=b.h/2; body.castShadow=body.receiveShadow=true; g.add(body);
+    if(b.roof>0){var r=new THREE.Mesh(new THREE.ConeGeometry(Math.max(b.w,b.d)*0.75,b.roof,4),new THREE.MeshLambertMaterial({color:0x4a3818}));r.position.y=b.h+b.roof/2;r.rotation.y=Math.PI/4;r.castShadow=true;g.add(r);}
+    g.position.set(b.x,0,b.z); g.name=b.name; g.userData.clickable=true; scene.add(g);
+  });
+  var bm=new THREE.Mesh(new THREE.SphereGeometry(3.2,16,10,0,Math.PI*2,0,Math.PI/2),new THREE.MeshLambertMaterial({color:0x3a3a28}));
+  bm.position.set(-6,0,-5); bm.name='Mesh_Barrow'; bm.userData.clickable=true; scene.add(bm);
+  var wm=new THREE.Mesh(new THREE.CylinderGeometry(0.7,0.7,1,16),new THREE.MeshLambertMaterial({color:0x5a5050}));
+  wm.position.set(1,0.5,3); wm.name='Mesh_Well'; wm.userData.clickable=true; scene.add(wm);
+  var wt=new THREE.Group();
+  var wtBase=new THREE.Mesh(new THREE.BoxGeometry(1.5,6,1.5),new THREE.MeshLambertMaterial({color:0x5a4830}));
+  wtBase.position.y=3; wtBase.castShadow=wtBase.receiveShadow=true; wt.add(wtBase);
+  var wtTop=new THREE.Mesh(new THREE.BoxGeometry(2.2,1.2,2.2),new THREE.MeshLambertMaterial({color:0x4a3820}));
+  wtTop.position.y=6.6; wtTop.castShadow=true; wt.add(wtTop);
+  var wtRoof=new THREE.Mesh(new THREE.ConeGeometry(1.6,2,4),new THREE.MeshLambertMaterial({color:0x3a2818}));
+  wtRoof.position.y=8.2; wtRoof.rotation.y=Math.PI/4; wtRoof.castShadow=true; wt.add(wtRoof);
+  wt.position.set(8,0,8); wt.name='Mesh_Watchtower'; wt.userData.clickable=true; scene.add(wt);
+  var tm=new THREE.MeshLambertMaterial({color:0x2a3a18}), tkm=new THREE.MeshLambertMaterial({color:0x4a3818});
+  [[-10,-3],[-11,2],[-10,8],[10,-8],[11,-2],[9,8],[0,-12],[-5,-11],[5,-10]].forEach(function(p){
+    var t=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.2,1.5,6),tkm); t.position.set(p[0],0.75,p[1]); scene.add(t);
+    var c=new THREE.Mesh(new THREE.ConeGeometry(1.2,3,7),tm); c.position.set(p[0],3,p[1]); scene.add(c);
+  });
+}
+buildPlaceholder();
+
+// ============================================================
+//  LOADING
+// ============================================================
+function fadeLoad(){var el=document.getElementById('load');if(!el)return;el.style.opacity='0';setTimeout(function(){el.style.display='none';},800);}
+var prog=0;
+var iv=setInterval(function(){prog+=8;var lb=document.getElementById('lb');if(lb)lb.style.width=Math.min(prog,100)+'%';if(prog>=100){clearInterval(iv);setTimeout(fadeLoad,300);}},80);
+
+// ============================================================
+//  CONTROLS
+// ============================================================
+var ctrl={
+  target:new THREE.Vector3(), sph:new THREE.Spherical(),
+  keys:{l:false,r:false,zoomIn:false,zoomOut:false},
+  speed:0.0135, zoomSpeed:0.4,
+  basePhi:Math.PI/4, cursorPhi:0, cursorTheta:0,
+  minPhi:0.15, maxPhi:Math.PI/2.2,
+  thetaVel:0, radiusVel:0, damping:0.92
+};
+var startRadius = (20 + MAX_RADIUS) / 2;
+camera.position.set(0, startRadius*Math.sin(Math.PI/4), startRadius*Math.cos(Math.PI/4));
+ctrl.sph.setFromVector3(camera.position);
+camera.lookAt(0,0,0);
+
+var PAN_AMOUNT=THREE.MathUtils.degToRad(10);
+var MAX_TILT=THREE.MathUtils.degToRad(10);
+
+function updateCam(){
+  var phi=Math.max(ctrl.minPhi,Math.min(ctrl.maxPhi,ctrl.basePhi+ctrl.cursorPhi));
+  var theta=ctrl.sph.theta+ctrl.cursorTheta;
+  camera.position.copy(new THREE.Vector3().setFromSpherical(new THREE.Spherical(ctrl.sph.radius,phi,theta)).add(ctrl.target));
+  camera.lookAt(ctrl.target);
+}
+
+// ============================================================
+//  SPLASH
+// ============================================================
+var splash=document.getElementById('splash');
+var splashDismissed=false;
+function dismissSplash(){
+  if(splashDismissed)return;
+  splashDismissed=true;
+  splash.classList.add('hidden');
+  setTimeout(function(){splash.style.display='none';},400);
+}
+splash.addEventListener('click',dismissSplash);
+
+// ============================================================
+//  INPUT
+// ============================================================
+window.addEventListener('keydown',function(e){
+  if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A') ctrl.keys.l=true;
+  if(e.key==='ArrowRight'||e.key==='d'||e.key==='D') ctrl.keys.r=true;
+  if(e.key==='w'||e.key==='W'||e.key==='ArrowUp') ctrl.keys.zoomIn=true;
+  if(e.key==='s'||e.key==='S'||e.key==='ArrowDown') ctrl.keys.zoomOut=true;
+  dismissSplash();
+});
+window.addEventListener('keyup',function(e){
+  if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A') ctrl.keys.l=false;
+  if(e.key==='ArrowRight'||e.key==='d'||e.key==='D') ctrl.keys.r=false;
+  if(e.key==='w'||e.key==='W'||e.key==='ArrowUp') ctrl.keys.zoomIn=false;
+  if(e.key==='s'||e.key==='S'||e.key==='ArrowDown') ctrl.keys.zoomOut=false;
+});
+
+// ============================================================
+//  RAYCASTING
+// ============================================================
+var rc=new THREE.Raycaster(), mo=new THREE.Vector2();
+function named(o){var c=o;while(c){if(BLDGS[c.name])return c;c=c.parent;}return null;}
+
+function handleHover(e){
+  mo.set((e.clientX/innerWidth)*2-1,-(e.clientY/innerHeight)*2+1);
+  rc.setFromCamera(mo,camera);
+  var hits=rc.intersectObjects(scene.children,true);
+  var hl=document.getElementById('hl');
+  var found=null;
+  for(var i=0;i<hits.length;i++){var n=named(hits[i].object);if(n){found=n;break;}}
+  if(found){
+    var b=BLDGS[found.name];
+    hl.innerHTML=b.title+(b.sub?'<span class="hl-sub">'+b.sub+'</span>':'');
+    hl.style.cssText='display:block;left:'+(e.clientX+14)+'px;top:'+(e.clientY-10)+'px';
+    renderer.domElement.style.cursor='pointer';
+  } else {
+    hl.style.display='none';
+    renderer.domElement.style.cursor='default';
+  }
+}
+
+// ============================================================
+//  MODALS
+// ============================================================
+var shrineModal=document.getElementById('shrine-modal');
+function openShrine(){shrineModal.classList.add('open');document.querySelectorAll('.stab').forEach(function(t,i){t.classList.toggle('active',i===0);});document.querySelectorAll('.spanel').forEach(function(p,i){p.classList.toggle('active',i===0);});}
+function closeShrine(){shrineModal.classList.remove('open');}
+document.getElementById('shrine-close').addEventListener('click',closeShrine);
+document.getElementById('shrine-backdrop').addEventListener('click',closeShrine);
+
+var smithyModal=document.getElementById('smithy-modal');
+function openSmithy(){smithyModal.classList.add('open');}
+function closeSmithy(){smithyModal.classList.remove('open');}
+document.getElementById('smithy-close').addEventListener('click',closeSmithy);
+document.getElementById('smithy-backdrop').addEventListener('click',closeSmithy);
+
+var buildingModal=document.getElementById('building-modal');
+function openBuilding(k){
+  var b=BLDGS[k];
+  document.getElementById('building-icon').textContent=b.icon;
+  document.getElementById('building-title').textContent=b.title;
+  document.getElementById('building-sub').textContent=b.sub;
+  buildingModal.classList.add('open');
+}
+function closeBuilding(){buildingModal.classList.remove('open');}
+document.getElementById('building-close').addEventListener('click',closeBuilding);
+document.getElementById('building-backdrop').addEventListener('click',closeBuilding);
+
+renderer.domElement.addEventListener('click',function(e){
+  mo.set((e.clientX/innerWidth)*2-1,-(e.clientY/innerHeight)*2+1);
+  rc.setFromCamera(mo,camera);
+  var hits=rc.intersectObjects(scene.children,true);
+  for(var i=0;i<hits.length;i++){
+    var n=named(hits[i].object);
+    if(n){
+      dismissSplash();
+      if(n.name==='Mesh_Shrine'){openShrine();return;}
+      if(n.name==='Mesh_Forge'){openSmithy();return;}
+      openBuilding(n.name);return;
+    }
+  }
+  closeBuilding();closeShrine();closeSmithy();
+});
+
+renderer.domElement.addEventListener('mousemove',function(e){
+  var normY=(e.clientY/innerHeight)*2-1;
+  var normX=(e.clientX/innerWidth)*2-1;
+  ctrl.cursorPhi=normY*MAX_TILT;
+  ctrl.cursorTheta=normX*PAN_AMOUNT;
+  updateCam();
+  handleHover(e);
+});
+
+// Shrine tabs
+document.querySelectorAll('.stab').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.stab').forEach(function(b){b.classList.remove('active');});
+    document.querySelectorAll('.spanel').forEach(function(p){p.classList.remove('active');});
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+document.querySelectorAll('.sstab').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var group=btn.closest('.spanel');
+    group.querySelectorAll('.sstab').forEach(function(b){b.classList.remove('active');});
+    group.querySelectorAll('.sstab-panel').forEach(function(p){p.classList.remove('active');});
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.stab).classList.add('active');
+  });
+});
+
+// Playbook selector
+var SPBS={
+  blessed:{name:'The Blessed',page:'p. 105',epithet:"Danu's chosen, keeper of the Old Ways",desc:"A devotee of Danu, the Earth Mother. The Blessed speaks with spirits, brews remedies, and channels the raw power of the land.",bgs:[['Initiate','Trained from childhood by Danu\'s circle in Stonetop, with a mentor and fellow devotees as followers.'],['Raised by Wolves','You grew up in the wild itself — beasts for siblings, wind and wood for teachers.'],['Vessel','A seed of the goddess\'s own power has taken root in your soul, filling your dreams with signs.']]},
+  fox:{name:'The Fox',page:'p. 109',epithet:'trickster, scoundrel, problem-solver',desc:"The charming rogue. Quick hands, quicker wits, and a flexible relationship with rules.",bgs:[['The Natural','Homegrown talent: you\'ve always been good at everything, and you spot opportunities no one else sees.'],['A Life of Crime','Walked away from a shady past, bringing a burglar\'s skills along.'],['The Prodigal Returned','Left long ago, lived by your wits across the known world, came home a minor legend.']]},
+  heavy:{name:'The Heavy',page:'p. 113',epithet:"the village's muscle and shield",desc:"Good people sometimes need someone willing to get bloody on their behalf.",bgs:[['Sheriff','Nothing official, but you keep order here — a cool head, a heavy presence, and a word people obey.'],['Blood-Soaked Past','Walked away from a life of violence and a name people still fear.'],['Storm-Marked','Touched by Tor, the thunder god, bearing runic marks of power.']]},
+  judge:{name:'The Judge',page:'p. 117',epithet:"Aratis's hammer, keeper of the Chronicle",desc:"A warrior-priest of Aratis, goddess of law and civilization.",bgs:[['Legacy','Latest in Stonetop\'s long, unbroken line of Judges, raised on a Chronicle stuffed with lore.'],['Missionary','Sent by a wider order of Judges to tend a young Chronicle and a precarious position.'],['Prophet','The old line was broken; Aratis called you herself, through dreams and omens.']]},
+  lightbearer:{name:'The Lightbearer',page:'p. 121',epithet:"Helior's flame against the dark",desc:"A holy vessel of Helior, the God of Light. The Lightbearer works miracles of flame and radiance.",bgs:[['Auspicious Birth','Born under an unmistakable sign of the Light — honored in Stonetop, and quietly unsettling to some.'],['Itinerant Mystic','A wandering riddle-speaker the town half-dismisses, who returns from the road exactly when needed.'],['Soul on Fire','Saved from a low, bitter life by a single moment of blazing grace.']]},
+  marshal:{name:'The Marshal',page:'p. 125',epithet:"commander of Stonetop's defenders",desc:"Hoping for peace isn't a plan. The Marshal runs the drills, mans the towers, and takes charge when trouble comes.",bgs:[['Scion','Heir to one of Stonetop\'s storied families; your authority is a given and your veteran crew an institution.'],['Penitent','You once led raiders or mercenaries; a moment of truth turned you to better work.'],['Luminary','A natural-born leader whose words inspire and whose deeds are retold.']]},
+  ranger:{name:'The Ranger',page:'p. 129',epithet:'guide and guardian of the wild places',desc:"Your true home lies beyond the Ringwall. The Ranger is the expedition specialist.",bgs:[['Mighty Hunter','The finest hunter the town has produced in generations.'],['Wide Wanderer','You\'ve traveled the breadth of the known world — and perhaps a little past its edge.'],['Beast-Bonded','Soul-bound to a wild animal companion who fights and travels at your side.']]},
+  seeker:{name:'The Seeker',page:'p. 133',epithet:'scholar of perilous secrets and arcana',desc:"While the village huddles behind its walls, the Seeker plunges into the unknown.",bgs:[['Patriot','These people are family, and you\'ve taken up dark power to keep them from harm.'],['Antiquarian','Years of study led you here, convinced Stonetop holds the key to your greatest discoveries.'],['Witch Hunter','You\'ve devoted your life to rooting out horrors and their servants.']]},
+  hero:{name:'The Would-Be Hero',page:'p. 137',epithet:'untested, unproven, undaunted',desc:"Everyone else in town worries about crops and roofs; you dream of greatness.",bgs:[['Impetuous Youth','A reckless kid who can push a near-miss into a success — always at a painful price.'],['Driven','Something terrible happened, and it left you burdened with purpose you can\'t put down.'],['Destined','Fate has marked you; pieces of your part in things have already been foretold.']]}
+};
+document.querySelectorAll('.spb-cell').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var pb=SPBS[btn.dataset.pb]; if(!pb) return;
+    document.querySelectorAll('.spb-cell').forEach(function(b){b.classList.toggle('selected',b===btn);});
+    var det=document.getElementById('spb-detail');
+    det.hidden=false;
+    det.innerHTML='<div class="spb-name">'+pb.name+'</div><div class="spb-epi">'+pb.epithet+'</div><div class="spb-meta">Book I · '+pb.page+'</div><p>'+pb.desc+'</p>'
+      +pb.bgs.map(function(b){return '<div class="spb-bg"><b>'+b[0]+'</b><span>'+b[1]+'</span></div>';}).join('');
+  });
+});
+
+// Dice roller
+var sd6=function(){return Math.floor(Math.random()*6)+1;};
+document.getElementById('s-roll-btn').addEventListener('click',function(){
+  var stat=parseInt(document.getElementById('s-stat-pick').value,10);
+  var adv=document.getElementById('s-adv').checked;
+  var dis=document.getElementById('s-dis').checked;
+  var extra=adv!==dis;
+  var dice=[sd6(),sd6()];
+  if(extra) dice.push(sd6());
+  var dropped=-1;
+  if(extra){var t=adv?Math.min.apply(null,dice):Math.max.apply(null,dice);dropped=dice.indexOf(t);}
+  var kept=dice.filter(function(_,i){return i!==dropped;});
+  var total=kept.reduce(function(a,b){return a+b;},0)+stat;
+  var row=document.getElementById('s-dice-row'); row.innerHTML='';
+  dice.forEach(function(v,i){var el=document.createElement('div');el.className='sdie'+(i===dropped?' dropped':'');el.textContent=v;row.appendChild(el);});
+  var op=document.createElement('div');op.className='sdie-op';op.textContent=stat>=0?'+ '+stat:'- '+Math.abs(stat);row.appendChild(op);
+  document.getElementById('s-roll-total').innerHTML='Total: <b>'+total+'</b>';
+  var vEl=document.getElementById('s-roll-verdict'), nEl=document.getElementById('s-roll-note');
+  vEl.className='sroll-verdict';
+  if(total>=10){vEl.classList.add('hit10');vEl.textContent='Strong Hit (10+)';nEl.textContent='You get what you were after.';}
+  else if(total>=7){vEl.classList.add('hit79');vEl.textContent='Weak Hit (7-9)';nEl.textContent='You get it, at a cost.';}
+  else{vEl.classList.add('miss');vEl.textContent='Miss (6-)';nEl.textContent='Mark XP. The GM says what happens — and it will be bad.';}
+});
+
+window.addEventListener('resize',function(){
+  camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+  rt.setSize(innerWidth,innerHeight);
+  dMat.uniforms.resolution.value.set(innerWidth,innerHeight);
+});
+
+// ============================================================
+//  AUTO-LOAD
+// ============================================================
+function autoLoadDither(){
+  var img=new Image();
+  img.onload=function(){
+    var t=new THREE.Texture(img);
+    t.wrapS=t.wrapT=THREE.RepeatWrapping;
+    t.magFilter=t.minFilter=THREE.NearestFilter;
+    t.needsUpdate=true;
+    dMat.uniforms.tDither.value=t;
+    dMat.uniforms.useCustom.value=1;
+    dMat.uniforms.customSize.value.set(img.naturalWidth,img.naturalHeight);
+  };
+  img.src='./dither.png';
+}
+
+function autoLoadGLB(){
+  if(typeof THREE.GLTFLoader==='undefined'){console.warn('GLTFLoader not available');return;}
+  new THREE.GLTFLoader().load('./village.glb',function(gltf){
+    scene.children.slice().forEach(function(o){if(!(o instanceof THREE.Light))scene.remove(o);});
+    var gnd=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshLambertMaterial({color:0x3a3530}));
+    gnd.rotation.x=-Math.PI/2; gnd.receiveShadow=true; scene.add(gnd);
+    gltf.scene.traverse(function(n){if(n.isMesh){n.castShadow=n.receiveShadow=true;if(BLDGS[n.name])n.userData.clickable=true;}});
+    scene.add(gltf.scene);
+    ctrl.target.set(0,0,0);
+    ctrl.sph.radius=(20+MAX_RADIUS)/2;
+    ctrl.sph.phi=Math.PI/4;
+    updateCam();
+    fadeLoad();
+    splash.style.display='flex';
+    splashDismissed=false;
+  },function(xhr){if(xhr.lengthComputable){var lb=document.getElementById('lb');if(lb)lb.style.width=(xhr.loaded/xhr.total*100)+'%';}},
+  function(err){console.warn('Auto-load failed:',err);});
+}
+
+// ============================================================
+//  RENDER LOOP
+// ============================================================
+function animate(){
+  requestAnimationFrame(animate);
+  if(ctrl.keys.l) ctrl.thetaVel=ctrl.speed;
+  else if(ctrl.keys.r) ctrl.thetaVel=-ctrl.speed;
+  else ctrl.thetaVel*=ctrl.damping;
+  if(ctrl.keys.zoomIn) ctrl.radiusVel=Math.max(ctrl.radiusVel-0.05,-0.2);
+  else if(ctrl.keys.zoomOut) ctrl.radiusVel=Math.min(ctrl.radiusVel+0.05,0.2);
+  else ctrl.radiusVel*=ctrl.damping;
+  ctrl.sph.theta+=ctrl.thetaVel;
+  ctrl.sph.radius=Math.max(20,Math.min(MAX_RADIUS,ctrl.sph.radius+ctrl.radiusVel));
+  if(Math.abs(ctrl.thetaVel)>0.00001||Math.abs(ctrl.radiusVel)>0.00001) updateCam();
+  var vigStart=20+(MAX_RADIUS-20)*0.6;
+  var vigT=Math.max(0,(ctrl.sph.radius-vigStart)/(MAX_RADIUS-vigStart));
+  dMat.uniforms.vigStrength.value=vigT*1.8;
+  renderer.setRenderTarget(rt); renderer.render(scene,camera);
+  renderer.setRenderTarget(null); renderer.render(dScene,dCam);
+}
+
+autoLoadDither();
+autoLoadGLB();
+animate();
+
+}); // end DOMContentLoaded
+</script>
+</body>
+</html>
