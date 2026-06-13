@@ -231,6 +231,40 @@
   .cc-fol{border:1px solid #3a2e1e;background:rgba(0,0,0,0.25);padding:10px 12px;margin-bottom:10px;}
   .cc-fol-top{display:flex;gap:8px;margin-bottom:8px;}
   .cc-fol-top .cc-in{flex:1;}
+  /* Relationship graph */
+  #graph-modal{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:55;}
+  #graph-modal.open{pointer-events:all;}
+  #graph-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0.5);opacity:0;transition:opacity .4s;}
+  #graph-modal.open #graph-backdrop{opacity:1;}
+  #graph-box{position:relative;width:88%;height:86%;background:rgba(8,6,4,0.96);border:1px solid #3a2e1e;display:flex;flex-direction:column;transform:translateY(12px);opacity:0;transition:opacity .4s,transform .4s;overflow:hidden;}
+  #graph-modal.open #graph-box{opacity:1;transform:none;}
+  #graph-close{position:absolute;top:16px;right:16px;background:none;border:1px solid #3a2e1e;color:#5a4e3e;font-size:16px;cursor:pointer;width:30px;height:30px;display:flex;align-items:center;justify-content:center;z-index:10;}
+  #graph-close:hover{border-color:#8b6940;color:#d4b896;}
+  #graph-header{padding:18px 24px;border-bottom:1px solid #2a2018;flex-shrink:0;}
+  #graph-title{font-size:16px;letter-spacing:3px;color:#d4b896;text-transform:uppercase;margin-bottom:10px;}
+  #graph-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  #g-hint{font-size:11px;color:#5a4e3e;font-style:italic;}
+  #graph-canvas{position:relative;flex:1;overflow:hidden;background:radial-gradient(circle at 50% 40%,rgba(40,32,20,0.25),transparent 70%);}
+  #graph-edges{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+  #graph-nodes{position:absolute;inset:0;pointer-events:none;}
+  .gnode{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;cursor:grab;user-select:none;padding:8px 12px;border:1px solid #5a4830;background:#15110a;color:#d4b896;font-size:12px;letter-spacing:.5px;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;border-radius:2px;box-shadow:0 2px 8px rgba(0,0,0,0.5);}
+  .gnode.pc{border-color:#7a6a3e;background:#1c1808;color:#e8d6a8;border-left:3px solid #b89048;}
+  .gnode.npc{border-left:3px solid #6a7a8a;}
+  .gnode:hover{border-color:#8b6940;}
+  .gnode.sel{border-color:#d4b896;box-shadow:0 0 0 1px #8b6940,0 2px 8px rgba(0,0,0,0.6);}
+  .gnode.dragging{cursor:grabbing;opacity:.92;}
+  .gnode-kind{font-size:8px;letter-spacing:1px;text-transform:uppercase;color:#5a4e3e;display:block;}
+  #graph-edges line{stroke:#5a4830;stroke-width:1.5;}
+  #graph-edges text{fill:#9a8a6a;font:italic 10px Georgia,serif;}
+  #graph-edges rect{fill:#0d0a06;}
+  #g-pop{position:absolute;z-index:20;display:none;background:rgba(12,9,5,0.98);border:1px solid #5a4830;padding:10px;width:210px;transform:translate(-50%,12px);box-shadow:0 4px 14px rgba(0,0,0,0.6);}
+  #g-pop.open{display:block;}
+  #g-pop input{width:100%;font-family:Georgia,serif;background:rgba(0,0,0,0.35);border:1px solid #3a2e1e;color:#d4b896;padding:6px 8px;font-size:12px;margin-bottom:6px;}
+  #g-pop .g-pop-btns{display:flex;gap:6px;}
+  #g-pop button{flex:1;font-family:Georgia,serif;font-size:9px;letter-spacing:1px;text-transform:uppercase;background:transparent;border:1px solid #3a2e1e;color:#a89070;padding:6px;cursor:pointer;}
+  #g-pop button:hover{border-color:#8b6940;color:#d4b896;}
+  #g-pop button.g-del:hover{border-color:#a8654e;color:#d48868;}
+  #g-pop button.g-conn{background:#8b6940;color:#0a0800;border-color:#8b6940;}
 </style>
 </head>
 <body>
@@ -470,6 +504,23 @@
         <div id="building-body">
           <div class="spanel active" id="building-panel"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- RELATIONSHIP GRAPH MODAL -->
+    <div id="graph-modal">
+      <div id="graph-backdrop"></div>
+      <div id="graph-box">
+        <button id="graph-close">✕</button>
+        <div id="graph-header">
+          <div id="graph-title">🕸 Relationship Map</div>
+          <div id="graph-tools">
+            <button class="cc-btn" id="g-add-npc">+ NPC</button>
+            <select class="cc-sel" id="g-add-pc"><option value="">+ Add character…</option></select>
+            <span id="g-hint">Drag to arrange · click a node to rename, connect, or delete.</span>
+          </div>
+        </div>
+        <div id="graph-canvas"><svg id="graph-edges"></svg><div id="graph-nodes"></div><div id="g-pop"></div></div>
       </div>
     </div>
 
@@ -756,6 +807,7 @@ function applyRemote(remote){
   applyingRemote=true;
   Object.keys(remote).forEach(function(k){
     if(k==='characters'){mergeCharacters(remote.characters);return;} // characters merge per-id (see creator)
+    if(k==='graph'){mergeGraph(remote.graph);return;}                 // relationship graph (string-encoded, whole-doc LWW)
     var r=remote[k]||{}, l=store[k];
     // per-building last-write-wins; Firebase drops empty arrays, so restore them
     if(!l||(r._t||0)>=(l._t||0)) store[k]={npcs:r.npcs||[],log:r.log||[],_t:r._t||0};
@@ -764,6 +816,7 @@ function applyRemote(remote){
   // refresh an open (non-editing) panel so other devices' edits appear live
   if(buildingModal.classList.contains('open')&&curBldg&&!editMode)renderBuilding();
   if(typeof renderRoster==='function'&&smithyModal.classList.contains('open')&&!editorOpen)renderRoster();
+  if(typeof graphSyncRefresh==='function')graphSyncRefresh();
   applyingRemote=false;
 }
 function initSync(){
@@ -828,7 +881,9 @@ function renderBuilding(){
   var k=curBldg, c=content(k);
   var logLabel=isChronicle(k)?'The Chronicle':'Notes';
   var addLogLabel=isChronicle(k)?'+ Add recap':'+ Add note';
-  var html='<div class="bedit-bar"><button id="bedit-toggle" class="'+(editMode?'on':'')+'">'+(editMode?'✓ Done':'✎ Edit')+'</button><span id="bedit-saved">Saved ✓</span></div>';
+  var html='<div class="bedit-bar"><button id="bedit-toggle" class="'+(editMode?'on':'')+'">'+(editMode?'✓ Done':'✎ Edit')+'</button>'
+    +(k==='Mesh_Longhouse'?'<button id="b-open-graph" class="sm-btn-go">🕸 Relationship Map</button>':'')
+    +'<span id="bedit-saved">Saved ✓</span></div>';
 
   // People
   if(editMode || (c.npcs && c.npcs.length)){
@@ -867,6 +922,7 @@ function renderBuilding(){
 function bindBuilding(){
   var k=curBldg;
   document.getElementById('bedit-toggle').addEventListener('click',function(){editMode=!editMode;renderBuilding();});
+  var bg=document.getElementById('b-open-graph'); if(bg)bg.addEventListener('click',openGraph);
   if(!editMode) return;
   var c=editable(k);
   // People: live field edits (no re-render, keeps focus)
@@ -1048,7 +1104,8 @@ function newChar(){
     stats:{STR:0,DEX:0,CON:0,INT:0,WIS:0,CHA:0},
     debilities:{weakened:false,dazed:false,miserable:false},
     damageDie:'d6',hp:18,maxHp:18,armor:0,xp:0,level:1,
-    moves:[],possessions:[],resources:{},invocations:[],arcana:[],followers:[],bonds:'',notes:''};
+    moves:[],possessions:[],resources:{},invocations:[],arcana:[],followers:[],
+    stateInsert:'',stateData:{instinct:'',master:'',choices:[],moves:[],track:[]},bonds:'',notes:''};
   seedPlaybook(c);
   openEditor(c,true);
 }
@@ -1059,6 +1116,8 @@ function openEditor(c,isNew){
   // defensively init fields that older saved characters may lack
   c.moves=c.moves||[]; c.possessions=c.possessions||[]; c.resources=c.resources||{};
   c.invocations=c.invocations||[]; c.arcana=c.arcana||[]; c.followers=c.followers||[];
+  c.stateInsert=c.stateInsert||''; c.stateData=c.stateData||{}; var sd=c.stateData;
+  sd.instinct=sd.instinct||''; sd.master=sd.master||''; sd.choices=sd.choices||[]; sd.moves=sd.moves||[]; sd.track=sd.track||[];
   editC=c; editorOpen=true;
   if(isNew)setChar(editC); // persist immediately so it appears in the synced roster
   renderEditor();
@@ -1104,6 +1163,29 @@ function possChecklist(c){
 }
 function tagChecklist(items,sel,attr){
   return items.map(function(m){return '<label class="cc-check"><input type="checkbox" '+attr+'="'+esc(m.name)+'"'+(sel[m.name]?' checked':'')+'><span class="cc-check-name">'+esc(m.name)+'</span><span class="cc-check-gist">'+esc(m.gist||'')+'</span></label>';}).join('');
+}
+function stateBlock(c){
+  var cur=c.stateInsert||'', S=window.STATES||{};
+  var h='<div class="cc-sec">Death’s Door / State</div>'
+    +'<div class="cc-hint">If your character died and came back changed (a Death’s Door result), set it here. Most PCs stay <b>None</b>.</div>'
+    +'<div class="cc-row"><div class="cc-field"><label>State</label><select class="cc-sel" id="cc-state"><option value="">None</option>'
+    +Object.keys(S).map(function(k){return '<option value="'+k+'"'+(k===cur?' selected':'')+'>'+esc(S[k].name)+'</option>';}).join('')
+    +'</select></div></div>';
+  var st=cur&&S[cur];
+  if(st){
+    var sd=c.stateData||{};
+    h+='<div class="cc-hint">'+esc(st.premise||'')+'</div>';
+    h+='<div class="cc-row"><div class="cc-field"><label>Instinct</label><input class="cc-in" id="cc-state-instinct" list="cc-state-inst" value="'+esc(sd.instinct||'')+'"><datalist id="cc-state-inst">'+(st.instincts||[]).map(function(i){return '<option value="'+esc(i)+'">';}).join('')+'</datalist></div>';
+    if(st.masterNote)h+='<div class="cc-field"><label>Your master</label><input class="cc-in" id="cc-state-master" value="'+esc(sd.master||'')+'" placeholder="'+esc(st.masterNote)+'"></div>';
+    h+='</div>';
+    var sc={}; (sd.choices||[]).forEach(function(n){sc[n]=true;});
+    h+='<div class="cc-sec">'+esc(st.choiceLabel||'Choices')+'</div>'+tagChecklist(st.choices||[],sc,'data-sc');
+    var sm={}; (sd.moves||[]).forEach(function(n){sm[n]=true;});
+    h+='<div class="cc-sec">Moves</div>'+tagChecklist(st.moves||[],sm,'data-sm');
+    var stk={}; (sd.track||[]).forEach(function(n){stk[n]=true;});
+    h+='<div class="cc-sec">'+esc(st.trackLabel||'Track')+'</div>'+tagChecklist(st.track||[],stk,'data-stk');
+  }
+  return h;
 }
 function listEditor(arr,key,ph){
   var h='';
@@ -1204,6 +1286,8 @@ function renderEditor(){
       +'<input class="cc-in" data-fol="'+i+'" data-fk="notes" value="'+esc(f.notes||'')+'" placeholder="instinct, tags, members, cost…" style="width:100%;"></div>';
   }).join('')+'<button class="cc-add" id="cc-add-fol">+ Add follower / companion</button>';
 
+  h+=stateBlock(c);
+
   h+='<div class="cc-sec">Bonds & Relationships</div>'
     +'<textarea class="cc-area" id="cc-bonds" placeholder="Who you protect, who wants you dead, ties to other PCs and townsfolk…">'+esc(c.bonds)+'</textarea>';
   h+='<div class="cc-sec">Notes</div>'
@@ -1260,6 +1344,13 @@ function bindEditor(){
   });
   ed.querySelectorAll('[data-rmfol]').forEach(function(b){b.addEventListener('click',function(){editC.followers.splice(+b.dataset.rmfol,1);save();renderEditor();});});
   var af=document.getElementById('cc-add-fol'); if(af)af.addEventListener('click',function(){editC.followers.push({name:'',hp:0,armor:0,damage:'',loyalty:0,notes:''});save();renderEditor();});
+  // state insert (Ghost/Revenant/Thrall)
+  var ss=document.getElementById('cc-state'); if(ss)ss.addEventListener('change',function(){editC.stateInsert=this.value;editC.stateData={instinct:'',master:'',choices:[],moves:[],track:[]};save();renderEditor();});
+  var si=document.getElementById('cc-state-instinct'); if(si){si.addEventListener('input',function(){editC.stateData.instinct=si.value;});si.addEventListener('change',save);}
+  var sm2=document.getElementById('cc-state-master'); if(sm2){sm2.addEventListener('input',function(){editC.stateData.master=sm2.value;});sm2.addEventListener('change',save);}
+  ed.querySelectorAll('[data-sc]').forEach(function(cb){cb.addEventListener('change',function(){toggleIn(editC.stateData.choices,cb.dataset.sc,cb.checked);save();});});
+  ed.querySelectorAll('[data-sm]').forEach(function(cb){cb.addEventListener('change',function(){toggleIn(editC.stateData.moves,cb.dataset.sm,cb.checked);save();});});
+  ed.querySelectorAll('[data-stk]').forEach(function(cb){cb.addEventListener('change',function(){toggleIn(editC.stateData.track,cb.dataset.stk,cb.checked);save();});});
   // top buttons
   document.getElementById('cc-done').addEventListener('click',function(){closeEditor();renderRoster();});
   document.getElementById('cc-del').addEventListener('click',function(){
@@ -1267,6 +1358,138 @@ function bindEditor(){
   });
 }
 var ncBtn=document.getElementById('sm-new-char'); if(ncBtn)ncBtn.addEventListener('click',newChar);
+
+// ============================================================
+//  RELATIONSHIP GRAPH (NPCs + PCs)  — stored string-encoded in store.graph
+// ============================================================
+var G={nodes:[],edges:[]}, gOpen=false, gDragging=false, gConnectFrom=null, gSelId=null;
+var gDragId=null, gMoved=false, gsx=0, gsy=0, gox=0, goy=0;
+var graphModal=document.getElementById('graph-modal');
+
+function gLoad(){var s=store.graph;if(s&&s.data){try{var o=JSON.parse(s.data);return {nodes:o.nodes||[],edges:o.edges||[]};}catch(_){}}return {nodes:[],edges:[]};}
+function saveGraph(){store.graph={data:JSON.stringify(G),_t:Date.now()};persist();pushGraph();flashSaved();}
+function pushGraph(){if(!syncRef||applyingRemote)return;syncRef.child('graph').set({data:store.graph.data,_t:store.graph._t}).catch(function(){setSyncState('error','sync error');});}
+function mergeGraph(r){r=r||{};var l=store.graph;if(!l||(r._t||0)>=(l._t||0))store.graph={data:r.data||'',_t:r._t||0};}
+function graphSyncRefresh(){if(gOpen&&!gDragging){G=gLoad();renderGraph();populatePcDropdown();}}
+
+function nodeById(id){for(var i=0;i<G.nodes.length;i++)if(G.nodes[i].id===id)return G.nodes[i];return null;}
+function edgeById(id){for(var i=0;i<G.edges.length;i++)if(G.edges[i].id===id)return G.edges[i];return null;}
+function nodeLabel(n){if(n.kind==='pc'&&n.pcId){var c=getChar(n.pcId);if(c&&c.name)return c.name;}return n.label||'(unnamed)';}
+function gcanvas(){return document.getElementById('graph-canvas').getBoundingClientRect();}
+function setHint(t){var el=document.getElementById('g-hint');if(el)el.textContent=t||'Drag to arrange · click a node to rename, connect, or delete.';}
+
+function openGraph(){graphModal.classList.add('open');G=gLoad();gOpen=true;gConnectFrom=null;gSelId=null;closePop();populatePcDropdown();renderGraph();}
+function closeGraph(){gOpen=false;closePop();graphModal.classList.remove('open');}
+function populatePcDropdown(){
+  var sel=document.getElementById('g-add-pc');if(!sel)return;
+  var on={};G.nodes.forEach(function(n){if(n.pcId)on[n.pcId]=true;});
+  var cs=(typeof allChars==='function'?allChars():[]).filter(function(c){return !on[c.id];});
+  sel.innerHTML='<option value="">+ Add character…</option>'+cs.map(function(c){return '<option value="'+c.id+'">'+esc(c.name||'Unnamed')+'</option>';}).join('');
+}
+function renderGraph(){
+  var nodesEl=document.getElementById('graph-nodes');
+  nodesEl.innerHTML=G.nodes.map(function(n){
+    return '<div class="gnode '+(n.kind==='pc'?'pc':'npc')+(n.id===gSelId?' sel':'')+'" data-nid="'+n.id+'" style="left:'+n.x+'px;top:'+n.y+'px;"><span class="gnode-kind">'+(n.kind==='pc'?'PC':'NPC')+'</span>'+esc(nodeLabel(n))+(n.note?'<span class="gnode-kind" style="color:#7a6a4e;">'+esc(n.note)+'</span>':'')+'</div>';
+  }).join('');
+  drawEdges();
+  nodesEl.querySelectorAll('.gnode').forEach(function(el){el.addEventListener('pointerdown',onNodeDown);});
+}
+function drawEdges(){
+  var svg=document.getElementById('graph-edges'),pos={};
+  G.nodes.forEach(function(n){pos[n.id]={x:n.x,y:n.y};});
+  var s='';
+  G.edges.forEach(function(e){var a=pos[e.from],b=pos[e.to];if(!a||!b)return;
+    var mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+    s+='<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'"></line>';
+    var w=e.label?(e.label.length*5.6+10):16;
+    s+='<rect x="'+(mx-w/2)+'" y="'+(my-8)+'" width="'+w+'" height="15" rx="2" data-eid="'+e.id+'" style="pointer-events:all;cursor:pointer;'+(e.label?'':'fill:#231a0e;')+'"></rect>';
+    if(e.label)s+='<text x="'+mx+'" y="'+(my+3)+'" text-anchor="middle" data-eid="'+e.id+'" style="pointer-events:all;cursor:pointer;">'+esc(e.label)+'</text>';
+  });
+  svg.innerHTML=s;
+  svg.querySelectorAll('[data-eid]').forEach(function(el){el.addEventListener('click',function(){editEdge(el.getAttribute('data-eid'));});});
+}
+function onNodeDown(e){
+  var el=e.currentTarget,n=nodeById(el.dataset.nid);if(!n)return;
+  gDragId=n.id;gMoved=false;gDragging=true;gsx=e.clientX;gsy=e.clientY;gox=n.x;goy=n.y;
+  try{el.setPointerCapture(e.pointerId);}catch(_){}
+  el.classList.add('dragging');
+  el.addEventListener('pointermove',onNodeMove);
+  el.addEventListener('pointerup',onNodeUp);
+  e.preventDefault();
+}
+function onNodeMove(e){
+  var n=nodeById(gDragId);if(!n)return;
+  var dx=e.clientX-gsx,dy=e.clientY-gsy;
+  if(Math.abs(dx)+Math.abs(dy)>3)gMoved=true;
+  var r=gcanvas();
+  n.x=Math.max(24,Math.min(r.width-24,gox+dx));
+  n.y=Math.max(24,Math.min(r.height-24,goy+dy));
+  e.currentTarget.style.left=n.x+'px';e.currentTarget.style.top=n.y+'px';
+  drawEdges();
+}
+function onNodeUp(e){
+  var el=e.currentTarget;el.classList.remove('dragging');
+  el.removeEventListener('pointermove',onNodeMove);el.removeEventListener('pointerup',onNodeUp);
+  var nid=gDragId;gDragId=null;gDragging=false;
+  if(gMoved)saveGraph(); else onNodeClick(nid);
+}
+function onNodeClick(nid){
+  if(gConnectFrom&&gConnectFrom!==nid){
+    var a=nodeById(gConnectFrom),b=nodeById(nid);
+    var label=prompt('Relationship from “'+nodeLabel(a)+'” to “'+nodeLabel(b)+'”? (e.g. ally, rival, family, owes a debt)','');
+    if(label!==null){G.edges.push({id:uid(),from:gConnectFrom,to:nid,label:label||''});saveGraph();}
+    gConnectFrom=null;setHint();renderGraph();return;
+  }
+  gConnectFrom=null;setHint();openPop(nid);
+}
+function openPop(nid){
+  var n=nodeById(nid);if(!n)return;gSelId=nid;renderGraph();
+  var pop=document.getElementById('g-pop'),isPc=n.kind==='pc';
+  pop.innerHTML='<input id="g-pop-label" value="'+esc(n.label||'')+'"'+(isPc?' disabled placeholder="(name from character sheet)"':' placeholder="NPC name"')+'>'
+    +'<input id="g-pop-note" value="'+esc(n.note||'')+'" placeholder="role / trait / note">'
+    +'<div class="g-pop-btns"><button class="g-conn" id="g-pop-conn">Connect →</button><button class="g-del" id="g-pop-del">Delete</button></div>';
+  pop.style.left=n.x+'px';pop.style.top=n.y+'px';pop.classList.add('open');
+  var lbl=document.getElementById('g-pop-label');
+  if(lbl&&!isPc){lbl.addEventListener('input',function(){n.label=lbl.value;updateChip(nid);});lbl.addEventListener('change',saveGraph);}
+  var note=document.getElementById('g-pop-note');
+  note.addEventListener('input',function(){n.note=note.value;updateChip(nid);});note.addEventListener('change',saveGraph);
+  document.getElementById('g-pop-conn').addEventListener('click',function(){gConnectFrom=nid;closePop();setHint('Connecting from “'+nodeLabel(n)+'” — click another node.');});
+  document.getElementById('g-pop-del').addEventListener('click',function(){
+    G.nodes=G.nodes.filter(function(x){return x.id!==nid;});
+    G.edges=G.edges.filter(function(x){return x.from!==nid&&x.to!==nid;});
+    saveGraph();closePop();populatePcDropdown();renderGraph();
+  });
+  if(lbl&&!isPc){lbl.focus();}
+}
+function updateChip(nid){
+  var n=nodeById(nid),el=document.querySelector('.gnode[data-nid="'+nid+'"]');if(!n||!el)return;
+  el.innerHTML='<span class="gnode-kind">'+(n.kind==='pc'?'PC':'NPC')+'</span>'+esc(nodeLabel(n))+(n.note?'<span class="gnode-kind" style="color:#7a6a4e;">'+esc(n.note)+'</span>':'');
+}
+function closePop(){var pop=document.getElementById('g-pop');if(pop)pop.classList.remove('open');if(gSelId){gSelId=null;}}
+function editEdge(eid){
+  var e=edgeById(eid);if(!e)return;
+  var v=prompt('Relationship label (type DELETE to remove this link):',e.label||'');
+  if(v===null)return;
+  if(v==='DELETE')G.edges=G.edges.filter(function(x){return x.id!==eid;}); else e.label=v;
+  saveGraph();renderGraph();
+}
+function addNpc(){
+  var r=gcanvas();
+  var n={id:uid(),kind:'npc',label:'',note:'',x:r.width/2+(Math.random()*140-70),y:r.height/2+(Math.random()*120-60)};
+  G.nodes.push(n);saveGraph();renderGraph();openPop(n.id);
+}
+// wiring
+document.getElementById('graph-close').addEventListener('click',closeGraph);
+document.getElementById('graph-backdrop').addEventListener('click',closeGraph);
+document.getElementById('g-add-npc').addEventListener('click',addNpc);
+document.getElementById('g-add-pc').addEventListener('change',function(){
+  var cid=this.value;if(!cid)return;var c=getChar(cid),r=gcanvas();
+  G.nodes.push({id:uid(),kind:'pc',pcId:cid,label:(c&&c.name)||'',note:'',x:r.width/2+(Math.random()*140-70),y:r.height/2+(Math.random()*120-60)});
+  saveGraph();populatePcDropdown();renderGraph();this.value='';
+});
+document.getElementById('graph-canvas').addEventListener('pointerdown',function(e){
+  if(e.target.id==='graph-canvas'||e.target.id==='graph-nodes'||e.target.id==='graph-edges'){closePop();renderGraph();if(gConnectFrom){gConnectFrom=null;setHint();}}
+});
 
 // Dice roller
 var sd6=function(){return Math.floor(Math.random()*6)+1;};

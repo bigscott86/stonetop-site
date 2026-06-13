@@ -168,15 +168,17 @@ Cross-cutting facts to build against (verified from the book):
 
 ## Roadmap (requested features)
 
-### 1. NPC relationship node graph
-Replace (or augment) the flat People list with an interactive **node graph**: create
-nodes for NPCs/characters and **draw connections** between them (e.g. "ally," "rival,"
-"family"). Players/DM build and edit it live.
-- Should fit the existing parchment/dark aesthetic.
-- Needs: draggable nodes, create/delete nodes, create/delete labeled edges, persistence
-  (same store, extended schema — e.g. `{ nodes:[{id,name,x,y,note}], edges:[{from,to,label}] }`).
-- Lightweight options: hand-rolled SVG/canvas, or a small lib. Keep the no-build,
-  single-file constraint in mind (prefer a CDN script or vanilla SVG).
+### 1. NPC relationship node graph — ✅ BUILT
+An interactive graph opened from the **Common House** building panel (🕸 Relationship Map
+button). Nodes are **NPCs and player characters** (PC nodes link to the roster via `pcId`,
+so they show the live character name); drag to arrange, click a node to rename/note/connect/
+delete, and connect two nodes to draw a **labeled relationship edge** (edge label click →
+edit/DELETE). Built with absolutely-positioned node chips over an SVG edge layer (pointer-event
+drag). Stored **string-encoded** in `store.graph = {data, _t}` (whole-doc last-write-wins —
+sidesteps Firebase array issues), synced via targeted `pushGraph()` / `mergeGraph()`, and
+live-refreshes from remote unless you're mid-drag (`graphSyncRefresh`). Model + sync unit-tested;
+live Firebase round-trip verified on the `graph` path. Opening from the Common House keeps that
+building's People/Notes editor intact.
 
 ### 2. Player character creation — ✅ BUILT
 A character creator/editor lives in **The Smithy** modal, above the existing playbook
@@ -213,8 +215,11 @@ reference browser.
   `{name,hp,armor,damage,loyalty,notes}`. Changing playbook re-seeds starting moves + vitals
   via `seedPlaybook()`. Backward compatible with v1 free-text characters. Model unit-tested
   against the real PBDATA (seed, toggle, Hero array, no dangling starting moves).
-- **Still not modeled:** the Ghost/Revenant/Thrall state-sheets from `class-sheet-setup.md`
-  (Death's Door results), and full per-arcanum/invocation rules text (names + gists only).
+- **State inserts (done):** a "Death's Door / State" section lets a PC become **Ghost /
+  Revenant / Thrall** (`window.STATES` in `playbooks.js`, from Book I pp.148–153) — each
+  with its instinct, Terrible Purpose/Impulse choices, moves, and Consequences/Marks track
+  as checklists. Stored in `stateInsert` + `stateData`.
+- **Still not modeled:** full per-arcanum/invocation rules *text* (names + gists only).
 
 ### 3. Shared sync across all computers — ✅ LIVE
 Implemented as a **Firebase Realtime Database** layer in `index.html`, and **the real
