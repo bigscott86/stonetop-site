@@ -232,6 +232,13 @@ Stonetop's); the full **Steading Improvements** checklist (17, with gist + cost)
 synced (whole-doc last-write-wins via `pushSteading`/`mergeSteading`; refresh skips while a field
 is focused). Model + sync unit-tested; live Firebase round-trip verified on the `steading` path.
 
+### 5. In-app rules lookup (the Stone) — ✅ BUILT
+The Stone (Shrine) modal now opens on a searchable **Lookup** tab (the hand-written The
+Game / Moves / Combat tabs remain). Driven by `window.RULES` in `playbooks.js` (23 entries
+from Book I: 10 basic moves with trigger + 10+/7–9/6– results, 4 special moves, the 6 stats,
+3 core mechanics). Live text search across title/trigger/text/results + category chips
+(`renderRules`/`buildRuleUI`). Read-only reference, no sync needed.
+
 ### 3. Shared sync across all computers — ✅ LIVE
 Implemented as a **Firebase Realtime Database** layer in `index.html`, and **the real
 database is configured and verified**:

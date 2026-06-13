@@ -279,6 +279,24 @@
   #steading-body{flex:1;overflow-y:auto;padding:20px 28px 44px;color:#a89070;}
   #steading-body::-webkit-scrollbar{width:4px;}
   #steading-body::-webkit-scrollbar-thumb{background:rgba(212,184,150,0.2);}
+  /* Rules lookup (the Stone) */
+  .rl-bar{position:sticky;top:0;background:rgba(8,6,4,0.97);padding:4px 0 10px;margin-bottom:6px;z-index:2;}
+  #rl-search{width:100%;font-family:Georgia,serif;background:rgba(0,0,0,0.35);border:1px solid #3a2e1e;color:#d4b896;padding:9px 12px;font-size:14px;margin-bottom:10px;box-sizing:border-box;}
+  #rl-search:focus{outline:none;border-color:#8b6940;}
+  #rl-cats{display:flex;gap:6px;flex-wrap:wrap;}
+  .rl-cat{font-family:Georgia,serif;font-size:9px;letter-spacing:1px;text-transform:uppercase;background:transparent;border:1px solid #3a2e1e;color:#5a4e3e;padding:5px 10px;cursor:pointer;}
+  .rl-cat:hover{border-color:#8b6940;color:#d4b896;}
+  .rl-cat.on{background:#8b6940;color:#0a0800;border-color:#8b6940;font-weight:bold;}
+  .rl-card{border:1px solid #2a2018;border-left:2px solid #5a4830;padding:10px 14px;margin-bottom:8px;background:rgba(0,0,0,0.25);}
+  .rl-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:4px;}
+  .rl-title{color:#d4b896;font-size:15px;letter-spacing:.5px;}
+  .rl-meta{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#5a4e3e;white-space:nowrap;}
+  .rl-trig{color:#a89070;font-size:12.5px;font-style:italic;margin-bottom:5px;}
+  .rl-res{display:flex;flex-wrap:wrap;gap:4px 14px;margin-bottom:5px;}
+  .rl-res span{font-size:12px;color:#a89070;}
+  .rl-res b{color:#8b6940;font-size:10px;letter-spacing:1px;margin-right:3px;}
+  .rl-text{color:#9a8a6a;font-size:12.5px;line-height:1.55;}
+  .rl-empty{color:#5a4e3e;font-style:italic;padding:14px 0;}
 </style>
 </head>
 <body>
@@ -348,13 +366,19 @@
         <div id="shrine-header">
           <div id="shrine-title">✦ The Stone — A New Player's Guide</div>
           <div id="shrine-tabs">
-            <button class="stab active" data-tab="s-game">The Game</button>
+            <button class="stab active" data-tab="s-lookup">Lookup</button>
+            <button class="stab" data-tab="s-game">The Game</button>
             <button class="stab" data-tab="s-moves">Moves</button>
             <button class="stab" data-tab="s-combat">Combat</button>
           </div>
         </div>
         <div id="shrine-body">
-          <div class="spanel active" id="s-game">
+          <div class="spanel active" id="s-lookup">
+            <h2>Rules Lookup</h2>
+            <div class="rl-bar"><input id="rl-search" placeholder="Search moves, stats, rules… (e.g. clash, defy, WIS)"><div id="rl-cats"></div></div>
+            <div id="rl-list"></div>
+          </div>
+          <div class="spanel" id="s-game">
             <h2>What Kind of Game Is This?</h2>
             <span class="pageref">Book I · The Players' Guide &amp; GM Reference · pp. 36–41</span>
             <p><em>Stonetop</em> is a tabletop RPG about a small Iron Age village and the heroes who protect it. Unlike games where you're wandering adventurers, your characters <em>live</em> somewhere. Stonetop is your home — its people, its fields, its old secrets — and the campaign is the story of you defending it, providing for it, and making it better, while a wide and dangerous world presses in.</p>
@@ -1589,6 +1613,38 @@ function bindSteading(){
 }
 document.getElementById('steading-close').addEventListener('click',closeSteading);
 document.getElementById('steading-backdrop').addEventListener('click',closeSteading);
+
+// ============================================================
+//  RULES LOOKUP (the Stone)  — data from window.RULES
+// ============================================================
+var rlCat='All';
+function renderRules(){
+  var list=document.getElementById('rl-list'); if(!list)return;
+  var q=((document.getElementById('rl-search')||{}).value||'').toLowerCase().trim();
+  var items=(window.RULES||[]).filter(function(r){
+    if(rlCat!=='All'&&r.cat!==rlCat)return false;
+    if(!q)return true;
+    var res=r.results?[r.results.strong,r.results.weak,r.results.miss].join(' '):'';
+    return (r.title+' '+(r.trigger||'')+' '+(r.text||'')+' '+res+' '+r.cat).toLowerCase().indexOf(q)>=0;
+  });
+  if(!items.length){list.innerHTML='<div class="rl-empty">No rules match “'+esc(q)+'”.</div>';return;}
+  list.innerHTML=items.map(function(r){
+    var h='<div class="rl-card"><div class="rl-head"><span class="rl-title">'+esc(r.title)+'</span><span class="rl-meta">'+esc(r.cat)+(r.page?' · p.'+r.page:'')+'</span></div>';
+    if(r.trigger)h+='<div class="rl-trig"><b>When you</b> '+esc(r.trigger)+'</div>';
+    if(r.results){var R=r.results;h+='<div class="rl-res">'+(R.strong?'<span><b>10+</b>'+esc(R.strong)+'</span>':'')+(R.weak?'<span><b>7–9</b>'+esc(R.weak)+'</span>':'')+(R.miss?'<span><b>6−</b>'+esc(R.miss)+'</span>':'')+'</div>';}
+    if(r.text)h+='<div class="rl-text">'+esc(r.text)+'</div>';
+    return h+'</div>';
+  }).join('');
+}
+function buildRuleUI(){
+  var cats=document.getElementById('rl-cats'); if(!cats)return;
+  var uniq=['All']; (window.RULES||[]).forEach(function(r){if(uniq.indexOf(r.cat)<0)uniq.push(r.cat);});
+  cats.innerHTML=uniq.map(function(c){return '<button class="rl-cat'+(c===rlCat?' on':'')+'" data-cat="'+esc(c)+'">'+esc(c)+'</button>';}).join('');
+  cats.querySelectorAll('[data-cat]').forEach(function(b){b.addEventListener('click',function(){rlCat=b.dataset.cat;buildRuleUI();renderRules();});});
+  renderRules();
+}
+var rlSearch=document.getElementById('rl-search'); if(rlSearch)rlSearch.addEventListener('input',renderRules);
+buildRuleUI();
 
 // Dice roller
 var sd6=function(){return Math.floor(Math.random()*6)+1;};
