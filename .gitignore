@@ -1,0 +1,9 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+
+# Source rulebook — copyrighted commercial product. Kept LOCAL only:
+# do not commit or deploy it publicly. The app needs none of it at runtime
+# (derived reference content lives in docs/ and playbooks.js).
+*.pdf
+Book_I_-_Stonetop_(spreads).pdf

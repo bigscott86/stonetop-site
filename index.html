@@ -5,6 +5,7 @@
 <title>Stonetop</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="./GLTFLoader.js"></script>
+<script src="./playbooks.js"></script>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
   body{background:#000;font-family:Georgia,serif;overflow:hidden;width:100vw;height:100vh;}
@@ -123,6 +124,113 @@
   #building-icon{font-size:28px;margin-bottom:8px;color:#8b6940;}
   #building-title{font-size:18px;font-weight:normal;letter-spacing:4px;color:#d4b896;text-transform:uppercase;margin-bottom:4px;}
   #building-sub{font-size:10px;letter-spacing:3px;color:#5a4e3e;text-transform:uppercase;margin-bottom:14px;}
+  /* Building content editor */
+  .bedit-bar{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+  #bedit-toggle{font-family:Georgia,serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#5a4e3e;background:transparent;border:1px solid #3a2e1e;padding:6px 14px;cursor:pointer;transition:background .15s,color .15s,border-color .15s;}
+  #bedit-toggle:hover{border-color:#8b6940;color:#d4b896;}
+  #bedit-toggle.on{background:#8b6940;color:#0a0800;border-color:#8b6940;font-weight:bold;}
+  #bedit-saved{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#7a9a5e;opacity:0;transition:opacity .3s;}
+  #bedit-saved.show{opacity:.8;}
+  .bnpc{display:flex;align-items:baseline;gap:14px;padding:8px 0;border-bottom:1px solid #1e1810;}
+  .bnpc-name{color:#d4b896;font-size:14px;min-width:130px;flex-shrink:0;}
+  .bnpc-role{color:#a89070;font-size:12.5px;font-style:italic;opacity:.85;}
+  .bnpc-edit{display:flex;gap:8px;align-items:center;padding:5px 0;}
+  .bedit-input,.bedit-area{font-family:Georgia,serif;background:rgba(0,0,0,0.35);border:1px solid #3a2e1e;color:#d4b896;padding:7px 10px;font-size:13px;}
+  .bedit-input:focus,.bedit-area:focus{outline:none;border-color:#8b6940;}
+  .bedit-area{width:100%;line-height:1.65;resize:vertical;min-height:58px;}
+  .bnpc-edit .bedit-input.n{width:150px;flex-shrink:0;}
+  .bnpc-edit .bedit-input.r{flex:1;}
+  .brm{background:none;border:1px solid #3a2e1e;color:#9a5e4e;width:26px;height:26px;cursor:pointer;flex-shrink:0;font-size:12px;line-height:1;}
+  .brm:hover{border-color:#a8654e;color:#d48868;}
+  .badd{font-family:Georgia,serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8b6940;background:transparent;border:1px dashed #3a2e1e;padding:7px 14px;cursor:pointer;margin-top:10px;}
+  .badd:hover{border-color:#8b6940;color:#d4b896;}
+  .blog{padding:12px 0;border-bottom:1px solid #1e1810;}
+  .blog-ts{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#5a4e3e;margin-bottom:5px;}
+  .blog-text{color:#a89070;font-size:13.5px;line-height:1.7;white-space:pre-wrap;}
+  .blog-edit{padding:10px 0;border-bottom:1px solid #1e1810;}
+  .bempty{color:#5a4e3e;font-style:italic;font-size:13px;padding:10px 0;}
+  /* Sync status indicator */
+  #sync-dot{position:fixed;bottom:12px;right:14px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#5a4e3e;z-index:60;pointer-events:none;display:flex;align-items:center;gap:6px;font-family:Georgia,serif;}
+  .sd{width:7px;height:7px;border-radius:50%;display:inline-block;background:#5a4e3e;}
+  .sd.connecting{background:#9a7d3e;}
+  .sd.synced{background:#5e7a44;}
+  .sd.error{background:#9a4e3e;}
+  /* Character creator */
+  #sm-roster{margin-bottom:8px;}
+  .sm-roster-head{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #3a2e1e;padding-bottom:8px;margin-bottom:14px;}
+  .sm-roster-head h2{border:none!important;margin:0!important;padding:0!important;}
+  .sm-btn-go{font-family:Georgia,serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;background:#8b6940;color:#0a0800;border:none;padding:8px 16px;cursor:pointer;font-weight:bold;flex-shrink:0;}
+  .sm-btn-go:hover{background:#a3825a;}
+  #sm-roster-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;}
+  .cc-card{border:1px solid #3a2e1e;background:rgba(0,0,0,0.35);padding:12px 14px;cursor:pointer;position:relative;transition:border-color .15s,background .15s;}
+  .cc-card:hover{border-color:#8b6940;background:rgba(212,184,150,0.06);}
+  .cc-card-name{color:#d4b896;font-size:15px;letter-spacing:1px;margin-bottom:3px;}
+  .cc-card-sub{color:#8b6940;font-size:10px;letter-spacing:2px;text-transform:uppercase;}
+  .cc-card-meta{color:#5a4e3e;font-size:10px;font-style:italic;margin-top:6px;}
+  .cc-card-edit{margin-top:9px;padding-top:8px;border-top:1px solid #2a2018;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8b6940;}
+  .cc-card:hover .cc-card-edit{color:#d4b896;}
+  .cc-roster-hint{font-size:11px;color:#5a4e3e;font-style:italic;margin:-4px 0 14px;}
+  .cc-card-rm{position:absolute;top:7px;right:7px;background:none;border:1px solid #3a2e1e;color:#9a5e4e;width:22px;height:22px;cursor:pointer;font-size:11px;line-height:1;opacity:0;transition:opacity .15s;}
+  .cc-card:hover .cc-card-rm{opacity:1;}
+  .cc-card-rm:hover{border-color:#a8654e;color:#d48868;}
+  .cc-empty{color:#5a4e3e;font-style:italic;font-size:13px;grid-column:1/-1;padding:6px 0;}
+  .sm-sep{border:none;border-top:1px solid #2a2018;margin:26px 0 22px;}
+  #sm-editor{position:absolute;inset:0;background:rgba(8,6,4,0.98);overflow-y:auto;padding:24px 32px 48px;display:none;z-index:5;color:#a89070;}
+  #sm-editor.open{display:block;}
+  #sm-editor::-webkit-scrollbar{width:4px;}
+  #sm-editor::-webkit-scrollbar-thumb{background:rgba(212,184,150,0.2);}
+  .cc-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;border-bottom:1px solid #3a2e1e;padding-bottom:12px;}
+  .cc-top-title{color:#d4b896;font-size:18px;letter-spacing:3px;text-transform:uppercase;}
+  .cc-top-btns{display:flex;gap:8px;flex-shrink:0;}
+  .cc-btn{font-family:Georgia,serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;background:transparent;border:1px solid #3a2e1e;color:#a89070;padding:7px 14px;cursor:pointer;}
+  .cc-btn:hover{border-color:#8b6940;color:#d4b896;}
+  .cc-btn.danger:hover{border-color:#a8654e;color:#d48868;}
+  .cc-sec{margin:20px 0 8px;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#8b6940;display:flex;align-items:center;gap:10px;}
+  .cc-sec::after{content:'';flex:1;height:1px;background:#2a2018;}
+  .cc-row{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:6px;}
+  .cc-field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px;}
+  .cc-field label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#5a4e3e;}
+  .cc-in,.cc-sel,.cc-area{font-family:Georgia,serif;background:rgba(0,0,0,0.35);border:1px solid #3a2e1e;color:#d4b896;padding:8px 10px;font-size:13px;}
+  .cc-in:focus,.cc-sel:focus,.cc-area:focus{outline:none;border-color:#8b6940;}
+  .cc-area{width:100%;line-height:1.6;resize:vertical;min-height:54px;}
+  .cc-hint{font-size:11px;color:#5a4e3e;font-style:italic;line-height:1.5;margin:2px 0 6px;}
+  .cc-hint b{color:#8b6940;font-style:normal;}
+  .cc-stats{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;}
+  @media(max-width:640px){.cc-stats{grid-template-columns:repeat(3,1fr);}}
+  .cc-stat{border:1px solid #3a2e1e;background:rgba(0,0,0,0.3);padding:8px 4px;text-align:center;}
+  .cc-stat label{display:block;font-size:10px;letter-spacing:2px;color:#8b6940;margin-bottom:2px;}
+  .cc-stepv{font-size:20px;color:#d4b896;margin:2px 0;}
+  .cc-step{display:flex;align-items:center;justify-content:center;gap:8px;}
+  .cc-step button{background:none;border:1px solid #3a2e1e;color:#a89070;width:22px;height:22px;cursor:pointer;font-size:13px;line-height:1;}
+  .cc-step button:hover{border-color:#8b6940;color:#d4b896;}
+  .cc-arr{font-size:11px;letter-spacing:1px;margin:9px 0 2px;}
+  .cc-arr.ok{color:#7a9a5e;}
+  .cc-arr.bad{color:#b08a5a;}
+  .cc-debils{display:flex;gap:20px;flex-wrap:wrap;margin:4px 0;}
+  .cc-debil{display:flex;align-items:center;gap:6px;font-size:12px;color:#a89070;cursor:pointer;}
+  .cc-debil small{color:#5a4e3e;}
+  .cc-list-row{display:flex;gap:8px;align-items:center;margin-bottom:6px;}
+  .cc-list-row .cc-in{flex:1;}
+  .cc-add{font-family:Georgia,serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8b6940;background:transparent;border:1px dashed #3a2e1e;padding:6px 12px;cursor:pointer;margin-top:4px;}
+  .cc-add:hover{border-color:#8b6940;color:#d4b896;}
+  .cc-rm{background:none;border:1px solid #3a2e1e;color:#9a5e4e;width:26px;height:32px;cursor:pointer;flex-shrink:0;}
+  .cc-rm:hover{border-color:#a8654e;color:#d48868;}
+  .cc-num{width:74px;flex:none!important;}
+  .cc-check{display:grid;grid-template-columns:20px 1fr;gap:8px;align-items:start;padding:7px 2px;border-bottom:1px solid #1e1810;cursor:pointer;}
+  .cc-check:hover{background:rgba(212,184,150,0.04);}
+  .cc-check input{margin-top:3px;}
+  .cc-check-name{color:#d4b896;font-size:13px;letter-spacing:.5px;}
+  .cc-check-gist{grid-column:2;color:#8a7a5e;font-size:11.5px;line-height:1.45;font-style:italic;margin-top:2px;}
+  .cc-tag{font-style:normal;font-size:8px;letter-spacing:1px;text-transform:uppercase;padding:1px 5px;border:1px solid #3a2e1e;margin-left:6px;vertical-align:middle;}
+  .cc-tag.start{color:#7a9a5e;border-color:#3e5234;}
+  .cc-tag.l6{color:#b08a5a;border-color:#5a4426;}
+  .cc-custom{margin-top:10px;}
+  .cc-res{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #1e1810;}
+  .cc-res-h b{color:#d4b896;font-weight:normal;font-size:13px;}
+  .cc-res-h small{display:block;color:#5a4e3e;font-style:italic;font-size:11px;margin-top:2px;}
+  .cc-fol{border:1px solid #3a2e1e;background:rgba(0,0,0,0.25);padding:10px 12px;margin-bottom:10px;}
+  .cc-fol-top{display:flex;gap:8px;margin-bottom:8px;}
+  .cc-fol-top .cc-in{flex:1;}
 </style>
 </head>
 <body>
@@ -322,7 +430,13 @@
         </div>
         <div id="smithy-body">
           <div class="spanel active" id="sm-playbooks">
-            <h2>The Playbooks</h2>
+            <div id="sm-roster">
+              <div class="sm-roster-head"><h2>Your Characters</h2><button id="sm-new-char" class="sm-btn-go">+ New Character</button></div>
+              <div class="cc-roster-hint">Click any character to view or edit their sheet — changes save automatically and sync to everyone.</div>
+              <div id="sm-roster-list"></div>
+            </div>
+            <hr class="sm-sep">
+            <h2>Playbook Reference</h2>
             <span class="pageref">Book I · "Playbooks &amp; Inserts" · pp. 103–140 · One per character · No duplicates</span>
             <p>Stonetop's "classes" are called <strong>playbooks</strong> — each containing everything that character can do: concept, stats, moves, gear, and questions tying them to the village. Every playbook opens with a choice of <strong>three backgrounds</strong>.</p>
             <div class="spb-grid" id="spb-grid">
@@ -338,6 +452,7 @@
             </div>
             <div class="spb-detail" id="spb-detail" hidden></div>
           </div>
+          <div id="sm-editor"></div>
         </div>
       </div>
     </div>
@@ -353,12 +468,7 @@
           <div id="building-sub"></div>
         </div>
         <div id="building-body">
-          <div class="spanel active" style="display:flex;align-items:center;justify-content:center;">
-            <div style="text-align:center;">
-              <div style="font-size:48px;margin-bottom:24px;opacity:0.2;">⧖</div>
-              <div style="font-size:22px;letter-spacing:4px;color:#5a4e3e;text-transform:uppercase;font-weight:normal;">Content Coming Soon</div>
-            </div>
-          </div>
+          <div class="spanel active" id="building-panel"></div>
         </div>
       </div>
     </div>
@@ -366,9 +476,20 @@
     <div id="load"><h2>Stonetop</h2><p id="lm">Preparing the village...</p><div id="lbw"><div id="lb"></div></div></div>
   </div>
 </div>
+<div id="sync-dot"></div>
 
 <script>
 window.addEventListener('DOMContentLoaded', function() {
+
+// ============================================================
+//  SHARED SYNC CONFIG (optional)
+//  To share notes/recaps live across ALL devices: create a free
+//  Firebase Realtime Database and paste its config object below.
+//  Step-by-step instructions: docs/sync-setup.md
+//  Leave as null = data stays in this browser only (works fine).
+// ============================================================
+var FIREBASE_CONFIG = { databaseURL: "https://stone-7ed10-default-rtdb.firebaseio.com" };
+var CAMPAIGN_ID = 'stonetop';
 
 // ============================================================
 //  BUILDING DATA
@@ -594,25 +715,181 @@ function handleHover(e){
 //  MODALS
 // ============================================================
 var shrineModal=document.getElementById('shrine-modal');
-function openShrine(){shrineModal.classList.add('open');document.querySelectorAll('.stab').forEach(function(t,i){t.classList.toggle('active',i===0);});document.querySelectorAll('.spanel').forEach(function(p,i){p.classList.toggle('active',i===0);});}
+function openShrine(){shrineModal.classList.add('open');shrineModal.querySelectorAll('.stab').forEach(function(t,i){t.classList.toggle('active',i===0);});shrineModal.querySelectorAll('.spanel').forEach(function(p,i){p.classList.toggle('active',i===0);});}
 function closeShrine(){shrineModal.classList.remove('open');}
 document.getElementById('shrine-close').addEventListener('click',closeShrine);
 document.getElementById('shrine-backdrop').addEventListener('click',closeShrine);
 
 var smithyModal=document.getElementById('smithy-modal');
-function openSmithy(){smithyModal.classList.add('open');}
-function closeSmithy(){smithyModal.classList.remove('open');}
+function openSmithy(){smithyModal.classList.add('open');var p=document.getElementById('sm-playbooks');if(p)p.classList.add('active');closeEditor();renderRoster();}
+function closeSmithy(){if(editorOpen)closeEditor();smithyModal.classList.remove('open');}
 document.getElementById('smithy-close').addEventListener('click',closeSmithy);
 document.getElementById('smithy-backdrop').addEventListener('click',closeSmithy);
 
 var buildingModal=document.getElementById('building-modal');
+var buildingPanel=document.getElementById('building-panel');
+var curBldg=null, editMode=false;
+
+// ---- Persistent content store (saved in this browser) ----
+var STORE_KEY='stonetop_v1';
+function loadStore(){try{return JSON.parse(localStorage.getItem(STORE_KEY))||{};}catch(e){return {};}}
+var store=loadStore();
+function saveStore(){
+  if(curBldg&&store[curBldg])store[curBldg]._t=Date.now(); // last-write-wins clock for sync
+  try{localStorage.setItem(STORE_KEY,JSON.stringify(store));}catch(e){}
+  pushRemote();
+  flashSaved();
+}
+
+// ---- Shared sync engine (Firebase Realtime Database; dormant if FIREBASE_CONFIG is null) ----
+var syncRef=null, applyingRemote=false, firstSync=true;
+function setSyncState(s,msg){
+  var el=document.getElementById('sync-dot');
+  if(el)el.innerHTML='<span class="sd '+s+'"></span>'+(msg||'');
+}
+function pushRemote(){
+  if(!syncRef||applyingRemote)return;
+  syncRef.update(JSON.parse(JSON.stringify(store))).catch(function(){setSyncState('error','sync error');});
+}
+function applyRemote(remote){
+  remote=remote||{};
+  applyingRemote=true;
+  Object.keys(remote).forEach(function(k){
+    if(k==='characters'){mergeCharacters(remote.characters);return;} // characters merge per-id (see creator)
+    var r=remote[k]||{}, l=store[k];
+    // per-building last-write-wins; Firebase drops empty arrays, so restore them
+    if(!l||(r._t||0)>=(l._t||0)) store[k]={npcs:r.npcs||[],log:r.log||[],_t:r._t||0};
+  });
+  try{localStorage.setItem(STORE_KEY,JSON.stringify(store));}catch(e){}
+  // refresh an open (non-editing) panel so other devices' edits appear live
+  if(buildingModal.classList.contains('open')&&curBldg&&!editMode)renderBuilding();
+  if(typeof renderRoster==='function'&&smithyModal.classList.contains('open')&&!editorOpen)renderRoster();
+  applyingRemote=false;
+}
+function initSync(){
+  if(!FIREBASE_CONFIG){setSyncState('local','this device only');return;}
+  setSyncState('connecting','connecting…');
+  var urls=['https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
+            'https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js'];
+  (function next(i){
+    if(i>=urls.length)return start();
+    var s=document.createElement('script');
+    s.src=urls[i];
+    s.onload=function(){next(i+1);};
+    s.onerror=function(){setSyncState('error','sync failed to load');};
+    document.head.appendChild(s);
+  })(0);
+  function start(){
+    try{
+      firebase.initializeApp(FIREBASE_CONFIG);
+      syncRef=firebase.database().ref('campaigns/'+CAMPAIGN_ID+'/store');
+      syncRef.on('value',function(snap){
+        applyRemote(snap.val());
+        setSyncState('synced','synced');
+        if(firstSync){firstSync=false;pushRemote();} // share what this device already has (after merging remote)
+      },function(){setSyncState('error','sync error');});
+    }catch(e){setSyncState('error','sync error');}
+  }
+}
+
+function defaultContent(k){
+  return {
+    npcs:(BLDGS[k].npcs||[]).map(function(n){return {name:n.name,role:n.role};}),
+    log:(BLDGS[k].notes?[{ts:'',text:BLDGS[k].notes}]:[])
+  };
+}
+function content(k){return store[k]||defaultContent(k);}      // read-only view
+function editable(k){if(!store[k])store[k]=defaultContent(k);return store[k];} // writable copy
+
+function esc(t){return (t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function today(){try{return new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});}catch(e){return '';}}
+function isChronicle(k){return k==='Mesh_Well';}
+
+var savedTimer=null;
+function flashSaved(){
+  var s=document.getElementById('bedit-saved'); if(!s) return;
+  s.classList.add('show');
+  if(savedTimer) clearTimeout(savedTimer);
+  savedTimer=setTimeout(function(){s.classList.remove('show');},1200);
+}
+
 function openBuilding(k){
+  curBldg=k; editMode=false;
   var b=BLDGS[k];
   document.getElementById('building-icon').textContent=b.icon;
   document.getElementById('building-title').textContent=b.title;
   document.getElementById('building-sub').textContent=b.sub;
+  buildingPanel.classList.add('active'); // defensive: re-assert in case anything stripped it
+  renderBuilding();
   buildingModal.classList.add('open');
 }
+
+function renderBuilding(){
+  var k=curBldg, c=content(k);
+  var logLabel=isChronicle(k)?'The Chronicle':'Notes';
+  var addLogLabel=isChronicle(k)?'+ Add recap':'+ Add note';
+  var html='<div class="bedit-bar"><button id="bedit-toggle" class="'+(editMode?'on':'')+'">'+(editMode?'✓ Done':'✎ Edit')+'</button><span id="bedit-saved">Saved ✓</span></div>';
+
+  // People
+  if(editMode || (c.npcs && c.npcs.length)){
+    html+='<h3>People</h3>';
+    if(editMode){
+      c.npcs.forEach(function(n,i){
+        html+='<div class="bnpc-edit"><input class="bedit-input n" data-np="'+i+'" data-f="name" value="'+esc(n.name)+'" placeholder="Name"><input class="bedit-input r" data-np="'+i+'" data-f="role" value="'+esc(n.role)+'" placeholder="Who they are"><button class="brm" data-rmn="'+i+'">✕</button></div>';
+      });
+      html+='<button class="badd" id="badd-npc">+ Add person</button>';
+    } else {
+      c.npcs.forEach(function(n){
+        html+='<div class="bnpc"><span class="bnpc-name">'+esc(n.name)+'</span><span class="bnpc-role">'+esc(n.role)+'</span></div>';
+      });
+    }
+  }
+
+  // Notes / Chronicle log
+  html+='<h3>'+logLabel+'</h3>';
+  if(editMode){
+    c.log.forEach(function(e,i){
+      html+='<div class="blog-edit"><div class="blog-ts">'+esc(e.ts||'')+'</div><textarea class="bedit-area" data-lg="'+i+'" placeholder="Write here…">'+esc(e.text)+'</textarea><div style="margin-top:6px;"><button class="brm" data-rml="'+i+'">✕</button></div></div>';
+    });
+    html+='<button class="badd" id="badd-log">'+addLogLabel+'</button>';
+  } else if(c.log && c.log.length){
+    c.log.forEach(function(e){
+      html+='<div class="blog">'+(e.ts?'<div class="blog-ts">'+esc(e.ts)+'</div>':'')+'<div class="blog-text">'+esc(e.text)+'</div></div>';
+    });
+  } else {
+    html+='<div class="bempty">Nothing recorded yet — press Edit to add.</div>';
+  }
+
+  buildingPanel.innerHTML=html;
+  bindBuilding();
+}
+
+function bindBuilding(){
+  var k=curBldg;
+  document.getElementById('bedit-toggle').addEventListener('click',function(){editMode=!editMode;renderBuilding();});
+  if(!editMode) return;
+  var c=editable(k);
+  // People: live field edits (no re-render, keeps focus)
+  buildingPanel.querySelectorAll('.bedit-input').forEach(function(inp){
+    inp.addEventListener('input',function(){c.npcs[+inp.dataset.np][inp.dataset.f]=inp.value;saveStore();});
+  });
+  buildingPanel.querySelectorAll('[data-rmn]').forEach(function(btn){
+    btn.addEventListener('click',function(){c.npcs.splice(+btn.dataset.rmn,1);saveStore();renderBuilding();});
+  });
+  var addN=document.getElementById('badd-npc');
+  if(addN) addN.addEventListener('click',function(){c.npcs.push({name:'',role:''});saveStore();renderBuilding();focusEl('.bnpc-edit:last-child .bedit-input.n');});
+  // Log: live text edits
+  buildingPanel.querySelectorAll('.bedit-area').forEach(function(area){
+    area.addEventListener('input',function(){c.log[+area.dataset.lg].text=area.value;saveStore();});
+  });
+  buildingPanel.querySelectorAll('[data-rml]').forEach(function(btn){
+    btn.addEventListener('click',function(){c.log.splice(+btn.dataset.rml,1);saveStore();renderBuilding();});
+  });
+  var addL=document.getElementById('badd-log');
+  if(addL) addL.addEventListener('click',function(){c.log.unshift({ts:today(),text:''});saveStore();renderBuilding();focusEl('.bedit-area');});
+}
+function focusEl(sel){var el=buildingPanel.querySelector(sel);if(el)el.focus();}
+
 function closeBuilding(){buildingModal.classList.remove('open');}
 document.getElementById('building-close').addEventListener('click',closeBuilding);
 document.getElementById('building-backdrop').addEventListener('click',closeBuilding);
@@ -642,11 +919,11 @@ renderer.domElement.addEventListener('mousemove',function(e){
   handleHover(e);
 });
 
-// Shrine tabs
-document.querySelectorAll('.stab').forEach(function(btn){
+// Shrine tabs (scoped to the shrine modal — .spanel/.stab also exist in other modals)
+shrineModal.querySelectorAll('.stab').forEach(function(btn){
   btn.addEventListener('click',function(){
-    document.querySelectorAll('.stab').forEach(function(b){b.classList.remove('active');});
-    document.querySelectorAll('.spanel').forEach(function(p){p.classList.remove('active');});
+    shrineModal.querySelectorAll('.stab').forEach(function(b){b.classList.remove('active');});
+    shrineModal.querySelectorAll('.spanel').forEach(function(p){p.classList.remove('active');});
     btn.classList.add('active');
     document.getElementById(btn.dataset.tab).classList.add('active');
   });
@@ -683,6 +960,313 @@ document.querySelectorAll('.spb-cell').forEach(function(btn){
       +pb.bgs.map(function(b){return '<div class="spb-bg"><b>'+b[0]+'</b><span>'+b[1]+'</span></div>';}).join('');
   });
 });
+
+// ============================================================
+//  CHARACTER CREATOR  (data: docs/pcs.md, docs/class-sheet-setup.md, docs/classes.md)
+// ============================================================
+// Per-playbook mechanical defaults. Keys match SPBS (note: Would-Be Hero = 'hero').
+var PBX={
+  blessed:{hp:18,die:'d6',weak:false,instincts:['Delight','Detachment','Nurture','Preservation','Reverence'],moves:'Spirit Tongue, Call the Spirits, +1 Background move, +1 of your choice',gear:'Sacred pouch (holds 3 Stock) + pick 2 possessions'},
+  fox:{hp:16,die:'d8',weak:false,instincts:['Conscience','Freedom','Comfort','Prestige','Trickery'],moves:'Ambush OR Skill at Arms; Danger Sense OR Perceptive; +1 of your choice',gear:'Pick 2 possessions'},
+  heavy:{hp:20,die:'d10',weak:false,instincts:['Peace','Pride','Recklessness','Trouble','Violence'],moves:'Dangerous, Hard to Kill, + (Armored OR Uncanny Reflexes)',gear:'Pick 2 possessions (incl. Weapons of war)'},
+  judge:{hp:20,die:'d6',weak:false,instincts:['Ambition','Dispassion','Harmony','Orthodoxy','Zeal'],moves:'Censure, Chronicler of Stonetop, +2 of your choice',gear:"Symbol of authority + scribe's tools + pick 1"},
+  lightbearer:{hp:18,die:'d4',weak:false,instincts:['Charity','Hope','Mercy','Praise','Righteousness'],moves:'Consecrated Flame, Invoke the Sun God, +1 of your choice',gear:'Pick 2 possessions'},
+  marshal:{hp:20,die:'d8',weak:false,instincts:['Authority','Caution','Drive','Honor','Ruthlessness'],moves:'Crew, Logistics, your Background moves, +1 of your choice',gear:'Pick 2 possessions (incl. Weapons of war)'},
+  ranger:{hp:18,die:'d8',weak:false,instincts:['Adventure','Independence','Stewardship','Tenacity','Wonder'],moves:'Home on the Range, your Background moves, +1 of your choice',gear:'Composite bow + pick 2 possessions'},
+  seeker:{hp:16,die:'d6',weak:false,instincts:['Cunning','Curiosity','Hubris','Mystery','Vision'],moves:"Well Versed, Work With What You've Got, +1 Background move",gear:"Scribe's tools + pick 2 possessions"},
+  hero:{hp:16,die:'d6',weak:true,instincts:['Defiance','Doubt','Earnestness','Optimism','Sacrifice'],moves:'Anger is a Gift, Potential for Greatness, +2 of your choice',gear:'Pick 2 possessions'}
+};
+var STAT_KEYS=['STR','DEX','CON','INT','WIS','CHA'];
+var STD_ARRAY=[2,1,1,0,0,-1], HERO_ARRAY=[1,0,0,0,0,-1];
+var DEBILS=[['weakened','STR / DEX'],['dazed','INT / WIS'],['miserable','CON / CHA']];
+var DICE=['d4','d6','d8','d10','d12'];
+
+function fmtMod(n){return n>0?'+'+n:(n<0?'−'+Math.abs(n):'0');}
+function uid(){return 'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function persist(){try{localStorage.setItem(STORE_KEY,JSON.stringify(store));}catch(e){}}
+
+// --- character store (synced collection, string-encoded per id; last-write-wins + tombstones) ---
+function chars(){if(!store.characters)store.characters={};return store.characters;}
+function getChar(id){var e=chars()[id];if(!e||e.deleted)return null;try{return JSON.parse(e.data);}catch(_){return null;}}
+function allChars(){var c=chars();return Object.keys(c).filter(function(id){return c[id]&&!c[id].deleted;}).map(getChar).filter(Boolean);}
+function setChar(o){var c=chars();c[o.id]={data:JSON.stringify(o),_t:Date.now(),deleted:false};persist();pushChar(o.id);flashSaved();}
+function delChar(id){var c=chars();if(c[id]){c[id]={data:c[id].data,_t:Date.now(),deleted:true};persist();pushChar(id);}}
+function pushChar(id){
+  if(!syncRef||applyingRemote)return;
+  var c=chars()[id];if(!c)return;
+  syncRef.child('characters').child(id).update({data:c.data,_t:c._t,deleted:!!c.deleted}).catch(function(){setSyncState('error','sync error');});
+}
+function mergeCharacters(rc){
+  rc=rc||{};var c=chars();
+  Object.keys(rc).forEach(function(id){
+    var r=rc[id]||{}, l=c[id];
+    if(!l||(r._t||0)>=(l._t||0)) c[id]={data:r.data||'{}',_t:r._t||0,deleted:!!r.deleted};
+  });
+}
+
+// --- roster ---
+function renderRoster(){
+  var list=document.getElementById('sm-roster-list'); if(!list)return;
+  var cs=allChars();
+  if(!cs.length){list.innerHTML='<div class="cc-empty">No characters yet. Press <b>+ New Character</b> to make one — the village needs heroes.</div>';return;}
+  list.innerHTML=cs.map(function(c){
+    var pb=SPBS[c.playbook]||{name:c.playbook};
+    return '<div class="cc-card" data-cid="'+c.id+'"><button class="cc-card-rm" data-del="'+c.id+'" title="Delete">✕</button>'
+      +'<div class="cc-card-name">'+esc(c.name||'Unnamed')+'</div>'
+      +'<div class="cc-card-sub">'+esc(pb.name||'')+(c.background?' · '+esc(c.background):'')+'</div>'
+      +'<div class="cc-card-meta">'+(c.player?'played by '+esc(c.player)+' · ':'')+'level '+(c.level||1)+'</div>'
+      +'<div class="cc-card-edit">✎ Edit sheet</div></div>';
+  }).join('');
+  list.querySelectorAll('.cc-card').forEach(function(card){
+    card.addEventListener('click',function(e){
+      if(e.target.closest('[data-del]'))return;
+      var c=getChar(card.dataset.cid); if(c)openEditor(c,false);
+    });
+  });
+  list.querySelectorAll('[data-del]').forEach(function(b){
+    b.addEventListener('click',function(e){
+      e.stopPropagation();
+      var c=getChar(b.dataset.del);
+      if(confirm('Delete '+((c&&c.name)||'this character')+'? This removes it for everyone.')){delChar(b.dataset.del);renderRoster();}
+    });
+  });
+}
+
+function pdata(k){return (window.PBDATA&&window.PBDATA[k])||null;}
+function seedPlaybook(c){
+  var P=pdata(c.playbook), x=PBX[c.playbook]||{};
+  c.damageDie=P?P.damageDie:(x.die||'d6');
+  c.maxHp=P?P.maxHp:(x.hp||16); c.hp=c.maxHp; c.armor=(P&&P.baseArmor)||0;
+  c.background='';
+  c.moves=P?P.moves.filter(function(m){return m.starting;}).map(function(m){return m.name;}):[];
+  c.possessions=[]; c.invocations=[]; c.arcana=[];
+  c.resources={}; if(P&&P.resources)P.resources.forEach(function(r){c.resources[r.key]=0;});
+  c.followers=c.followers||[];
+}
+function newChar(){
+  var c={id:uid(),player:'',name:'',playbook:'blessed',background:'',instinct:'',pronouns:'',appearance:'',origin:'Stonetop',
+    stats:{STR:0,DEX:0,CON:0,INT:0,WIS:0,CHA:0},
+    debilities:{weakened:false,dazed:false,miserable:false},
+    damageDie:'d6',hp:18,maxHp:18,armor:0,xp:0,level:1,
+    moves:[],possessions:[],resources:{},invocations:[],arcana:[],followers:[],bonds:'',notes:''};
+  seedPlaybook(c);
+  openEditor(c,true);
+}
+
+// --- editor ---
+var editorOpen=false, editC=null;
+function openEditor(c,isNew){
+  // defensively init fields that older saved characters may lack
+  c.moves=c.moves||[]; c.possessions=c.possessions||[]; c.resources=c.resources||{};
+  c.invocations=c.invocations||[]; c.arcana=c.arcana||[]; c.followers=c.followers||[];
+  editC=c; editorOpen=true;
+  if(isNew)setChar(editC); // persist immediately so it appears in the synced roster
+  renderEditor();
+  document.getElementById('sm-editor').classList.add('open');
+}
+function closeEditor(){
+  var e=document.getElementById('sm-editor'); if(e)e.classList.remove('open');
+  if(editorOpen&&editC)setChar(editC); // flush any pending text edits
+  editorOpen=false; editC=null;
+}
+function targetArray(c){var P=pdata(c.playbook);return (P&&P.statArray)||((PBX[c.playbook]&&PBX[c.playbook].weak)?HERO_ARRAY:STD_ARRAY);}
+function arrayOK(c){
+  var t=targetArray(c).slice().sort(function(a,b){return a-b;});
+  var cur=STAT_KEYS.map(function(k){return c.stats[k]||0;}).sort(function(a,b){return a-b;});
+  return t.join(',')===cur.join(',');
+}
+function toggleIn(arr,name,on){var i=arr.indexOf(name);if(on&&i<0)arr.push(name);if(!on&&i>=0)arr.splice(i,1);}
+
+function moveChecklist(c){
+  var P=pdata(c.playbook);
+  if(!P)return listEditor(c.moves,'move','add a move');
+  var sel={}; c.moves.forEach(function(n){sel[n]=true;});
+  var known={};
+  var rows=P.moves.slice().sort(function(a,b){return (b.starting?1:0)-(a.starting?1:0)||(a.level||1)-(b.level||1);}).map(function(m){
+    known[m.name]=true;
+    var badge=(m.starting?'<em class="cc-tag start">start</em>':'')+(((m.level||1)>=6)?'<em class="cc-tag l6">L6</em>':'');
+    return '<label class="cc-check"><input type="checkbox" data-move="'+esc(m.name)+'"'+(sel[m.name]?' checked':'')+'><span class="cc-check-name">'+esc(m.name)+badge+'</span><span class="cc-check-gist">'+esc(m.gist||'')+'</span></label>';
+  }).join('');
+  var ch=''; c.moves.forEach(function(n,idx){if(!known[n])ch+='<div class="cc-list-row"><input class="cc-in" data-cmove="'+idx+'" value="'+esc(n)+'" placeholder="custom move"><button class="cc-rm" data-rmcmove="'+idx+'">✕</button></div>';});
+  return '<div class="cc-hint">'+esc(P.startingNote||'')+'</div>'+rows+'<div class="cc-custom">'+ch+'<button class="cc-add" id="cc-add-cmove">+ Add custom / homebrew move</button></div>';
+}
+function possChecklist(c){
+  var P=pdata(c.playbook);
+  if(!P)return listEditor(c.possessions,'poss','add a possession');
+  var sel={}; c.possessions.forEach(function(n){sel[n]=true;});
+  var known={};
+  var rows=P.possessions.map(function(m){known[m.name]=true;
+    return '<label class="cc-check"><input type="checkbox" data-poss="'+esc(m.name)+'"'+(sel[m.name]?' checked':'')+'><span class="cc-check-name">'+esc(m.name)+'</span><span class="cc-check-gist">'+esc(m.gist||'')+'</span></label>';
+  }).join('');
+  var picked=c.possessions.filter(function(n){return known[n];}).length;
+  var ch=''; c.possessions.forEach(function(n,idx){if(!known[n])ch+='<div class="cc-list-row"><input class="cc-in" data-cposs="'+idx+'" value="'+esc(n)+'" placeholder="custom possession"><button class="cc-rm" data-rmcposs="'+idx+'">✕</button></div>';});
+  return '<div class="cc-hint">'+esc(P.possessionsNote||'')+' <b id="cc-poss-count">(picked '+picked+')</b></div>'+rows+'<div class="cc-custom">'+ch+'<button class="cc-add" id="cc-add-cposs">+ Add custom possession</button></div>';
+}
+function tagChecklist(items,sel,attr){
+  return items.map(function(m){return '<label class="cc-check"><input type="checkbox" '+attr+'="'+esc(m.name)+'"'+(sel[m.name]?' checked':'')+'><span class="cc-check-name">'+esc(m.name)+'</span><span class="cc-check-gist">'+esc(m.gist||'')+'</span></label>';}).join('');
+}
+function listEditor(arr,key,ph){
+  var h='';
+  arr.forEach(function(v,i){h+='<div class="cc-list-row"><input class="cc-in" data-list="'+key+'" data-i="'+i+'" value="'+esc(v)+'" placeholder="'+ph+'"><button class="cc-rm" data-rm="'+key+'" data-i="'+i+'">✕</button></div>';});
+  h+='<button class="cc-add" data-add="'+key+'">+ Add</button>';
+  return h;
+}
+function updateArrayLine(){
+  var el=document.getElementById('cc-arr'); if(!el)return;
+  var ok=arrayOK(editC), t=targetArray(editC).map(fmtMod).join('  ');
+  el.className='cc-arr '+(ok?'ok':'bad');
+  el.innerHTML='Assign the array: '+t+(editC.playbook==='hero'?'  (Would-Be Hero — weaker, grows via Potential for Greatness)':'')+'  —  '+(ok?'✓ matches':'✗ not yet matched');
+}
+function renderEditor(){
+  var c=editC, pb=SPBS[c.playbook]||{}, P=pdata(c.playbook), x=PBX[c.playbook]||{};
+  var ok=arrayOK(c), target=targetArray(c).map(fmtMod).join('  ');
+  var instincts=(P&&P.instincts)||x.instincts||[];
+  var h='';
+  h+='<div class="cc-top"><div class="cc-top-title">'+esc(c.name||'New Character')+'</div>'
+    +'<div class="cc-top-btns"><button class="cc-btn danger" id="cc-del">Delete</button><button class="cc-btn" id="cc-done">← Done</button></div></div>';
+
+  h+='<div class="cc-row"><div class="cc-field"><label>Played by</label><input class="cc-in" id="cc-player" value="'+esc(c.player)+'" placeholder="Player name"></div>'
+    +'<div class="cc-field"><label>Character name</label><input class="cc-in" id="cc-name" value="'+esc(c.name)+'" placeholder="I am called…"></div>'
+    +'<div class="cc-field cc-num"><label>Pronouns</label><input class="cc-in" id="cc-pronouns" value="'+esc(c.pronouns)+'" placeholder="they/them"></div></div>';
+
+  h+='<div class="cc-sec">Playbook</div>';
+  h+='<div class="cc-row"><div class="cc-field"><label>Playbook (one per table, no duplicates)</label><select class="cc-sel" id="cc-playbook">'
+    +Object.keys(SPBS).map(function(k){return '<option value="'+k+'"'+(k===c.playbook?' selected':'')+'>'+esc(SPBS[k].name)+'</option>';}).join('')
+    +'</select></div></div>';
+  h+='<div class="cc-hint">'+esc(pb.epithet||'')+' · Book I '+esc(pb.page||'')+'<br>'+esc(pb.desc||'')+'</div>';
+
+  h+='<div class="cc-sec">Background</div>';
+  h+='<div class="cc-row"><div class="cc-field"><label>Background (choose 1 of 3)</label><select class="cc-sel" id="cc-bg"><option value="">— choose —</option>'
+    +(pb.bgs||[]).map(function(b){return '<option value="'+esc(b[0])+'"'+(b[0]===c.background?' selected':'')+'>'+esc(b[0])+'</option>';}).join('')
+    +'</select></div></div>';
+  var bgD=(pb.bgs||[]).filter(function(b){return b[0]===c.background;})[0];
+  var bgX=P?(P.backgrounds||[]).filter(function(b){return b.name===c.background;})[0]:null;
+  if(bgD)h+='<div class="cc-hint">'+esc(bgD[1])+(bgX&&bgX.grants?'<br><b>Grants:</b> '+esc(bgX.grants):'')+'</div>';
+
+  h+='<div class="cc-sec">Identity</div>';
+  h+='<div class="cc-row"><div class="cc-field"><label>Instinct (your drive — mark XP when you act on or against it)</label>'
+    +'<input class="cc-in" id="cc-instinct" list="cc-inst-list" value="'+esc(c.instinct)+'" placeholder="choose or write one">'
+    +'<datalist id="cc-inst-list">'+instincts.map(function(i){return '<option value="'+esc(i)+'">';}).join('')+'</datalist></div></div>';
+  h+='<div class="cc-row"><div class="cc-field"><label>Place of origin</label><input class="cc-in" id="cc-origin" value="'+esc(c.origin)+'" placeholder="Stonetop"></div>'
+    +'<div class="cc-field"><label>Appearance / look</label><input class="cc-in" id="cc-appearance" value="'+esc(c.appearance)+'" placeholder="how they look"></div></div>';
+
+  h+='<div class="cc-sec">Stats</div>';
+  h+='<div class="cc-stats">'+STAT_KEYS.map(function(k){
+    return '<div class="cc-stat"><label>'+k+'</label><div class="cc-step"><button data-dec="'+k+'">−</button><span class="cc-stepv" id="cc-sv-'+k+'">'+fmtMod(c.stats[k]||0)+'</span><button data-inc="'+k+'">+</button></div></div>';
+  }).join('')+'</div>';
+  h+='<div class="cc-arr '+(ok?'ok':'bad')+'" id="cc-arr">Assign the array: '+target+(c.playbook==='hero'?'  (Would-Be Hero — weaker, grows via Potential for Greatness)':'')+'  —  '+(ok?'✓ matches':'✗ not yet matched')+'</div>';
+
+  h+='<div class="cc-sec">Debilities</div>';
+  h+='<div class="cc-debils">'+DEBILS.map(function(d){
+    return '<label class="cc-debil"><input type="checkbox" data-debil="'+d[0]+'"'+(c.debilities[d[0]]?' checked':'')+'> '+d[0]+' <small>('+d[1]+' at disadvantage)</small></label>';
+  }).join('')+'</div>';
+
+  h+='<div class="cc-sec">Vitals</div>';
+  h+='<div class="cc-row">'
+    +'<div class="cc-field cc-num"><label>HP</label><input class="cc-in" type="number" id="cc-hp" value="'+(c.hp)+'"></div>'
+    +'<div class="cc-field cc-num"><label>Max HP</label><input class="cc-in" type="number" id="cc-maxHp" value="'+(c.maxHp)+'"></div>'
+    +'<div class="cc-field cc-num"><label>Armor</label><input class="cc-in" type="number" id="cc-armor" value="'+(c.armor)+'"></div>'
+    +'<div class="cc-field cc-num"><label>Damage</label><select class="cc-sel" id="cc-die">'+DICE.map(function(d){return '<option'+(d===c.damageDie?' selected':'')+'>'+d+'</option>';}).join('')+'</select></div>'
+    +'<div class="cc-field cc-num"><label>Level</label><input class="cc-in" type="number" id="cc-level" value="'+(c.level)+'"></div>'
+    +'<div class="cc-field cc-num"><label>XP</label><input class="cc-in" type="number" id="cc-xp" value="'+(c.xp)+'"></div></div>';
+  h+='<div class="cc-hint">Level up when XP reaches <b>'+(6+2*(c.level||1))+'</b> (= 6 + 2×level). No HP or stat gain from leveling itself.</div>';
+
+  h+='<div class="cc-sec">Moves</div>'+moveChecklist(c);
+  h+='<div class="cc-sec">Special Possessions</div>'+possChecklist(c);
+
+  // Resources & tracks
+  if(P&&P.resources&&P.resources.length){
+    h+='<div class="cc-sec">Resources &amp; Tracks</div>'+P.resources.map(function(r){
+      var v=(c.resources&&c.resources[r.key])||0;
+      return '<div class="cc-res"><div class="cc-res-h"><b>'+esc(r.name)+'</b><small>'+esc(r.note||'')+'</small></div>'
+        +'<div class="cc-step"><button data-rdec="'+r.key+'">−</button><span class="cc-stepv" id="cc-rv-'+r.key+'">'+v+(r.max?' / '+r.max:'')+'</span><button data-rinc="'+r.key+'" data-rmax="'+(r.max||99)+'">+</button></div></div>';
+    }).join('');
+  }
+  // Invocations (Lightbearer)
+  if(P&&P.invocations&&P.invocations.length){
+    var si={}; c.invocations.forEach(function(n){si[n]=true;});
+    h+='<div class="cc-sec">Invocations</div><div class="cc-hint">Holy-light invocations you know (used with Invoke the Sun God).</div>'+tagChecklist(P.invocations,si,'data-inv');
+  }
+  // Arcana (Seeker)
+  if(P&&P.arcana&&P.arcana.length){
+    var sa={}; c.arcana.forEach(function(n){sa[n]=true;});
+    h+='<div class="cc-sec">Arcana</div><div class="cc-hint">Major arcana (full rules in Book II). Check the one(s) you start with.</div>'+tagChecklist(P.arcana,sa,'data-arc');
+  }
+  // Followers & companions
+  var fhint=(P&&P.followerInsert&&P.followerInsert.type&&P.followerInsert.type!=='none')?'<div class="cc-hint"><b>'+esc(P.followerInsert.type)+' insert:</b> '+esc(P.followerInsert.note||'')+'</div>':'';
+  h+='<div class="cc-sec">Followers &amp; Companions</div>'+fhint+(c.followers||[]).map(function(f,i){
+    return '<div class="cc-fol"><div class="cc-fol-top"><input class="cc-in" data-fol="'+i+'" data-fk="name" value="'+esc(f.name||'')+'" placeholder="Name / type"><button class="cc-rm" data-rmfol="'+i+'">✕</button></div>'
+      +'<div class="cc-row">'
+      +'<div class="cc-field cc-num"><label>HP</label><input class="cc-in" type="number" data-fol="'+i+'" data-fk="hp" value="'+(f.hp||0)+'"></div>'
+      +'<div class="cc-field cc-num"><label>Armor</label><input class="cc-in" type="number" data-fol="'+i+'" data-fk="armor" value="'+(f.armor||0)+'"></div>'
+      +'<div class="cc-field cc-num"><label>Damage</label><input class="cc-in" data-fol="'+i+'" data-fk="damage" value="'+esc(f.damage||'')+'" placeholder="d6"></div>'
+      +'<div class="cc-field cc-num"><label>Loyalty</label><input class="cc-in" type="number" data-fol="'+i+'" data-fk="loyalty" value="'+(f.loyalty||0)+'"></div></div>'
+      +'<input class="cc-in" data-fol="'+i+'" data-fk="notes" value="'+esc(f.notes||'')+'" placeholder="instinct, tags, members, cost…" style="width:100%;"></div>';
+  }).join('')+'<button class="cc-add" id="cc-add-fol">+ Add follower / companion</button>';
+
+  h+='<div class="cc-sec">Bonds & Relationships</div>'
+    +'<textarea class="cc-area" id="cc-bonds" placeholder="Who you protect, who wants you dead, ties to other PCs and townsfolk…">'+esc(c.bonds)+'</textarea>';
+  h+='<div class="cc-sec">Notes</div>'
+    +'<textarea class="cc-area" id="cc-notes" placeholder="Anything else — world-building answers, what excites you about this character…">'+esc(c.notes)+'</textarea>';
+
+  document.getElementById('sm-editor').innerHTML=h;
+  bindEditor();
+}
+function bindEditor(){
+  var ed=document.getElementById('sm-editor');
+  function save(){setChar(editC);}
+  function txt(id,field,num){var el=document.getElementById(id);if(!el)return;
+    el.addEventListener('input',function(){editC[field]=num?(parseInt(el.value,10)||0):el.value;});
+    el.addEventListener('change',save);}
+  txt('cc-player','player');txt('cc-name','name');txt('cc-pronouns','pronouns');
+  txt('cc-instinct','instinct');txt('cc-origin','origin');txt('cc-appearance','appearance');
+  txt('cc-hp','hp',1);txt('cc-maxHp','maxHp',1);txt('cc-armor','armor',1);txt('cc-level','level',1);txt('cc-xp','xp',1);
+  document.getElementById('cc-name').addEventListener('change',renderEditor);
+  document.getElementById('cc-level').addEventListener('change',renderEditor);
+  document.getElementById('cc-bonds').addEventListener('input',function(){editC.bonds=this.value;});
+  document.getElementById('cc-bonds').addEventListener('change',save);
+  document.getElementById('cc-notes').addEventListener('input',function(){editC.notes=this.value;});
+  document.getElementById('cc-notes').addEventListener('change',save);
+  // playbook / background / damage die
+  document.getElementById('cc-playbook').addEventListener('change',function(){
+    editC.playbook=this.value; seedPlaybook(editC); save(); renderEditor();
+  });
+  document.getElementById('cc-bg').addEventListener('change',function(){editC.background=this.value;save();renderEditor();});
+  document.getElementById('cc-die').addEventListener('change',function(){editC.damageDie=this.value;save();});
+  // stat steppers (in-place update, no full re-render so scroll stays put)
+  ed.querySelectorAll('[data-inc]').forEach(function(b){b.addEventListener('click',function(){var k=b.dataset.inc;editC.stats[k]=Math.min(3,(editC.stats[k]||0)+1);document.getElementById('cc-sv-'+k).textContent=fmtMod(editC.stats[k]);updateArrayLine();save();});});
+  ed.querySelectorAll('[data-dec]').forEach(function(b){b.addEventListener('click',function(){var k=b.dataset.dec;editC.stats[k]=Math.max(-1,(editC.stats[k]||0)-1);document.getElementById('cc-sv-'+k).textContent=fmtMod(editC.stats[k]);updateArrayLine();save();});});
+  // resource steppers (in-place)
+  ed.querySelectorAll('[data-rinc]').forEach(function(b){b.addEventListener('click',function(){var k=b.dataset.rinc,mx=+b.dataset.rmax||99;editC.resources[k]=Math.min(mx,(editC.resources[k]||0)+1);document.getElementById('cc-rv-'+k).textContent=editC.resources[k]+(mx<99?' / '+mx:'');save();});});
+  ed.querySelectorAll('[data-rdec]').forEach(function(b){b.addEventListener('click',function(){var k=b.dataset.rdec;editC.resources[k]=Math.max(0,(editC.resources[k]||0)-1);var mxEl=ed.querySelector('[data-rinc="'+k+'"]');var mx=mxEl?(+mxEl.dataset.rmax||99):99;document.getElementById('cc-rv-'+k).textContent=editC.resources[k]+(mx<99?' / '+mx:'');save();});});
+  // debilities
+  ed.querySelectorAll('[data-debil]').forEach(function(cb){cb.addEventListener('change',function(){editC.debilities[cb.dataset.debil]=cb.checked;save();});});
+  // checklist toggles (no re-render → keeps scroll/focus)
+  ed.querySelectorAll('[data-move]').forEach(function(cb){cb.addEventListener('change',function(){toggleIn(editC.moves,cb.dataset.move,cb.checked);save();});});
+  ed.querySelectorAll('[data-poss]').forEach(function(cb){cb.addEventListener('change',function(){toggleIn(editC.possessions,cb.dataset.poss,cb.checked);var cnt=document.getElementById('cc-poss-count');if(cnt){var P=pdata(editC.playbook),known={};(P?P.possessions:[]).forEach(function(m){known[m.name]=true;});cnt.textContent='(picked '+editC.possessions.filter(function(n){return known[n];}).length+')';}save();});});
+  ed.querySelectorAll('[data-inv]').forEach(function(cb){cb.addEventListener('change',function(){toggleIn(editC.invocations,cb.dataset.inv,cb.checked);save();});});
+  ed.querySelectorAll('[data-arc]').forEach(function(cb){cb.addEventListener('change',function(){toggleIn(editC.arcana,cb.dataset.arc,cb.checked);save();});});
+  // custom move/possession text rows
+  ed.querySelectorAll('[data-cmove]').forEach(function(inp){inp.addEventListener('input',function(){editC.moves[+inp.dataset.cmove]=inp.value;});inp.addEventListener('change',save);});
+  ed.querySelectorAll('[data-rmcmove]').forEach(function(b){b.addEventListener('click',function(){editC.moves.splice(+b.dataset.rmcmove,1);save();renderEditor();});});
+  ed.querySelectorAll('[data-cposs]').forEach(function(inp){inp.addEventListener('input',function(){editC.possessions[+inp.dataset.cposs]=inp.value;});inp.addEventListener('change',save);});
+  ed.querySelectorAll('[data-rmcposs]').forEach(function(b){b.addEventListener('click',function(){editC.possessions.splice(+b.dataset.rmcposs,1);save();renderEditor();});});
+  var am=document.getElementById('cc-add-cmove'); if(am)am.addEventListener('click',function(){editC.moves.push('');save();renderEditor();var r=ed.querySelectorAll('[data-cmove]');if(r.length)r[r.length-1].focus();});
+  var ap=document.getElementById('cc-add-cposs'); if(ap)ap.addEventListener('click',function(){editC.possessions.push('');save();renderEditor();var r=ed.querySelectorAll('[data-cposs]');if(r.length)r[r.length-1].focus();});
+  // followers
+  ed.querySelectorAll('[data-fol]').forEach(function(inp){
+    inp.addEventListener('input',function(){var f=editC.followers[+inp.dataset.fol];if(!f)return;var k=inp.dataset.fk;f[k]=(inp.type==='number')?(parseInt(inp.value,10)||0):inp.value;});
+    inp.addEventListener('change',save);
+  });
+  ed.querySelectorAll('[data-rmfol]').forEach(function(b){b.addEventListener('click',function(){editC.followers.splice(+b.dataset.rmfol,1);save();renderEditor();});});
+  var af=document.getElementById('cc-add-fol'); if(af)af.addEventListener('click',function(){editC.followers.push({name:'',hp:0,armor:0,damage:'',loyalty:0,notes:''});save();renderEditor();});
+  // top buttons
+  document.getElementById('cc-done').addEventListener('click',function(){closeEditor();renderRoster();});
+  document.getElementById('cc-del').addEventListener('click',function(){
+    if(confirm('Delete '+(editC.name||'this character')+'? This removes it for everyone.')){var id=editC.id;editorOpen=false;editC=null;delChar(id);document.getElementById('sm-editor').classList.remove('open');renderRoster();}
+  });
+}
+var ncBtn=document.getElementById('sm-new-char'); if(ncBtn)ncBtn.addEventListener('click',newChar);
 
 // Dice roller
 var sd6=function(){return Math.floor(Math.random()*6)+1;};
@@ -774,6 +1358,7 @@ function animate(){
 
 autoLoadDither();
 autoLoadGLB();
+initSync();
 animate();
 
 }); // end DOMContentLoaded
