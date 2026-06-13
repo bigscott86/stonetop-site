@@ -221,6 +221,17 @@ reference browser.
   as checklists. Stored in `stateInsert` + `stateData`.
 - **Still not modeled:** full per-arcanum/invocation rules *text* (names + gists only).
 
+### 4. The Steading (village) sheet — ✅ BUILT
+A shared, editable **Village Sheet** opened from the **Granary** ("Homefront") panel
+(🏘 Village Sheet button). Driven by `window.STEADING` in `playbooks.js` (Stonetop steading
+playbook, Book I pp.154–161): editable name/size/population; the five steading **stats** as
+steppers (Surplus, Fortunes, Population, Prosperity, Defenses) seeded to their book starting
+values; Grievances/Debilities; Defenses; an editable **Places of Interest** list (seeded with
+Stonetop's); the full **Steading Improvements** checklist (17, with gist + cost); a **Treasury**
+(silver/gold); an **Assets** reference + notes. Stored string-encoded in `store.steading` and
+synced (whole-doc last-write-wins via `pushSteading`/`mergeSteading`; refresh skips while a field
+is focused). Model + sync unit-tested; live Firebase round-trip verified on the `steading` path.
+
 ### 3. Shared sync across all computers — ✅ LIVE
 Implemented as a **Firebase Realtime Database** layer in `index.html`, and **the real
 database is configured and verified**:

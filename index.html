@@ -265,6 +265,20 @@
   #g-pop button:hover{border-color:#8b6940;color:#d4b896;}
   #g-pop button.g-del:hover{border-color:#a8654e;color:#d48868;}
   #g-pop button.g-conn{background:#8b6940;color:#0a0800;border-color:#8b6940;}
+  /* Steading / village sheet */
+  #steading-modal{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:55;}
+  #steading-modal.open{pointer-events:all;}
+  #steading-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0.5);opacity:0;transition:opacity .4s;}
+  #steading-modal.open #steading-backdrop{opacity:1;}
+  #steading-box{position:relative;width:80%;height:84%;background:rgba(8,6,4,0.96);border:1px solid #3a2e1e;display:flex;flex-direction:column;transform:translateY(12px);opacity:0;transition:opacity .4s,transform .4s;overflow:hidden;}
+  #steading-modal.open #steading-box{opacity:1;transform:none;}
+  #steading-close{position:absolute;top:16px;right:16px;background:none;border:1px solid #3a2e1e;color:#5a4e3e;font-size:16px;cursor:pointer;width:30px;height:30px;display:flex;align-items:center;justify-content:center;z-index:10;}
+  #steading-close:hover{border-color:#8b6940;color:#d4b896;}
+  #steading-header{padding:18px 24px;border-bottom:1px solid #2a2018;flex-shrink:0;}
+  #steading-title{font-size:16px;letter-spacing:3px;color:#d4b896;text-transform:uppercase;}
+  #steading-body{flex:1;overflow-y:auto;padding:20px 28px 44px;color:#a89070;}
+  #steading-body::-webkit-scrollbar{width:4px;}
+  #steading-body::-webkit-scrollbar-thumb{background:rgba(212,184,150,0.2);}
 </style>
 </head>
 <body>
@@ -521,6 +535,16 @@
           </div>
         </div>
         <div id="graph-canvas"><svg id="graph-edges"></svg><div id="graph-nodes"></div><div id="g-pop"></div></div>
+      </div>
+    </div>
+
+    <!-- STEADING (VILLAGE) MODAL -->
+    <div id="steading-modal">
+      <div id="steading-backdrop"></div>
+      <div id="steading-box">
+        <button id="steading-close">✕</button>
+        <div id="steading-header"><div id="steading-title">🏘 The Village of Stonetop</div></div>
+        <div id="steading-body"></div>
       </div>
     </div>
 
@@ -808,6 +832,7 @@ function applyRemote(remote){
   Object.keys(remote).forEach(function(k){
     if(k==='characters'){mergeCharacters(remote.characters);return;} // characters merge per-id (see creator)
     if(k==='graph'){mergeGraph(remote.graph);return;}                 // relationship graph (string-encoded, whole-doc LWW)
+    if(k==='steading'){mergeSteading(remote.steading);return;}         // village sheet (string-encoded, whole-doc LWW)
     var r=remote[k]||{}, l=store[k];
     // per-building last-write-wins; Firebase drops empty arrays, so restore them
     if(!l||(r._t||0)>=(l._t||0)) store[k]={npcs:r.npcs||[],log:r.log||[],_t:r._t||0};
@@ -817,6 +842,7 @@ function applyRemote(remote){
   if(buildingModal.classList.contains('open')&&curBldg&&!editMode)renderBuilding();
   if(typeof renderRoster==='function'&&smithyModal.classList.contains('open')&&!editorOpen)renderRoster();
   if(typeof graphSyncRefresh==='function')graphSyncRefresh();
+  if(typeof steadingSyncRefresh==='function')steadingSyncRefresh();
   applyingRemote=false;
 }
 function initSync(){
@@ -883,6 +909,7 @@ function renderBuilding(){
   var addLogLabel=isChronicle(k)?'+ Add recap':'+ Add note';
   var html='<div class="bedit-bar"><button id="bedit-toggle" class="'+(editMode?'on':'')+'">'+(editMode?'✓ Done':'✎ Edit')+'</button>'
     +(k==='Mesh_Longhouse'?'<button id="b-open-graph" class="sm-btn-go">🕸 Relationship Map</button>':'')
+    +(k==='Mesh_Barrow'?'<button id="b-open-steading" class="sm-btn-go">🏘 Village Sheet</button>':'')
     +'<span id="bedit-saved">Saved ✓</span></div>';
 
   // People
@@ -923,6 +950,7 @@ function bindBuilding(){
   var k=curBldg;
   document.getElementById('bedit-toggle').addEventListener('click',function(){editMode=!editMode;renderBuilding();});
   var bg=document.getElementById('b-open-graph'); if(bg)bg.addEventListener('click',openGraph);
+  var bs=document.getElementById('b-open-steading'); if(bs)bs.addEventListener('click',openSteading);
   if(!editMode) return;
   var c=editable(k);
   // People: live field edits (no re-render, keeps focus)
@@ -1490,6 +1518,77 @@ document.getElementById('g-add-pc').addEventListener('change',function(){
 document.getElementById('graph-canvas').addEventListener('pointerdown',function(e){
   if(e.target.id==='graph-canvas'||e.target.id==='graph-nodes'||e.target.id==='graph-edges'){closePop();renderGraph();if(gConnectFrom){gConnectFrom=null;setHint();}}
 });
+
+// ============================================================
+//  STEADING / VILLAGE SHEET  — shared, string-encoded in store.steading
+// ============================================================
+var ST=null, stOpen=false;
+var steadingModal=document.getElementById('steading-modal');
+function seedSteading(){
+  var T=window.STEADING||{stats:[],places:[]};
+  var s={name:T.name||'Stonetop',size:T.size||'',population:T.population||'',stats:{},debilities:[],defenses:'',
+    places:(T.places||[]).map(function(p){return {name:p.name||'',note:p.note||''};}),
+    improvements:[],silver:0,gold:0,assetsNotes:'',notes:''};
+  (T.stats||[]).forEach(function(x){s.stats[x.key]=x.start||0;});
+  return s;
+}
+function stLoad(){var x=store.steading;if(x&&x.data){try{return JSON.parse(x.data);}catch(_){}}return seedSteading();}
+function saveSteading(){store.steading={data:JSON.stringify(ST),_t:Date.now()};persist();pushSteading();flashSaved();}
+function pushSteading(){if(!syncRef||applyingRemote)return;syncRef.child('steading').set({data:store.steading.data,_t:store.steading._t}).catch(function(){setSyncState('error','sync error');});}
+function mergeSteading(r){r=r||{};var l=store.steading;if(!l||(r._t||0)>=(l._t||0))store.steading={data:r.data||'',_t:r._t||0};}
+function steadingSyncRefresh(){if(!stOpen)return;var ae=document.activeElement,body=document.getElementById('steading-body');if(body&&ae&&body.contains(ae))return;ST=stLoad();renderSteading();}
+function openSteading(){steadingModal.classList.add('open');ST=stLoad();stOpen=true;renderSteading();}
+function closeSteading(){stOpen=false;steadingModal.classList.remove('open');}
+function renderSteading(){
+  var T=window.STEADING||{stats:[],improvements:[],places:[],debilities:[],assets:[]}, s=ST, h='';
+  h+='<div class="cc-row"><div class="cc-field"><label>Name</label><input class="cc-in" id="st-name" value="'+esc(s.name)+'"></div>'
+    +'<div class="cc-field"><label>Size</label><input class="cc-in" id="st-size" value="'+esc(s.size)+'"></div>'
+    +'<div class="cc-field"><label>Population</label><input class="cc-in" id="st-pop" value="'+esc(s.population)+'"></div></div>';
+  h+='<div class="cc-sec">Stats</div><div class="cc-stats" style="grid-template-columns:repeat(5,1fr);">'
+    +T.stats.map(function(x){var v=(s.stats[x.key]!=null?s.stats[x.key]:(x.start||0));
+      return '<div class="cc-stat"><label>'+esc(x.name)+'</label><div class="cc-step"><button data-sdec="'+x.key+'">−</button><span class="cc-stepv" id="st-sv-'+x.key+'">'+v+'</span><button data-sinc="'+x.key+'" data-min="'+(x.min==null?'':x.min)+'" data-max="'+(x.max==null?'':x.max)+'">+</button></div></div>';
+    }).join('')+'</div>';
+  if(T.stats.length)h+='<div class="cc-hint">'+T.stats.filter(function(x){return x.note;}).map(function(x){return '<b>'+esc(x.name)+':</b> '+esc(x.note);}).join('<br>')+'</div>';
+  if(T.debilities&&T.debilities.length){
+    var sd={};(s.debilities||[]).forEach(function(n){sd[n]=true;});
+    h+='<div class="cc-sec">Grievances / Debilities</div>'+(T.debilitiesNote?'<div class="cc-hint">'+esc(T.debilitiesNote)+'</div>':'')+tagChecklist(T.debilities,sd,'data-sdeb');
+  }
+  h+='<div class="cc-sec">Defenses</div>'+(T.defensesNote?'<div class="cc-hint">'+esc(T.defensesNote)+'</div>':'')
+    +'<input class="cc-in" id="st-defenses" style="width:100%;" value="'+esc(s.defenses||'')+'" placeholder="walls, militia, watchtower…">';
+  h+='<div class="cc-sec">Places of Interest</div>'+(s.places||[]).map(function(p,i){
+    return '<div class="cc-list-row"><input class="cc-in" data-place="'+i+'" data-pk="name" value="'+esc(p.name||'')+'" placeholder="place" style="flex:0 0 36%;"><input class="cc-in" data-place="'+i+'" data-pk="note" value="'+esc(p.note||'')+'" placeholder="note" style="flex:1;"><button class="cc-rm" data-rmplace="'+i+'">✕</button></div>';
+  }).join('')+'<button class="cc-add" id="st-add-place">+ Add place</button>';
+  var si={};(s.improvements||[]).forEach(function(n){si[n]=true;});
+  h+='<div class="cc-sec">Steading Improvements</div><div class="cc-hint">Check what Stonetop has built.</div>'
+    +T.improvements.map(function(im){return '<label class="cc-check"><input type="checkbox" data-imp="'+esc(im.name)+'"'+(si[im.name]?' checked':'')+'><span class="cc-check-name">'+esc(im.name)+(im.cost?'<em class="cc-tag">'+esc(im.cost)+'</em>':'')+'</span><span class="cc-check-gist">'+esc(im.gist||'')+'</span></label>';}).join('');
+  h+='<div class="cc-sec">Treasury</div>'+(T.treasuryNote?'<div class="cc-hint">'+esc(T.treasuryNote)+'</div>':'')
+    +'<div class="cc-row"><div class="cc-field cc-num"><label>Silver</label><input class="cc-in" type="number" id="st-silver" value="'+(s.silver||0)+'"></div>'
+    +'<div class="cc-field cc-num"><label>Gold</label><input class="cc-in" type="number" id="st-gold" value="'+(s.gold||0)+'"></div></div>';
+  if(T.assets&&T.assets.length)h+='<div class="cc-sec">Assets</div><div class="cc-hint">'+T.assets.map(function(a){return '<b>'+esc(a.name)+':</b> '+esc(a.gist||'');}).join('<br>')+'</div>';
+  h+='<textarea class="cc-area" id="st-assets-notes" placeholder="holdings, herds, stores, tools…">'+esc(s.assetsNotes||'')+'</textarea>';
+  h+='<div class="cc-sec">Notes</div><textarea class="cc-area" id="st-notes" placeholder="anything about the village…">'+esc(s.notes||'')+'</textarea>';
+  document.getElementById('steading-body').innerHTML=h;
+  bindSteading();
+}
+function bindSteading(){
+  var body=document.getElementById('steading-body');
+  function save(){saveSteading();}
+  function txt(id,field,num){var el=document.getElementById(id);if(!el)return;el.addEventListener('input',function(){ST[field]=num?(parseInt(el.value,10)||0):el.value;});el.addEventListener('change',save);}
+  txt('st-name','name');txt('st-size','size');txt('st-pop','population');txt('st-defenses','defenses');
+  txt('st-silver','silver',1);txt('st-gold','gold',1);txt('st-assets-notes','assetsNotes');txt('st-notes','notes');
+  // stat steppers (in-place)
+  body.querySelectorAll('[data-sinc]').forEach(function(b){b.addEventListener('click',function(){var k=b.dataset.sinc,mx=(b.dataset.max===''?999:+b.dataset.max);ST.stats[k]=Math.min(mx,(ST.stats[k]||0)+1);document.getElementById('st-sv-'+k).textContent=ST.stats[k];save();});});
+  body.querySelectorAll('[data-sdec]').forEach(function(b){b.addEventListener('click',function(){var k=b.dataset.sdec,inc=body.querySelector('[data-sinc="'+k+'"]'),mn=(inc&&inc.dataset.min!==''?+inc.dataset.min:-99);ST.stats[k]=Math.max(mn,(ST.stats[k]||0)-1);document.getElementById('st-sv-'+k).textContent=ST.stats[k];save();});});
+  // grievances + improvements checklists
+  body.querySelectorAll('[data-sdeb]').forEach(function(cb){cb.addEventListener('change',function(){toggleIn(ST.debilities,cb.dataset.sdeb,cb.checked);save();});});
+  body.querySelectorAll('[data-imp]').forEach(function(cb){cb.addEventListener('change',function(){toggleIn(ST.improvements,cb.dataset.imp,cb.checked);save();});});
+  // places list
+  body.querySelectorAll('[data-place]').forEach(function(inp){inp.addEventListener('input',function(){ST.places[+inp.dataset.place][inp.dataset.pk]=inp.value;});inp.addEventListener('change',save);});
+  body.querySelectorAll('[data-rmplace]').forEach(function(b){b.addEventListener('click',function(){ST.places.splice(+b.dataset.rmplace,1);save();renderSteading();});});
+  var ap=document.getElementById('st-add-place');if(ap)ap.addEventListener('click',function(){ST.places.push({name:'',note:''});save();renderSteading();var r=body.querySelectorAll('[data-pk="name"]');if(r.length)r[r.length-1].focus();});
+}
+document.getElementById('steading-close').addEventListener('click',closeSteading);
+document.getElementById('steading-backdrop').addEventListener('click',closeSteading);
 
 // Dice roller
 var sd6=function(){return Math.floor(Math.random()*6)+1;};
