@@ -41,6 +41,7 @@ awk '/^<script>$/{f=1;next} /^<\/script>$/{f=0} f' index.html > /tmp/check.js &&
 | `netlify.toml` | Sets correct MIME headers for `.glb` and `.js`. Site deploys to Netlify as static files. |
 | `Book_I_-_Stonetop_(spreads).pdf` | The Stonetop Book I rulebook (~36 MB, spreads layout: each PDF page = 2 book pages). Source for the `docs/` guides. |
 | `playbooks.js` | Generated `window.PBDATA` — complete per-playbook data (moves, possessions, resources, invocations, arcana, follower inserts) for all 9 playbooks, extracted from Book I pp.103–146. Loaded before the inline script; powers the character creator's checklists. Regenerate from `/tmp/pb/*.json` if re-extracting. |
+| `map-vicinity.jpg` / `map-world.jpg` | Map art (~3.4 MB JPEGs each) for the Watchtower route-drawing feature. Loaded lazily by `<img>` only when the Chart Your Course tab opens — kept as external files (NOT inlined) to keep `index.html` small. |
 | `docs/` | Rules guides distilled from the rulebook (pp. 1–165) to drive the interactive features. See `docs/README.md`. |
 | `README.md` | Currently just a title. |
 | `CLAUDE.md` | This file. |
@@ -238,6 +239,22 @@ Game / Moves / Combat tabs remain). Driven by `window.RULES` in `playbooks.js` (
 from Book I: 10 basic moves with trigger + 10+/7–9/6– results, 4 special moves, the 6 stats,
 3 core mechanics). Live text search across title/trigger/text/results + category chips
 (`renderRules`/`buildRuleUI`). Read-only reference, no sync needed.
+
+### 6. Watchtower route maps — ✅ BUILT (ported from collaborator)
+Clicking the **Watchtower** opens two tabs: **Leaving Stonetop** (expedition-prep rules
+text, `wtLeaving`) and **Chart Your Course** (`wtChart`) — a Vicinity / Wider World map
+view where players draw routes. Each map is an `<img>` (`map-vicinity.jpg` / `map-world.jpg`)
+with a `<canvas>` overlay and Pen / Eraser / color / Clear tools (`wtMapPanel`,
+`bindWhiteboards`, `setupCanvas`; mouse + touch, so it works on phones). Per-canvas tool/color
+state in `wtState`. Wired via a `Mesh_Watchtower` branch in `renderBuilding`.
+- **Origin/caveats:** this came from a non-coding collaborator's export (sent via Drive). His
+  file was a 9 MB single doc with the maps inlined as base64 and one corrupted CSS line
+  (`#load`). Per the user, only the route tool was ported (cleanly) onto `main`; the maps were
+  extracted to external `.jpg` files. His other extras (3D hover labels + embedded font,
+  3-tone dither shader, a "Wishing Well" dice building, a Stables expeditions tab) were **not**
+  ported. **Drawings are NOT synced or persisted** — they're per-session, per-browser canvas
+  strokes (clearing the tab or reloading loses them). Persisting/syncing routes would be a
+  follow-up (e.g. store canvas `toDataURL` in `store`).
 
 ### 3. Shared sync across all computers — ✅ LIVE
 Implemented as a **Firebase Realtime Database** layer in `index.html`, and **the real

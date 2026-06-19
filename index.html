@@ -297,6 +297,14 @@
   .rl-res b{color:#8b6940;font-size:10px;letter-spacing:1px;margin-right:3px;}
   .rl-text{color:#9a8a6a;font-size:12.5px;line-height:1.55;}
   .rl-empty{color:#5a4e3e;font-style:italic;padding:14px 0;}
+  /* Watchtower route maps */
+  .stab-bar{display:flex;border-bottom:1px solid #2a2018;flex-wrap:wrap;}
+  .wt-tool,.wt-clear{font-family:Georgia,serif;font-size:10px;letter-spacing:1px;background:transparent;border:1px solid #3a2e1e;color:#8b6940;padding:4px 10px;cursor:pointer;border-radius:2px;transition:background 0.15s,color 0.15s;}
+  .wt-tool:hover,.wt-clear:hover{color:#d4b896;border-color:#5a4e3e;}
+  .wt-tool.active{background:rgba(212,184,150,0.15);color:#d4b896;border-color:#8b6940;}
+  .wt-color{width:18px;height:18px;border:2px solid transparent;border-radius:50%;cursor:pointer;padding:0;flex-shrink:0;}
+  .wt-color.active{border-color:#d4b896;box-shadow:0 0 0 1px #8b6940;}
+  .wt-panel{overflow:hidden;}
 </style>
 </head>
 <body>
@@ -927,6 +935,207 @@ function openBuilding(k){
   buildingModal.classList.add('open');
 }
 
+// ============================================================
+//  THE WATCHTOWER — route maps (players draw routes on village/world maps)
+// ============================================================
+function renderWatchtowerTabs(){
+  return '<div class="stab-bar" id="wt-bar">'
+    +'<button class="stab active" data-wtb="wt-leave">Leaving Stonetop</button>'
+    +'<button class="stab" data-wtb="wt-chart">Chart Your Course</button>'
+    +'</div>'
+    +'<div id="wt-leave" class="wt-panel active">'+wtLeaving()+'</div>'
+    +'<div id="wt-chart" class="wt-panel" style="display:none">'+wtChart()+'</div>';
+}
+
+function bindWatchtowerTabs(){
+  var btns=buildingPanel.querySelectorAll('[data-wtb]');
+  btns.forEach(function(btn){
+    btn.addEventListener('click',function(){
+      btns.forEach(function(b){b.classList.remove('active');});
+      btn.classList.add('active');
+      buildingPanel.querySelectorAll('.wt-panel').forEach(function(p){p.style.display='none';});
+      var panel=buildingPanel.querySelector('#'+btn.dataset.wtb);
+      if(panel)panel.style.display='block';
+    });
+  });
+  // Bind map tabs within Chart Your Course
+  var mtabs=buildingPanel.querySelectorAll('[data-mt]');
+  mtabs.forEach(function(btn){
+    btn.addEventListener('click',function(){
+      mtabs.forEach(function(b){b.classList.remove('active');});
+      btn.classList.add('active');
+      buildingPanel.querySelectorAll('.mt-panel').forEach(function(p){p.style.display='none';});
+      var panel=buildingPanel.querySelector('#'+btn.dataset.mt);
+      if(panel)panel.style.display='flex';
+    });
+  });
+  // Bind whiteboard canvases
+  bindWhiteboards();
+}
+
+function wtLeaving(){
+  return '<div class="spanel" style="display:block;position:relative;overflow-y:auto;max-height:100%;">'
+    +'<h2>Leaving Stonetop</h2>'
+    +'<p class="pageref">Expedition Prep — Book I, pp. 301–311</p>'
+    +'<p>Stonetop sits at the edge of the known world — surrounded by the Great Wood, the Foothills, and the open Flats. Leaving it is never a casual thing. Every journey begins with intention: the group decides <strong>where</strong> they are going and <strong>how</strong> they intend to get there, then faces whatever the road demands.</p>'
+    +'<h3>Charting a Course</h3>'
+    +'<p>Before you leave, you <strong>Chart a Course</strong>. Name your destination — Gordin\'s Delve, a spot in the Great Wood, wherever the tracks lead — and describe your intended route. The GM will tell you the requirements (supplies, a guide, warm clothes), the risks ahead, and roughly how long it will take. These are set before you leave; once you set out, challenges are addressed one at a time.</p>'
+    +'<h3>Known Landmarks</h3>'
+    +'<p>The land around Stonetop has distinct regions and waypoints that shape every journey:</p>'
+    +'<ul>'
+    +'<li><strong>The Great Wood</strong> — the dense forest east and south of Stonetop. Ancient, dangerous, and full of Fae, crinwin, and older things. Most overland routes skirt or cut through it.</li>'
+    +'<li><strong>The Foothills</strong> — the rising land northwest of the village, leading toward the Whitefang Mountains. Rougher going, good hunting, few paths.</li>'
+    +'<li><strong>The Flats</strong> — open ground south and west. Faster travel but exposed, and the nosgolau haunt it at night.</li>'
+    +'<li><strong>The Makers\' Roads</strong> — ancient stone highways that cross the region. Travel on them is faster and safer than the wild, but they draw attention.</li>'
+    +'<li><strong>The Sruth</strong> — the river that flows south from the highlands through Stonetop\'s valley toward Marshedge. Following it upstream or down anchors many routes.</li>'
+    +'<li><strong>Gordin\'s Delve</strong> — the dwarven settlement to the northwest, reached via the Foothills or the old roads. A source of metal goods and news from the mountains.</li>'
+    +'<li><strong>Marshedge</strong> — a larger town to the south along the Steplands road. A staging ground for longer expeditions and a place to resupply and trade.</li>'
+    +'<li><strong>Barrier Pass</strong> — the high mountain pass far to the northwest. The only reliable way through the Whitefang Mountains. Dangerous in any season.</li>'
+    +'</ul>'
+    +'<h3>Time Is Not Equal</h3>'
+    +'<p>Not every hour of a journey gets equal attention at the table. The GM will move freely between <em>loose play</em> — a quick description of weather, terrain, and time passing — and <em>scenes</em>, zooming in when something interesting happens or when a challenge demands it.</p>'
+    +'<p>A half-day\'s walk along a familiar road might be covered in a sentence: <em>"You head down the path. An hour later you\'re past the Old Wall, stepping onto the West Road."</em> But a muddy river crossing, a sudden crinwin sighting, or a fork with no clear right answer will pull the camera in tight. Expect the journey to breathe at its own pace.</p>'
+    +'<p>Between points of interest, the GM may invite you to <strong>Keep Company</strong> — a quiet moment to ask each other questions and reveal something about your characters while the miles pass. These stretches are not wasted time. They are where the party becomes more than a group of people walking in the same direction.</p>'
+    +'<h3>Going Home</h3>'
+    +'<p>The return trip is usually glossed over unless something has changed — new dangers, an unusual route, or cargo that makes the journey harder. If you left in triumph, the GM will ask what the village looks like when you arrive. Who comes out to meet you? Who doesn\'t?</p>'
+    +'</div>';
+}
+
+function wtChart(){
+  return '<div style="display:flex;flex-direction:column;height:100%;">'
+    +'<div class="stab-bar" style="flex-shrink:0;">'
+    +'<button class="stab active" data-mt="mt-vic">The Vicinity</button>'
+    +'<button class="stab" data-mt="mt-world">The Wider World</button>'
+    +'</div>'
+    +'<div id="mt-vic" class="mt-panel" style="display:flex;flex-direction:column;flex:1;min-height:0;">'
+    +wtMapPanel('wt-canvas-vic','./map-vicinity.jpg')+
+    '</div>'
+    +'<div id="mt-world" class="mt-panel" style="display:none;flex-direction:column;flex:1;min-height:0;">'
+    +wtMapPanel('wt-canvas-world','./map-world.jpg')+
+    '</div>'
+    +'</div>';
+}
+
+function wtMapPanel(id,imgSrc){
+  return '<div class="wt-toolbar" style="flex-shrink:0;display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid #2a2018;background:#0a0806;">'
+    +'<span style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#5a4e3e;">Tool:</span>'
+    +'<button class="wt-tool active" data-tool="pen" data-canvas="'+id+'">✏ Pen</button>'
+    +'<button class="wt-tool" data-tool="eraser" data-canvas="'+id+'">⌫ Eraser</button>'
+    +'<span style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#5a4e3e;margin-left:8px;">Color:</span>'
+    +'<button class="wt-color active" data-color="#ffffff" data-canvas="'+id+'" style="background:#ffffff;"></button>'
+    +'<button class="wt-color" data-color="#e84040" data-canvas="'+id+'" style="background:#e84040;"></button>'
+    +'<button class="wt-color" data-color="#4a9eff" data-canvas="'+id+'" style="background:#4a9eff;"></button>'
+    +'<button class="wt-color" data-color="#ffe040" data-canvas="'+id+'" style="background:#ffe040;"></button>'
+    +'<button class="wt-clear" data-canvas="'+id+'" style="margin-left:auto;">✕ Clear</button>'
+    +'</div>'
+    +'<div style="position:relative;overflow:hidden;height:62vh;max-height:620px;min-height:340px;">'
+    +'<img src="'+imgSrc+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;"/>'
+    +'<canvas id="'+id+'" style="position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;"></canvas>'
+    +'</div>';
+}
+
+// ── Whiteboard drawing logic ───────────────────────────────────────────────────
+var wtState={};
+function bindWhiteboards(){
+  ['wt-canvas-vic','wt-canvas-world'].forEach(function(id){
+    if(!wtState[id])wtState[id]={tool:'pen',color:'#ffffff'};
+    setupCanvas(id);
+  });
+  // Tool buttons
+  buildingPanel.querySelectorAll('.wt-tool').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var id=btn.dataset.canvas;
+      buildingPanel.querySelectorAll('.wt-tool[data-canvas="'+id+'"]').forEach(function(b){b.classList.remove('active');});
+      btn.classList.add('active');
+      wtState[id].tool=btn.dataset.tool;
+    });
+  });
+  // Color buttons
+  buildingPanel.querySelectorAll('.wt-color').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var id=btn.dataset.canvas;
+      buildingPanel.querySelectorAll('.wt-color[data-canvas="'+id+'"]').forEach(function(b){b.classList.remove('active');});
+      btn.classList.add('active');
+      wtState[id].color=btn.dataset.color;
+      // switch to pen when picking a color
+      buildingPanel.querySelectorAll('.wt-tool[data-canvas="'+id+'"]').forEach(function(b){b.classList.remove('active');});
+      var penBtn=buildingPanel.querySelector('.wt-tool[data-tool="pen"][data-canvas="'+id+'"]');
+      if(penBtn)penBtn.classList.add('active');
+      wtState[id].tool='pen';
+    });
+  });
+  // Clear buttons
+  buildingPanel.querySelectorAll('.wt-clear').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var canvas=buildingPanel.querySelector('#'+btn.dataset.canvas);
+      if(canvas){var ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);}
+    });
+  });
+}
+
+function setupCanvas(id){
+  var canvas=buildingPanel.querySelector('#'+id);
+  if(!canvas)return;
+  var container=canvas.parentElement;
+  function resize(){
+    var dpr=window.devicePixelRatio||1;
+    var w=container.clientWidth, h=container.clientHeight;
+    if(!w||!h)return;                 // skip while hidden (0×0); ResizeObserver re-runs when shown
+    // Save existing drawing
+    var tmp=document.createElement('canvas');
+    tmp.width=canvas.width; tmp.height=canvas.height;
+    if(canvas.width&&canvas.height) tmp.getContext('2d').drawImage(canvas,0,0);
+    canvas.width=w*dpr; canvas.height=h*dpr;
+    var ctx=canvas.getContext('2d');
+    ctx.scale(dpr,dpr);
+    if(tmp.width&&tmp.height) ctx.drawImage(tmp,0,0,w,h);
+  }
+  resize();
+  // Re-size when the panel becomes visible (e.g. switching to the Wider World tab) or the window changes
+  if(window.ResizeObserver){var ro=new ResizeObserver(function(){resize();});ro.observe(container);}
+  var drawing=false, lx=0, ly=0;
+  function getPos(e){
+    var r=canvas.getBoundingClientRect();
+    var src=e.touches?e.touches[0]:e;
+    return {x:(src.clientX-r.left),y:(src.clientY-r.top)};
+  }
+  function startDraw(e){
+    e.preventDefault();
+    drawing=true;
+    var p=getPos(e); lx=p.x; ly=p.y;
+  }
+  function draw(e){
+    if(!drawing)return;
+    e.preventDefault();
+    var p=getPos(e);
+    var st=wtState[id];
+    var ctx=canvas.getContext('2d');
+    ctx.lineCap='round';
+    ctx.lineJoin='round';
+    if(st.tool==='eraser'){
+      ctx.globalCompositeOperation='destination-out';
+      ctx.lineWidth=24;
+    }else{
+      ctx.globalCompositeOperation='source-over';
+      ctx.strokeStyle=st.color;
+      ctx.lineWidth=3;
+    }
+    ctx.beginPath();
+    ctx.moveTo(lx,ly);
+    ctx.lineTo(p.x,p.y);
+    ctx.stroke();
+    lx=p.x; ly=p.y;
+  }
+  function stopDraw(){drawing=false;}
+  canvas.addEventListener('mousedown',startDraw);
+  canvas.addEventListener('mousemove',draw);
+  canvas.addEventListener('mouseup',stopDraw);
+  canvas.addEventListener('mouseleave',stopDraw);
+  canvas.addEventListener('touchstart',startDraw,{passive:false});
+  canvas.addEventListener('touchmove',draw,{passive:false});
+  canvas.addEventListener('touchend',stopDraw);
+}
+
 function renderBuilding(){
   var k=curBldg, c=content(k);
   var logLabel=isChronicle(k)?'The Chronicle':'Notes';
@@ -949,6 +1158,15 @@ function renderBuilding(){
         html+='<div class="bnpc"><span class="bnpc-name">'+esc(n.name)+'</span><span class="bnpc-role">'+esc(n.role)+'</span></div>';
       });
     }
+  }
+
+  // The Watchtower: Leaving Stonetop + Chart Your Course (route maps)
+  if(k==='Mesh_Watchtower'){
+    html+=renderWatchtowerTabs();
+    buildingPanel.innerHTML=html;
+    bindBuilding();
+    bindWatchtowerTabs();
+    return;
   }
 
   // Notes / Chronicle log
