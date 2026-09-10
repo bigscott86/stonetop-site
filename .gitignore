@@ -7,3 +7,7 @@ Thumbs.db
 # (derived reference content lives in docs/ and playbooks.js).
 *.pdf
 Book_I_-_Stonetop_(spreads).pdf
+
+# Rulebook archive (copyrighted) — local only, never commit or deploy
+Books/
+*.zip
