@@ -272,12 +272,12 @@
   .rl-text{color:var(--text-2);font-size:13px;line-height:1.55;}
   .rl-live{margin-top:var(--s2);padding:var(--s2) var(--s3);border-left:2px solid var(--accent);background:var(--ink-2);font-size:12.5px;color:var(--text-2);}
   .rl-live b{color:var(--text-1);}
-  .wt-tables{display:flex;flex-direction:column;gap:var(--s3);margin:var(--s3) 0 var(--s5);}
-  .wt-roll{display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center;}
-  .wt-roll-out{display:flex;align-items:center;gap:var(--s4);padding:var(--s3) var(--s4);border:1px solid var(--line-1);background:var(--ink-1);min-height:56px;font-size:14px;line-height:1.5;}
-  .wt-roll-out.empty{color:var(--text-3);font-style:italic;}
-  .wt-roll-out .sdie{flex-shrink:0;}
-  .wt-roll-out b{display:block;color:var(--text-1);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;}
+  .wt-tables{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--s3);margin:var(--s3) 0 var(--s3);}
+  .wt-tblock{border:1px solid var(--line-1);background:var(--ink-1);padding:var(--s3) var(--s4);}
+  .wt-roll{display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center;margin-bottom:var(--s2);}
+  .wt-tr{display:flex;gap:var(--s3);padding:var(--s1) 0;border-bottom:1px dotted var(--line-0);font-size:13px;line-height:1.5;}
+  .wt-tr:last-child{border-bottom:none;}
+  .wt-td{flex:0 0 34px;color:var(--text-1);font-weight:bold;}
   #g-find{min-height:var(--ctl);width:170px;padding:0 var(--s3);font-size:13px;}
   .gnode.dim{opacity:.28;}
   .gnode.hit{box-shadow:0 0 0 2px var(--accent-hi),0 2px 8px rgba(0,0,0,.6);}
@@ -670,15 +670,16 @@
                 <div class="srung miss"><div class="sband">6−</div><div class="sdesc"><strong>Miss.</strong> Mark XP. The GM says what happens — and it will be bad.</div></div>
               </div>
               <div class="sroller">
-                <span class="slabel">Roll a Move</span>
+                <span class="slabel">Read a roll (dice in hand)</span>
                 <div class="sroller-ctrls">
-                  <span>2d6 +</span>
+                  <span>2d6 =</span>
+                  <select id="s-dice-pick"><option value="">—</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option></select>
+                  <span>+</span>
                   <select id="s-stat-pick"><option value="-1">STAT −1</option><option value="0">STAT +0</option><option value="1" selected>STAT +1</option><option value="2">STAT +2</option><option value="3">STAT +3</option></select>
                   <label><input type="checkbox" id="s-adv"> advantage</label>
                   <label><input type="checkbox" id="s-dis"> disadvantage</label>
                 </div>
-                <button class="sroll-btn" id="s-roll-btn">Roll</button>
-                <button class="cc-btn" id="s-fate-btn" title="A plain d6: low is bad, high is good (p.42)">Die of Fate</button>
+                <div class="sroller-ctrls"><span>Die of Fate =</span><select id="s-fate-pick" title="A plain d6: low is bad, high is good (p.42)"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
                 <div class="sdice-row" id="s-dice-row"></div>
                 <div class="sroll-total" id="s-roll-total"></div>
                 <div class="sroll-verdict" id="s-roll-verdict"></div>
@@ -1100,10 +1101,11 @@ function setSyncState(s,msg){
   var el=document.getElementById('sync-dot');
   if(el)el.innerHTML='<span class="sd '+s+'"></span>'+(msg||'');
 }
+function syncFail(e){var code=String(e&&(e.code||e.message)||'');if(e)console.warn('[sync]',e);setSyncState('error',/PERMISSION/i.test(code)?'sync blocked · database rules':'offline · saved here');}
 function pushRemote(){
   if(!syncRef||applyingRemote)return;
   var copy=JSON.parse(JSON.stringify(store));delete copy.routes; // routes are big and pushed on their own
-  syncRef.update(copy).catch(function(){setSyncState('error','offline · saved here');});
+  syncRef.update(copy).catch(syncFail);
 }
 function applyRemote(remote){
   remote=remote||{};
@@ -1158,7 +1160,7 @@ function initSync(){
         applyRemote(snap.val());
         setSyncState('synced','synced');
         if(firstSync){firstSync=false;pushRemote();} // share what this device already has (after merging remote)
-      },function(){setSyncState('error','offline · saved here');});
+      },syncFail);
     }catch(e){setSyncState('error','offline · saved here');}
   }
 }
@@ -1239,25 +1241,18 @@ function bindWatchtowerTabs(){
   if(mtTab){var rm=buildingPanel.querySelector('[data-mt="'+mtTab+'"]');if(rm&&!rm.classList.contains('active'))rm.click();}
 }
 
+var wtSeasonIdx=null;
+function wtTableRows(tb){return '<div class="wt-table">'+tb.map(function(r){return '<div class="wt-tr"><span class="wt-td">'+r[0].join('–')+'</span><span>'+esc(r[1])+'</span></div>';}).join('')+'</div>';}
 function wtTables(){
   var T=window.TABLES;if(!T)return '';
-  return '<h3>Roll at the table</h3><div class="hint">The book\'s Die of Fate tables for the road — weather by season (p.325), what interrupts a night\'s rest (p.335), and how a perilous leg turns out (p.323).</div>'
-    +'<div class="wt-tables"><div class="wt-roll"><select class="cc-sel" id="wt-season">'+T.weather.seasons.map(function(x,i){return '<option value="'+i+'">'+esc(x.name)+'</option>';}).join('')+'</select><button class="cc-btn" data-roll="weather">Roll weather</button></div>'
-    +'<div class="wt-roll"><button class="cc-btn" data-roll="night">Roll the night</button><button class="cc-btn" data-roll="peril">Roll perilous travel</button><button class="cc-btn" data-roll="fate">Die of Fate</button></div>'
-    +'<div id="wt-roll-out" class="wt-roll-out empty">Nothing rolled yet.</div></div>';
+  if(wtSeasonIdx==null){var sn=(stLoad()||{}).season;wtSeasonIdx={spring:1,summer:2,autumn:4,winter:5}[sn]||0;}
+  return '<h3>Tables for the road <span class="pk-hn">roll a d6 in person and read the line — weather p.325, the night p.335, perilous travel p.323</span></h3>'
+    +'<div class="wt-tables"><div class="wt-tblock"><div class="wt-roll"><span class="t-label">Weather</span><select class="cc-sel" id="wt-season">'+T.weather.seasons.map(function(x,k){return '<option value="'+k+'"'+(k===wtSeasonIdx?' selected':'')+'>'+esc(x.name)+'</option>';}).join('')+'</select></div><div id="wt-weather">'+wtTableRows(T.weather.seasons[wtSeasonIdx].rows)+'</div></div>'
+    +'<div class="wt-tblock"><div class="t-label" style="margin-bottom:6px">'+esc(T.night.name)+'</div>'+wtTableRows(T.night.rows)+'</div>'
+    +'<div class="wt-tblock"><div class="t-label" style="margin-bottom:6px">'+esc(T.peril.name)+'</div>'+wtTableRows(T.peril.rows)+'</div></div>'
+    +'<div class="hint">The Die of Fate is a plain d6: low is bad, high is good, and the GM says what it means (p.42).</div>';
 }
-function bindTables(){
-  var T=window.TABLES,out=buildingPanel.querySelector('#wt-roll-out');if(!T||!out)return;
-  function pick(rows,v){for(var i=0;i<rows.length;i++)if(rows[i][0].indexOf(v)>=0)return rows[i][1];return '';}
-  buildingPanel.querySelectorAll('[data-roll]').forEach(function(b){b.addEventListener('click',function(){
-    var v=Math.floor(Math.random()*6)+1,k=b.dataset.roll,label='',text='';
-    if(k==='weather'){var sn=T.weather.seasons[+buildingPanel.querySelector('#wt-season').value];label=sn.name;text=pick(sn.rows,v);}
-    else if(k==='night'){label=T.night.name;text=pick(T.night.rows,v);}
-    else if(k==='peril'){label=T.peril.name;text=pick(T.peril.rows,v);}
-    else{label='Die of Fate';text=v>=5?'Good — things go your way.':v>=3?'Mixed — the GM says how.':'Bad — trouble.';}
-    out.className='wt-roll-out';out.innerHTML='<span class="sdie">'+v+'</span><div><b>'+esc(label)+'</b><div>'+esc(text)+'</div></div>';
-  });});
-}
+function bindTables(){var sel=buildingPanel.querySelector('#wt-season');if(!sel)return;sel.addEventListener('change',function(){wtSeasonIdx=+sel.value;var out=buildingPanel.querySelector('#wt-weather');if(out)out.innerHTML=wtTableRows(window.TABLES.weather.seasons[wtSeasonIdx].rows);});}
 function wtLeaving(){
   return '<div class="spanel" style="display:block;position:relative;overflow-y:auto;max-height:100%;">'
     +'<h2>Leaving Stonetop</h2>'
@@ -1353,7 +1348,7 @@ function getThreat(id){var e=threats()[id];if(!e||e.deleted)return null;try{retu
 function allThreats(){var t=threats();return Object.keys(t).filter(function(id){return t[id]&&!t[id].deleted;}).map(getThreat).filter(Boolean);}
 function setThreat(o){threats()[o.id]={data:JSON.stringify(o),_t:Date.now(),deleted:false};persist();pushThreat(o.id);flashSaved();}
 function delThreat(id){var t=threats();if(t[id]){t[id]={data:t[id].data,_t:Date.now(),deleted:true};persist();pushThreat(id);}}
-function pushThreat(id){if(!syncRef||applyingRemote)return;var e=threats()[id];if(!e)return;syncRef.child('threats').child(id).update({data:e.data,_t:e._t,deleted:!!e.deleted}).catch(function(){setSyncState('error','offline · saved here');});}
+function pushThreat(id){if(!syncRef||applyingRemote)return;var e=threats()[id];if(!e)return;syncRef.child('threats').child(id).update({data:e.data,_t:e._t,deleted:!!e.deleted}).catch(syncFail);}
 function mergeThreats(rc){rc=rc||{};var c=threats();Object.keys(rc).forEach(function(id){var r=rc[id]||{},l=c[id];if(!l||(r._t||0)>=(l._t||0))c[id]={data:r.data||'{}',_t:r._t||0,deleted:!!r.deleted};});}
 function threatsSyncRefresh(){if(!buildingModal.classList.contains('open')||curBldg!=='Mesh_Watchtower')return;var root=buildingPanel.querySelector('#wt-threats');if(!root)return;var ae=document.activeElement;if(ae&&root.contains(ae)&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName))return;root.innerHTML=renderThreats();bindThreats();}
 function threatType(key){return (window.THREAT_TYPES||[]).filter(function(x){return x.key===key;})[0];}
@@ -1437,7 +1432,7 @@ var wpOpen=null;
 function wpKey(id){return id==='wt-canvas-vic'?'vic':'world';}
 function wpLoad(){var x=store.wpins;if(x&&x.data){try{return JSON.parse(x.data)||{};}catch(_){}}return {};}
 function wpSave(all){store.wpins={data:JSON.stringify(all),_t:Date.now()};persist();pushWPins();flashSaved();}
-function pushWPins(){if(!syncRef||applyingRemote||!store.wpins)return;syncRef.child('wpins').set({data:store.wpins.data,_t:store.wpins._t}).catch(function(){setSyncState('error','offline · saved here');});}
+function pushWPins(){if(!syncRef||applyingRemote||!store.wpins)return;syncRef.child('wpins').set({data:store.wpins.data,_t:store.wpins._t}).catch(syncFail);}
 function mergeWPins(r){r=r||{};var l=store.wpins;if(!l||(r._t||0)>=(l._t||0))store.wpins={data:r.data||'',_t:r._t||0};}
 function wpinsSyncRefresh(){if(!buildingModal.classList.contains('open')||curBldg!=='Mesh_Watchtower')return;var ae=document.activeElement;if(ae&&ae.closest&&ae.closest('.wt-pinpop'))return;['wt-canvas-vic','wt-canvas-world'].forEach(renderWPins);}
 function imgBox(stage){ // where the object-fit:contain map image actually sits inside its stage
@@ -1478,7 +1473,7 @@ function closeWPop(id){var pop=buildingPanel.querySelector('#'+id+'-pop');if(pop
 var wtDrawing=false, routesTimer=null;
 function routesLoad(){var x=store.routes;if(x&&x.data){try{return JSON.parse(x.data)||{};}catch(_){}}return {};}
 function routesSave(key,dataUrl){var r=routesLoad();r[key]=dataUrl||'';store.routes={data:JSON.stringify(r),_t:Date.now()};persist();clearTimeout(routesTimer);routesTimer=setTimeout(pushRoutes,400);flashSaved();}
-function pushRoutes(){if(!syncRef||applyingRemote)return;if(!store.routes)return;syncRef.child('routes').set({data:store.routes.data,_t:store.routes._t}).catch(function(){setSyncState('error','offline · saved here');});}
+function pushRoutes(){if(!syncRef||applyingRemote)return;if(!store.routes)return;syncRef.child('routes').set({data:store.routes.data,_t:store.routes._t}).catch(syncFail);}
 function mergeRoutes(r){r=r||{};var l=store.routes;if(!l||(r._t||0)>=(l._t||0))store.routes={data:r.data||'',_t:r._t||0};}
 function routesSyncRefresh(){if(!buildingModal.classList.contains('open')||curBldg!=='Mesh_Watchtower'||wtDrawing)return;['wt-canvas-vic','wt-canvas-world'].forEach(function(id){var c=buildingPanel.querySelector('#'+id);if(c&&c._loadRoute)c._loadRoute();});}
 function wtChart(){
@@ -1798,7 +1793,7 @@ function delChar(id){var c=chars();if(c[id]){c[id]={data:c[id].data,_t:Date.now(
 function pushChar(id){
   if(!syncRef||applyingRemote)return;
   var c=chars()[id];if(!c)return;
-  syncRef.child('characters').child(id).update({data:c.data,_t:c._t,deleted:!!c.deleted}).catch(function(){setSyncState('error','offline · saved here');});
+  syncRef.child('characters').child(id).update({data:c.data,_t:c._t,deleted:!!c.deleted}).catch(syncFail);
 }
 function mergeCharacters(rc){
   rc=rc||{};var c=chars();
@@ -2118,7 +2113,7 @@ var graphModal=document.getElementById('graph-modal');
 function gLoad(){var s=store.graph;if(s&&s.data){try{var o=JSON.parse(s.data);return {nodes:o.nodes||[],edges:o.edges||[]};}catch(_){}}return {nodes:[],edges:[]};}
 function saveGraph(){gLastSaved=JSON.stringify(G);store.graph={data:gLastSaved,_t:Date.now()};persist();pushGraph();flashSaved();}
 function dirSyncRefresh(){if(!buildingModal.classList.contains('open')||curBldg!=='Mesh_Longhouse')return;var ae=document.activeElement;if(ae&&buildingPanel.contains(ae)&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName))return;renderBuilding();}
-function pushGraph(){if(!syncRef||applyingRemote)return;syncRef.child('graph').set({data:store.graph.data,_t:store.graph._t}).catch(function(){setSyncState('error','offline · saved here');});}
+function pushGraph(){if(!syncRef||applyingRemote)return;syncRef.child('graph').set({data:store.graph.data,_t:store.graph._t}).catch(syncFail);}
 function mergeGraph(r){r=r||{};var l=store.graph;if(!l||(r._t||0)>=(l._t||0))store.graph={data:r.data||'',_t:r._t||0};}
 function graphSyncRefresh(){
   if(!gOpen)return;
@@ -2402,7 +2397,7 @@ function seedSteading(){
 }
 function stLoad(){var x=store.steading;if(x&&x.data){try{return JSON.parse(x.data);}catch(_){}}return seedSteading();}
 function saveSteading(){store.steading={data:JSON.stringify(ST),_t:Date.now()};persist();pushSteading();flashSaved();if(typeof applySeason==='function')applySeason();}
-function pushSteading(){if(!syncRef||applyingRemote)return;syncRef.child('steading').set({data:store.steading.data,_t:store.steading._t}).catch(function(){setSyncState('error','offline · saved here');});}
+function pushSteading(){if(!syncRef||applyingRemote)return;syncRef.child('steading').set({data:store.steading.data,_t:store.steading._t}).catch(syncFail);}
 function mergeSteading(r){r=r||{};var l=store.steading;if(!l||(r._t||0)>=(l._t||0))store.steading={data:r.data||'',_t:r._t||0};}
 function steadingSyncRefresh(){if(!stOpen)return;var ae=document.activeElement,body=document.getElementById('steading-body');if(body&&ae&&body.contains(ae))return;ST=stLoad();renderSteading();}
 function openSteading(){steadingModal.classList.add('open');ST=stLoad();stOpen=true;renderSteading();}
@@ -2482,7 +2477,15 @@ function renderSeasonSection(){
   if(SR.active)h+=renderSeasonRunner();
   return h;
 }
-function srRollInput(key,label,hint){var v=SR.rolls[key];return '<div class="st-step"><span class="st-step-l">'+label+'</span><button class="cc-btn" data-srroll="'+key+'">Roll</button><input class="cc-in" type="number" data-srin="'+key+'" value="'+(v==null?'':v)+'" placeholder="total"><span class="hint">'+hint+'</span></div>';}
+function srOptions(key){ // every total the dice can give, so the table just picks what they rolled
+  var f=steadingStat('fortunes'),pop=steadingStat('population'),seen={},opts=[];
+  function add(v,l){if(seen[v])return;seen[v]=1;opts.push([v,l]);}
+  if(key==='main'||key==='second'){var adj=key==='second'?srCompute().d.fortunes:0;for(var d=2;d<=12;d++){var t=d+f+adj;add(t,t+'  ('+(t>=10?'10+':t>=7?'7–9':'6−')+')');}}
+  else if(key==='surplus'){if(SR.season==='summer')for(var i=0;i<=3;i++)add(i,i+' Surplus');else for(var j=1;j<=4;j++)add(j,j+' Surplus');}
+  else for(var k=1;k<=4;k++){var v=Math.max(0,k+pop);add(v,v+' Surplus');}
+  return opts;
+}
+function srRollInput(key,label,hint){var v=SR.rolls[key];return '<div class="st-step"><span class="st-step-l">'+label+'</span><select class="cc-sel" data-srin="'+key+'"><option value="">— roll in person, then pick —</option>'+srOptions(key).map(function(o){return '<option value="'+o[0]+'"'+(v===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select><span class="hint">'+hint+'</span></div>';}
 function srCompute(){
   var s=SR.season,f=steadingStat('fortunes'),pop=steadingStat('population'),sur=steadingStat('surplus');
   var o={lines:[],d:{surplus:0,fortunes:0,population:0},gains:0,ready:false,needConseq:false,needConseq2:false,needDisaster:false,reset:isMalcontent()?0:1,threat:false};
@@ -2515,7 +2518,7 @@ function srCompute(){
 }
 function renderSeasonRunner(){
   var s=SR.season,I=SEASON_INFO[s],o=srCompute(),f=steadingStat('fortunes'),pop=steadingStat('population'),yr=(ST.year||1)+((s==='spring'&&(ST.season||'spring')==='winter')?1:0),h='';
-  h+='<div class="st-runner"><div class="st-runner-h"><b>Seasons Change — '+I.name+', year '+yr+'</b><span class="hint">'+I.line+', '+I.who+' rolls. Type the total from your dice, or press Roll.</span></div>';
+  h+='<div class="st-runner"><div class="st-runner-h"><b>Seasons Change — '+I.name+', year '+yr+'</b><span class="hint">'+I.line+', '+I.who+' rolls. Roll at the table, then pick each total below.</span></div>';
   if(s!=='winter'){
     h+=srRollInput('main','Roll +Fortunes ('+fmtMod(f)+')','2d6 + Fortunes');
     if(s==='summer')h+=srRollInput('surplus','Surplus generated','1d4 − 1');
@@ -2559,10 +2562,6 @@ function bindSeasons(){
   var run=document.getElementById('st-run');if(run)run.addEventListener('click',function(){SR={active:true,season:seasonNext(),rolls:{},picks:{gains:[]}};renderSteading();var el=document.querySelector('.st-runner');if(el)el.scrollIntoView({block:'nearest'});});
   var cancel=document.getElementById('st-cancel');if(cancel)cancel.addEventListener('click',function(){SR={active:false};renderSteading();});
   var apply=document.getElementById('st-apply');if(apply)apply.addEventListener('click',srApply);
-  function d(n){return Math.floor(Math.random()*n)+1;}
-  body.querySelectorAll('[data-srroll]').forEach(function(b){b.addEventListener('click',function(){var k=b.dataset.srroll,f=steadingStat('fortunes'),pop=steadingStat('population'),v;
-    if(k==='main')v=d(6)+d(6)+f;else if(k==='second')v=d(6)+d(6)+f+(srCompute().d.fortunes);else if(k==='surplus')v=SR.season==='summer'?Math.max(0,d(4)-1):d(4);else v=Math.max(0,d(4)+pop);
-    SR.rolls[k]=v;renderSteading();});});
   body.querySelectorAll('[data-srin]').forEach(function(inp){inp.addEventListener('change',function(){var v=parseInt(inp.value,10);SR.rolls[inp.dataset.srin]=isNaN(v)?null:v;renderSteading();});});
   body.querySelectorAll('[data-srgain]').forEach(function(cb){cb.addEventListener('change',function(){var g=cb.dataset.srgain,i=SR.picks.gains.indexOf(g);if(cb.checked&&i<0)SR.picks.gains.push(g);if(!cb.checked&&i>=0)SR.picks.gains.splice(i,1);renderSteading();});});
   body.querySelectorAll('[data-srconseq]').forEach(function(r){r.addEventListener('change',function(){SR.picks.conseq=r.dataset.srconseq;renderSteading();});});
@@ -2636,7 +2635,7 @@ buildRuleUI();
 var FT=null;
 function ftLoad(){var x=store.fight;if(x&&x.data){try{var o=JSON.parse(x.data);o.foes=o.foes||[];return o;}catch(_){}}return {foes:[],notes:'',them:6,us:4};}
 function ftSave(){store.fight={data:JSON.stringify(FT),_t:Date.now()};persist();pushFight();flashSaved();}
-function pushFight(){if(!syncRef||applyingRemote||!store.fight)return;syncRef.child('fight').set({data:store.fight.data,_t:store.fight._t}).catch(function(){setSyncState('error','offline · saved here');});}
+function pushFight(){if(!syncRef||applyingRemote||!store.fight)return;syncRef.child('fight').set({data:store.fight.data,_t:store.fight._t}).catch(syncFail);}
 function mergeFight(r){r=r||{};var l=store.fight;if(!l||(r._t||0)>=(l._t||0))store.fight={data:r.data||'',_t:r._t||0};}
 function fightSyncRefresh(){if(!shrineModal.classList.contains('open'))return;var b=document.getElementById('fight-body');if(!b)return;var ae=document.activeElement;if(ae&&b.contains(ae)&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName))return;FT=ftLoad();renderFight();}
 function renderFight(){
@@ -2664,36 +2663,23 @@ function bindFight(){
   var n=document.getElementById('ft-notes');n.addEventListener('input',function(){FT.notes=n.value;});n.addEventListener('change',ftSave);
 }
 
-// Dice roller
-var sd6=function(){return Math.floor(Math.random()*6)+1;};
-var fateBtn=document.getElementById('s-fate-btn');if(fateBtn)fateBtn.addEventListener('click',function(){
-  var v=sd6(),row=document.getElementById('s-dice-row');row.innerHTML='<div class="sdie">'+v+'</div>';
-  document.getElementById('s-roll-total').innerHTML='Die of Fate: <b>'+v+'</b>';
-  var vEl=document.getElementById('s-roll-verdict'),nEl=document.getElementById('s-roll-note');vEl.className='sroll-verdict '+(v>=5?'hit10':v>=3?'hit79':'miss');
-  vEl.textContent=v>=5?'Good':v>=3?'Mixed':'Bad';nEl.textContent='Low is bad, high is good — the GM says what it means.';
-});
-document.getElementById('s-roll-btn').addEventListener('click',function(){
-  var stat=parseInt(document.getElementById('s-stat-pick').value,10);
-  var adv=document.getElementById('s-adv').checked;
-  var dis=document.getElementById('s-dis').checked;
-  var extra=adv!==dis;
-  var dice=[sd6(),sd6()];
-  if(extra) dice.push(sd6());
-  var dropped=-1;
-  if(extra){var t=adv?Math.min.apply(null,dice):Math.max.apply(null,dice);dropped=dice.indexOf(t);}
-  var kept=dice.filter(function(_,i){return i!==dropped;});
-  var total=kept.reduce(function(a,b){return a+b;},0)+stat;
-  var row=document.getElementById('s-dice-row'); row.innerHTML='';
-  dice.forEach(function(v,i){var el=document.createElement('div');el.className='sdie'+(i===dropped?' dropped':'');el.textContent=v;row.appendChild(el);});
-  var op=document.createElement('div');op.className='sdie-op';op.textContent=stat>=0?'+ '+stat:'- '+Math.abs(stat);row.appendChild(op);
-  document.getElementById('s-roll-total').innerHTML='Total: <b>'+total+'</b>';
-  var vEl=document.getElementById('s-roll-verdict'), nEl=document.getElementById('s-roll-note');
-  vEl.className='sroll-verdict';
-  if(total>=10){vEl.classList.add('hit10');vEl.textContent='Strong Hit (10+)';nEl.textContent='You get what you were after.';}
-  else if(total>=7){vEl.classList.add('hit79');vEl.textContent='Weak Hit (7-9)';nEl.textContent='You get it, at a cost.';}
-  else{vEl.classList.add('miss');vEl.textContent='Miss (6-)';nEl.textContent='Mark XP. The GM says what happens — and it will be bad.';}
-});
-
+// Reading rolls made in person (the table rolls physical dice)
+(function(){
+  var dice=document.getElementById('s-dice-pick'),stat=document.getElementById('s-stat-pick'),adv=document.getElementById('s-adv'),dis=document.getElementById('s-dis'),fate=document.getElementById('s-fate-pick');
+  if(!dice)return;
+  var vEl=document.getElementById('s-roll-verdict'),nEl=document.getElementById('s-roll-note'),tEl=document.getElementById('s-roll-total'),row=document.getElementById('s-dice-row');
+  function read(){
+    var d=parseInt(dice.value,10);if(isNaN(d)){row.innerHTML='';tEl.textContent='';vEl.className='sroll-verdict';vEl.textContent='';nEl.textContent=(adv.checked!==dis.checked)?(adv.checked?'Advantage: roll 3d6 and keep the best two.':'Disadvantage: roll 3d6 and keep the worst two.'):'';return;}
+    var st=parseInt(stat.value,10)||0,total=d+st;
+    row.innerHTML='<div class="sdie">'+d+'</div><div class="sdie-op">'+(st>=0?'+ '+st:'− '+Math.abs(st))+'</div>';
+    tEl.innerHTML='Total: <b>'+total+'</b>';vEl.className='sroll-verdict';
+    if(total>=10){vEl.classList.add('hit10');vEl.textContent='Strong Hit (10+)';nEl.textContent='You get what you were after.';}
+    else if(total>=7){vEl.classList.add('hit79');vEl.textContent='Weak Hit (7-9)';nEl.textContent='You get it, at a cost.';}
+    else{vEl.classList.add('miss');vEl.textContent='Miss (6-)';nEl.textContent='Mark XP. The GM says what happens — and it will be bad.';}
+  }
+  [dice,stat,adv,dis].forEach(function(el){el.addEventListener('change',read);});
+  fate.addEventListener('change',function(){var v=parseInt(fate.value,10);if(isNaN(v))return;dice.value='';row.innerHTML='<div class="sdie">'+v+'</div>';tEl.innerHTML='Die of Fate: <b>'+v+'</b>';vEl.className='sroll-verdict '+(v>=5?'hit10':v>=3?'hit79':'miss');vEl.textContent=v>=5?'Good':v>=3?'Mixed':'Bad';nEl.textContent='Low is bad, high is good — the GM says what it means.';});
+})();
 
 // ============================================================
 //  PACK & CLOSET — per-character inventory
@@ -2718,7 +2704,7 @@ function invLoad(id){
   return o;
 }
 function saveInv(){if(!PK)return;invs()[PK.charId]={data:JSON.stringify(PK),_t:Date.now()};persist();pushInv(PK.charId);flashSaved();}
-function pushInv(id){if(!syncRef||applyingRemote)return;var e=invs()[id];if(!e)return;syncRef.child('inventory').child(id).set({data:e.data,_t:e._t}).catch(function(){setSyncState('error','offline · saved here');});}
+function pushInv(id){if(!syncRef||applyingRemote)return;var e=invs()[id];if(!e)return;syncRef.child('inventory').child(id).set({data:e.data,_t:e._t}).catch(syncFail);}
 function mergeInventory(ri){ri=ri||{};var l=invs();Object.keys(ri).forEach(function(id){var r=ri[id]||{},x=l[id];if(!x||(r._t||0)>=(x._t||0))l[id]={data:r.data||'',_t:r._t||0};});}
 function packSyncRefresh(){
   if(!pkOpen||!PK)return;
@@ -2921,7 +2907,7 @@ function getArc(id){var e=arcanaItems()[id];if(!e||e.deleted)return null;try{ret
 function allArc(){var c=arcanaItems();return Object.keys(c).filter(function(id){return c[id]&&!c[id].deleted;}).map(getArc).filter(Boolean).sort(function(a,b){return (a.added||0)-(b.added||0);});}
 function setArc(o){arcanaItems()[o.id]={data:JSON.stringify(o),_t:Date.now(),deleted:false};persist();pushArc(o.id);flashSaved();}
 function delArc(id){var c=arcanaItems();if(c[id]){c[id]={data:c[id].data,_t:Date.now(),deleted:true};persist();pushArc(id);}}
-function pushArc(id){if(!syncRef||applyingRemote)return;var e=arcanaItems()[id];if(!e)return;syncRef.child('arcana').child(id).update({data:e.data,_t:e._t,deleted:!!e.deleted}).catch(function(){setSyncState('error','offline · saved here');});}
+function pushArc(id){if(!syncRef||applyingRemote)return;var e=arcanaItems()[id];if(!e)return;syncRef.child('arcana').child(id).update({data:e.data,_t:e._t,deleted:!!e.deleted}).catch(syncFail);}
 function mergeArcana(rc){rc=rc||{};var c=arcanaItems();Object.keys(rc).forEach(function(id){var r=rc[id]||{},l=c[id];if(!l||(r._t||0)>=(l._t||0))c[id]={data:r.data||'{}',_t:r._t||0,deleted:!!r.deleted};});}
 function arcanaSyncRefresh(){if(!arOpen)return;var b=document.getElementById('arcana-body'),ae=document.activeElement;if(b&&ae&&b.contains(ae)&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName))return;renderArcana();}
 function arcanaEntry(it){ // the card text: from the book by ref, or the item's own custom text

@@ -524,6 +524,13 @@ How it works:
 - **The P hotkey** is ignored while any `[id$="-modal"].open` exists or an input is focused —
   keep new modal ids ending in `-modal` so that guard keeps working.
 - **Deploy:** static files to Netlify. Changes are local until deployed.
+- **Sync rules expire.** On 2026-09-10 the Firebase database answered "Permission denied" to every
+  read and write (test-mode rules had lapsed), so all devices were silently local-only. The pill now
+  says "sync blocked · database rules" in that state (`syncFail`); the fix is republishing the open
+  rules in the Firebase console — see the last section of docs/sync-setup.md.
+- **Rolls happen in person.** The group rolls physical dice. Nothing in the app rolls for them:
+  the Seasons Change runner, the Stone's roll reader and the Watchtower tables all take the result
+  the table rolled (dropdowns), and the Watchtower shows the tables to read against a d6.
 
 ## Deployment setup (one shared screen, today)
 

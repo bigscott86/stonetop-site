@@ -98,3 +98,37 @@ var FIREBASE_CONFIG = {
 - `localStorage` still works as the offline cache, so the site loads instantly and
   works offline; it reconciles when the connection returns.
 - If Firebase is unreachable, the dot shows red and edits keep saving locally.
+
+
+## If the status pill says "sync blocked · database rules"
+
+The database is refusing reads and writes. This is what happened on 2026-09-10: Firebase's
+default "test mode" rules stop working 30 days after a database is created, and from then on
+every device runs alone ("offline · saved here") and nothing reaches the others — seasons set on
+one screen never show on another, and the map only tints where the change was made.
+
+Fix (about a minute, needs the Firebase project owner):
+
+1. Open https://console.firebase.google.com → the **stone-7ed10** project → **Realtime
+   Database** → the **Rules** tab.
+2. Replace the rules with:
+   ```json
+   {
+     "rules": {
+       "campaigns": {
+         ".read": true,
+         ".write": true
+       }
+     }
+   }
+   ```
+3. Press **Publish**. Reload the site on each device; the pill should turn green ("synced").
+
+Quick check from a terminal:
+```bash
+curl -s "https://stone-7ed10-default-rtdb.firebaseio.com/campaigns/stonetop/store.json?shallow=true"
+```
+"Permission denied" means the rules are still closed; a JSON object of keys means sync is back.
+
+These rules keep the URL-as-shared-secret model described above. If you would rather lock it
+down, the upgrade path is Firebase anonymous auth plus `".read": "auth != null"`.
