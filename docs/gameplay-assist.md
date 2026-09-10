@@ -55,7 +55,7 @@ Surplus starts at 1, no cap, 1 Surplus = Value 2 (p.509, 542). It moves by rule 
 (pp.516–523). Today it's a bare stepper; a dated ledger with a source label makes the running total
 auditable and lets the Seasons Change runner (B1) write entries.
 
-### A4. Arcana & treasures chest (progressive reveal)
+### A4. Arcana & treasures chest (progressive reveal) — ✅ BUILT 2026-09-10 (Stables; all 82 arcana transcribed)
 Book II has **64 minor arcana** (App. C, PDF pp.508–539) and **18 major arcana** (App. D,
 pp.540–575). Each minor arcanum is a two-sided card: the **front** is the found object, its tags,
 and the **unlock requirements**; the **back** is the name, a move with 10+/7–9/6− results, and
@@ -157,7 +157,7 @@ never reduced (p.239). A healing card reading live Prosperity: **Recover = 4 + P
 per damage cycle (p.246), **Make Camp** = ½ max HP or clear a debility, bedroll +1d6 (p.248),
 **Convalesce** = full HP and all debilities after days of rest (p.249), **Death's Door** (p.245).
 
-### D2. Danger tracker (GM)
+### D2. Danger tracker (GM) — ✅ fight tracker BUILT 2026-09-10 (the Stone, GM tab)
 No initiative; foes only take an attack on specific triggers (p.409). Track each foe's HP/armor/
 tags, **groups** abstracted as one member's stats with +1 damage and armor per outnumber multiple
 (20 crinwin vs 6 = 3:1 → +2, recalculated as they fall, p.416), **spirits** with manifest vs true
@@ -191,7 +191,7 @@ the relationship graph. Name lists by culture and the NPC trait list live in the
 
 ## F. Threats and session rituals (GM)
 
-### F1. Threat tracker
+### F1. Threat tracker — ✅ BUILT 2026-09-10 (Watchtower, GM tab)
 A threat has a name, one of **8 types** (Affliction, Beast, Institution, MacGuffin, Rabble,
 Magical entity, Villain, Wildcard), an instinct "to …", a description, an optional **impending
 doom** with **2–4 grim portents** (checkboxes), stakes questions, and custom moves; it sits on the
@@ -215,7 +215,7 @@ principles (p.192), the 7 exploration moves (pp.317–321, 352–354), gear and 
 
 ---
 
-## G. Cross-cutting: a "GM screen" mode
+## G. Cross-cutting: a "GM screen" mode — ✅ BUILT 2026-09-10 (Places list toggle)
 Threats, danger HP, unrevealed arcana backs, place secrets, and love letters (pp.568–569) all need
 to be hidden from the shared screen. Proposal: a per-browser GM flag (set once on the DM's laptop
 or phone, stored locally) that renders GM-only fields; the shared display and player devices never

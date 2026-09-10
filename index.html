@@ -10,6 +10,8 @@
 <script src="./gear.js"></script>
 <script src="./townsfolk.js"></script>
 <script src="./moves.js"></script>
+<script src="./gm.js"></script>
+<script src="./arcana.js"></script>
 <style>
   /* ══════════════════════════════════════════════════════════════════════
      DESIGN TOKENS — the only place colours, sizes and spacing are defined.
@@ -100,7 +102,7 @@
   .modal{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:50;}
   .modal.open{pointer-events:all;}
   #graph-modal,#steading-modal{z-index:55;}
-  #pack-modal{z-index:56;}
+  #pack-modal,#arcana-modal{z-index:56;}
   .modal-backdrop{position:absolute;inset:0;background:var(--dim);opacity:0;transition:opacity var(--dur) var(--ease);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);}
   .modal.open .modal-backdrop{opacity:1;}
   .modal-box{position:relative;width:min(1280px,88vw);height:min(860px,88vh);background:var(--ink-0);border:1px solid var(--line-1);box-shadow:var(--shadow);display:flex;flex-direction:column;transform:translateY(12px);opacity:0;transition:opacity var(--dur) var(--ease),transform var(--dur) var(--ease);overflow:hidden;}
@@ -332,6 +334,63 @@
   .cc-fol-top{display:flex;gap:var(--s2);margin-bottom:var(--s2);}
   .cc-fol-top .cc-in{flex:1;min-width:0;}
 
+  /* ── Arcana chest ────────────────────────────────────────────────────── */
+  .ar-card{border:1px solid var(--line-1);background:var(--ink-1);padding:var(--s4) var(--s5);margin-bottom:var(--s3);}
+  .ar-card.revealed{border-color:var(--accent);}
+  .ar-top{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2) var(--s3);margin-bottom:var(--s2);}
+  .ar-kind{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);}
+  .ar-name{color:var(--text-1);font-size:17px;letter-spacing:.5px;}
+  .ar-found{font-size:12px;font-style:italic;color:var(--text-3);}
+  .ar-spacer{flex:1;}
+  .ar-holder{min-height:32px;padding:0 var(--s5) 0 var(--s2);font-size:12px;}
+  .ar-front{color:var(--text-2);font-size:14px;line-height:1.6;max-width:72ch;}
+  .ar-tags{font-style:italic;color:var(--text-3);font-size:12.5px;margin-top:var(--s1);}
+  .ar-innate{margin-top:var(--s2);font-size:13.5px;} .ar-innate b{color:var(--text-1);font-weight:normal;}
+  .ar-track{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2) var(--s3);margin-top:var(--s2);}
+  .ar-track .pk-pips{margin-left:0;} .ar-track .hint{flex-basis:100%;}
+  .ar-back{margin-top:var(--s3);padding:var(--s3) var(--s4);border-left:2px solid var(--accent);background:var(--ink-0);}
+  .ar-back.secret{border-left-color:var(--danger);}
+  .ar-back-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--s3);margin-bottom:var(--s2);}
+  .ar-truename{color:var(--text-1);font-size:16px;}
+  .ar-move{margin:var(--s2) 0;padding-bottom:var(--s2);border-bottom:1px dotted var(--line-0);} .ar-move b{color:var(--text-1);font-weight:normal;}
+  .ar-locked{margin-top:var(--s3);font-style:italic;color:var(--text-3);display:flex;align-items:center;gap:6px;}
+  .ar-notes{margin-top:var(--s3);min-height:44px;font-size:13px;}
+  .ar-edit{display:flex;flex-direction:column;gap:var(--s2);margin:var(--s2) 0;} .ar-edit .cc-area{min-height:56px;}
+  .cc-check-name.done{text-decoration:line-through;color:var(--text-3);}
+
+  /* ── GM screen (a per-device curtain) ─────────────────────────────────── */
+  body:not(.gm) .gm-only{display:none!important;}
+  .gm-badge{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--danger-hi);border:1px solid var(--danger);padding:1px 6px;margin-left:8px;vertical-align:middle;font-weight:normal;}
+  #brand-gm{color:var(--danger-hi)!important;}
+  .place.gm-toggle{border-top:1px solid var(--line-1);} .place.gm-toggle .ic{color:var(--danger-hi);}
+  body.gm .place.gm-toggle .ic{color:var(--ok);}
+  /* threat tracker */
+  .th-head{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s3);margin-bottom:var(--s2);}
+  .th-head .hint{flex:1;min-width:260px;}
+  .th-card{border:1px solid var(--line-1);background:var(--ink-1);margin-bottom:var(--s2);}
+  .th-card.open{border-color:var(--accent);}
+  .th-card.resolved .th-name{text-decoration:line-through;color:var(--text-3);}
+  .th-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--s2) var(--s3);padding:var(--s3) var(--s4);cursor:pointer;min-height:44px;}
+  .th-row:hover{background:var(--ink-2);}
+  .th-name{color:var(--text-1);font-size:15px;}
+  .th-type{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent-text);border:1px solid var(--line-1);padding:2px 7px;}
+  .th-inst{font-style:italic;color:var(--text-3);font-size:13px;flex:1;}
+  .th-prog{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--text-3);}
+  .th-form{padding:var(--s3) var(--s4) var(--s4);border-top:1px solid var(--line-0);}
+  .th-moves{margin-top:var(--s3);padding:var(--s2) var(--s3);border-left:2px solid var(--accent);background:var(--ink-0);}
+  .th-btns{display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s4);}
+  /* fight tracker */
+  .ft-head{display:flex;flex-wrap:wrap;gap:var(--s2);margin-bottom:var(--s3);}
+  .ft-cols,.ft-row{display:grid;grid-template-columns:1.2fr 190px 110px 1fr 1.4fr 32px;gap:var(--s2);align-items:center;}
+  .ft-cols{padding:var(--s1) 0;border-bottom:1px solid var(--line-0);}
+  .ft-row{padding:var(--s2) 0;border-bottom:1px solid var(--line-0);}
+  .ft-row.down{opacity:.45;} .ft-row.down [data-ftf="name"]{text-decoration:line-through;}
+  .ft-hp{display:inline-flex;align-items:center;gap:6px;}
+  .ft-max{width:64px;min-height:32px;padding:var(--s1) var(--s2);}
+  .ft-group{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2) var(--s3);}
+  .ft-group .hint b{color:var(--text-1);font-style:normal;}
+  @media (max-width:640px){.ft-cols{display:none;} .ft-row{grid-template-columns:1fr 1fr;}}
+
   /* ── Village sheet: seasons + ledger ─────────────────────────────────── */
   .st-season{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s3) var(--s4);}
   .st-runner{border:1px solid var(--accent);background:var(--ink-1);padding:var(--s4) var(--s5);margin-top:var(--s3);display:flex;flex-direction:column;gap:var(--s3);}
@@ -479,7 +538,7 @@
     </div>
   </div>
   <div id="ui">
-    <div id="brand"><b>Stonetop</b><small>A hearth-fantasy campaign</small></div>
+    <div id="brand"><b>Stonetop</b><small>A hearth-fantasy campaign</small><small id="brand-gm" hidden>GM screen on</small></div>
     <div id="places"><button id="places-btn" aria-expanded="false" aria-controls="places-list"><svg class="ic"><use href="#i-list"/></svg> Places</button><div id="places-list" role="menu"></div></div>
     <div id="inst">Click a place &nbsp;·&nbsp; drag to pan &nbsp;·&nbsp; scroll or pinch to zoom</div>
     <div id="hl"></div>
@@ -496,6 +555,7 @@
             <button class="stab" data-tab="s-game">The Game</button>
             <button class="stab" data-tab="s-moves">Moves</button>
             <button class="stab" data-tab="s-combat">Combat</button>
+            <button class="stab gm-only" data-tab="s-fight">Fight <span class="gm-badge">GM</span></button>
           </div>
         </div>
         <div id="shrine-body" class="modal-body panes">
@@ -582,6 +642,7 @@
               </div>
             </div>
           </div>
+          <div class="spanel gm-only" id="s-fight"><div id="fight-body"></div></div>
           <div class="spanel" id="s-combat">
             <h2>Running Combat</h2>
             <span class="pageref">Book I · "Dangers" chapter · pp. 406–419</span>
@@ -709,6 +770,16 @@
         <button id="pack-close" class="modal-close" aria-label="Close">✕</button>
         <div id="pack-header" class="modal-head"><div id="pack-title" class="modal-title"><svg class="ic"><use href="#i-pack"/></svg>Pack &amp; Closet</div></div>
         <div id="pack-body" class="modal-body"></div>
+      </div>
+    </div>
+
+    <!-- ARCANA CHEST MODAL -->
+    <div id="arcana-modal" class="modal">
+      <div id="arcana-backdrop" class="modal-backdrop"></div>
+      <div id="arcana-box" class="modal-box">
+        <button id="arcana-close" class="modal-close" aria-label="Close">✕</button>
+        <div id="arcana-header" class="modal-head"><div id="arcana-title" class="modal-title"><svg class="ic"><use href="#i-key"/></svg>Arcana Chest</div><div class="modal-actions gm-only" id="arcana-actions"></div></div>
+        <div id="arcana-body" class="modal-body"></div>
       </div>
     </div>
 
@@ -892,12 +963,22 @@ window.addEventListener('keydown',function(e){
   setPlacing(!placing);
 });
 
+var GM_KEY='stonetop_gm';
+function isGM(){try{return localStorage.getItem(GM_KEY)==='1';}catch(_){return false;}}
+function setGM(on){try{if(on)localStorage.setItem(GM_KEY,'1');else localStorage.removeItem(GM_KEY);}catch(_){}applyGM();}
+function applyGM(){ // a per-device curtain: GM-only panels render only where this is on; the data still syncs everywhere
+  var on=isGM();document.body.classList.toggle('gm',on);
+  var b=document.getElementById('gm-toggle');if(b)b.innerHTML=ico(on?'unlock':'lock')+'<span><b>GM screen: '+(on?'on':'off')+'</b><small>'+(on?'this device shows GM-only panels':'tap to show GM-only panels on this device')+'</small></span>';
+  var br=document.getElementById('brand-gm');if(br)br.hidden=!on;
+}
 function buildPlaces(){
   var list=document.getElementById('places-list'),btn=document.getElementById('places-btn'),wrap=document.getElementById('places');if(!list||!btn)return;
-  list.innerHTML=Object.keys(BLDGS).map(function(k){var b=BLDGS[k];return '<button class="place" role="menuitem" data-k="'+k+'">'+ico(b.icon)+'<span><b>'+esc(b.title)+'</b><small>'+esc(b.sub)+'</small></span></button>';}).join('');
+  list.innerHTML=Object.keys(BLDGS).map(function(k){var b=BLDGS[k];return '<button class="place" role="menuitem" data-k="'+k+'">'+ico(b.icon)+'<span><b>'+esc(b.title)+'</b><small>'+esc(b.sub)+'</small></span></button>';}).join('')
+    +'<button class="place gm-toggle" id="gm-toggle" role="menuitem"></button>';
+  document.getElementById('gm-toggle').addEventListener('click',function(){setGM(!isGM());});applyGM();
   function setOpen(on){wrap.classList.toggle('open',on);btn.setAttribute('aria-expanded',on?'true':'false');}
   btn.addEventListener('click',function(e){e.stopPropagation();setOpen(!wrap.classList.contains('open'));});
-  list.querySelectorAll('.place').forEach(function(el){el.addEventListener('click',function(){setOpen(false);openPlace(el.dataset.k);});});
+  list.querySelectorAll('.place[data-k]').forEach(function(el){el.addEventListener('click',function(){setOpen(false);openPlace(el.dataset.k);});});
   document.addEventListener('pointerdown',function(e){if(wrap.classList.contains('open')&&!wrap.contains(e.target))setOpen(false);});
   window.addEventListener('keydown',function(e){if(e.key==='Escape')setOpen(false);});
 }
@@ -919,7 +1000,7 @@ function initMap(){
 //  MODALS
 // ============================================================
 var shrineModal=document.getElementById('shrine-modal');
-function openShrine(){shrineModal.classList.add('open');shrineModal.querySelectorAll('.stab').forEach(function(t,i){t.classList.toggle('active',i===0);});shrineModal.querySelectorAll('.spanel').forEach(function(p,i){p.classList.toggle('active',i===0);});}
+function openShrine(){shrineModal.classList.add('open');if(typeof renderFight==='function')renderFight();shrineModal.querySelectorAll('.stab').forEach(function(t,i){t.classList.toggle('active',i===0);});shrineModal.querySelectorAll('.spanel').forEach(function(p,i){p.classList.toggle('active',i===0);});}
 function closeShrine(){shrineModal.classList.remove('open');}
 document.getElementById('shrine-close').addEventListener('click',closeShrine);
 document.getElementById('shrine-backdrop').addEventListener('click',closeShrine);
@@ -965,6 +1046,9 @@ function applyRemote(remote){
     if(k==='steading'){mergeSteading(remote.steading);return;}         // village sheet (string-encoded, whole-doc LWW)
     if(k==='inventory'){mergeInventory(remote.inventory);return;}      // per-character packs (string-encoded per id, LWW)
     if(k==='routes'){mergeRoutes(remote.routes);return;}               // Watchtower route drawings (string-encoded, whole-doc LWW)
+    if(k==='threats'){mergeThreats(remote.threats);return;}            // GM threat tracker (string-encoded per id, LWW + tombstones)
+    if(k==='fight'){mergeFight(remote.fight);return;}                  // GM fight tracker (string-encoded, whole-doc LWW)
+    if(k==='arcana'){mergeArcana(remote.arcana);return;}               // arcana chest (string-encoded per id, LWW + tombstones)
     var r=remote[k]||{}, l=store[k];
     // per-building last-write-wins; Firebase drops empty arrays, so restore them
     if(!l||(r._t||0)>=(l._t||0)) store[k]=Object.assign({},r,{npcs:r.npcs||[],log:r.log||[],_t:r._t||0});
@@ -977,6 +1061,9 @@ function applyRemote(remote){
   if(typeof steadingSyncRefresh==='function')steadingSyncRefresh();
   if(typeof packSyncRefresh==='function')packSyncRefresh();
   if(typeof routesSyncRefresh==='function')routesSyncRefresh();
+  if(typeof threatsSyncRefresh==='function')threatsSyncRefresh();
+  if(typeof fightSyncRefresh==='function')fightSyncRefresh();
+  if(typeof arcanaSyncRefresh==='function')arcanaSyncRefresh();
   applyingRemote=false;
 }
 function initSync(){
@@ -1045,9 +1132,11 @@ function renderWatchtowerTabs(){
   return '<div class="stab-bar" id="wt-bar">'
     +'<button class="stab active" data-wtb="wt-leave">Leaving Stonetop</button>'
     +'<button class="stab" data-wtb="wt-chart">Chart Your Course</button>'
+    +'<button class="stab gm-only" data-wtb="wt-threats">Threats <span class="gm-badge">GM</span></button>'
     +'</div>'
     +'<div id="wt-leave" class="wt-panel active">'+wtLeaving()+'</div>'
-    +'<div id="wt-chart" class="wt-panel" style="display:none">'+wtChart()+'</div>';
+    +'<div id="wt-chart" class="wt-panel" style="display:none">'+wtChart()+'</div>'
+    +'<div id="wt-threats" class="wt-panel gm-only" style="display:none">'+renderThreats()+'</div>';
 }
 
 var wtTab='', mtTab='';
@@ -1125,6 +1214,61 @@ function wtLeaving(){
     +'<p>The return trip is usually glossed over unless something has changed — new dangers, an unusual route, or cargo that makes the journey harder. If you left in triumph, the GM will ask what the village looks like when you arrive. Who comes out to meet you? Who doesn\'t?</p>'
     +wtTables()
     +'</div>';
+}
+
+// ── Threat tracker (GM only; Book I pp.277–298) ──────────────────────────────
+var THREAT_TRACKERS=[['homefront','Homefront'],['nearby','Nearby'],['distant','Distant']];
+var thOpen=null;
+function threats(){if(!store.threats)store.threats={};return store.threats;}
+function getThreat(id){var e=threats()[id];if(!e||e.deleted)return null;try{return JSON.parse(e.data);}catch(_){return null;}}
+function allThreats(){var t=threats();return Object.keys(t).filter(function(id){return t[id]&&!t[id].deleted;}).map(getThreat).filter(Boolean);}
+function setThreat(o){threats()[o.id]={data:JSON.stringify(o),_t:Date.now(),deleted:false};persist();pushThreat(o.id);flashSaved();}
+function delThreat(id){var t=threats();if(t[id]){t[id]={data:t[id].data,_t:Date.now(),deleted:true};persist();pushThreat(id);}}
+function pushThreat(id){if(!syncRef||applyingRemote)return;var e=threats()[id];if(!e)return;syncRef.child('threats').child(id).update({data:e.data,_t:e._t,deleted:!!e.deleted}).catch(function(){setSyncState('error','offline · saved here');});}
+function mergeThreats(rc){rc=rc||{};var c=threats();Object.keys(rc).forEach(function(id){var r=rc[id]||{},l=c[id];if(!l||(r._t||0)>=(l._t||0))c[id]={data:r.data||'{}',_t:r._t||0,deleted:!!r.deleted};});}
+function threatsSyncRefresh(){if(!buildingModal.classList.contains('open')||curBldg!=='Mesh_Watchtower')return;var root=buildingPanel.querySelector('#wt-threats');if(!root)return;var ae=document.activeElement;if(ae&&root.contains(ae)&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName))return;root.innerHTML=renderThreats();bindThreats();}
+function threatType(key){return (window.THREAT_TYPES||[]).filter(function(x){return x.key===key;})[0];}
+function renderThreats(){
+  var list=allThreats(),h='';
+  h+='<div class="th-head"><div class="hint">Threats are ongoing problems that will cause trouble if left unchecked (pp.277–298). This tab shows only on devices with the GM screen on — the data still syncs to everyone, so mind who is looking.</div><button class="sm-btn-go" id="th-add">'+ico('plus')+' New threat</button></div>';
+  THREAT_TRACKERS.forEach(function(tr){var items=list.filter(function(t){return (t.tracker||'nearby')===tr[0]&&!t.resolved;});
+    h+='<div class="cc-sec">'+tr[1]+' <span class="pk-hn">'+items.length+'</span></div>'+(items.length?items.map(thCard).join(''):'<div class="empty" style="padding:var(--s1) 0 var(--s2)">Nothing on this tracker.</div>');});
+  var done=list.filter(function(t){return t.resolved;});if(done.length)h+='<div class="cc-sec">Resolved <span class="pk-hn">'+done.length+'</span></div>'+done.map(thCard).join('');
+  return h;
+}
+function thCard(t){
+  var open=t.id===thOpen,type=threatType(t.type),portents=t.portents||[],done=portents.filter(function(x){return x.done;}).length;
+  var h='<div class="th-card'+(open?' open':'')+(t.resolved?' resolved':'')+'"><div class="th-row" data-thopen="'+t.id+'"><span class="th-name">'+esc(t.name||'(unnamed threat)')+'</span><span class="th-type">'+esc(type?type.name:'')+'</span><span class="th-inst">'+esc(t.instinct||'')+'</span>'+(portents.length?'<span class="th-prog">'+done+' / '+portents.length+' portents</span>':'')+'</div>';
+  if(open){
+    h+='<div class="th-form">'
+      +'<div class="cc-row"><div class="cc-field"><label>Name</label><input class="cc-in" data-thf="name" value="'+esc(t.name||'')+'"></div>'
+      +'<div class="cc-field"><label>Type</label><select class="cc-sel" data-thf="type">'+(window.THREAT_TYPES||[]).map(function(x){return '<option value="'+x.key+'"'+(x.key===t.type?' selected':'')+'>'+esc(x.name)+'</option>';}).join('')+'</select></div>'
+      +'<div class="cc-field"><label>Tracker</label><select class="cc-sel" data-thf="tracker">'+THREAT_TRACKERS.map(function(x){return '<option value="'+x[0]+'"'+(x[0]===(t.tracker||'nearby')?' selected':'')+'>'+x[1]+'</option>';}).join('')+'</select></div></div>'
+      +(type?'<div class="hint" style="margin:0 0 var(--s2)">'+esc(type.gist)+'</div>':'')
+      +'<div class="cc-row"><div class="cc-field"><label>Instinct</label><input class="cc-in" data-thf="instinct" value="'+esc(t.instinct||'')+'" placeholder="to …"></div></div>'
+      +'<div class="cc-field"><label>Description — origin, who is involved, related threats</label><textarea class="cc-area" data-thf="desc">'+esc(t.desc||'')+'</textarea></div>'
+      +'<div class="cc-row" style="margin-top:var(--s3)"><div class="cc-field"><label>Impending doom</label><input class="cc-in" data-thf="doom" value="'+esc(t.doom||'')+'" placeholder="the irreversible bad end, if nothing stops it"></div></div>'
+      +'<div class="t-label" style="margin:var(--s3) 0 6px">Grim portents</div>'+portents.map(function(x,i){return '<div class="wt-item"><input type="checkbox" data-thp="'+i+'"'+(x.done?' checked':'')+'><input class="cc-in'+(x.done?' done':'')+'" data-thpt="'+i+'" value="'+esc(x.t||'')+'" placeholder="a concrete, observable step toward the doom"><button class="brm" data-thprm="'+i+'">✕</button></div>';}).join('')+'<button class="badd" id="th-add-portent">+ Add portent</button>'
+      +'<div class="cc-row" style="margin-top:var(--s3)"><div class="cc-field"><label>Stakes questions</label><textarea class="cc-area" data-thf="stakes" placeholder="Will …? Who …?">'+esc(t.stakes||'')+'</textarea></div><div class="cc-field"><label>Custom moves</label><textarea class="cc-area" data-thf="moves">'+esc(t.moves||'')+'</textarea></div></div>'
+      +(type?'<div class="th-moves"><div class="t-label" style="margin-bottom:4px">GM moves for '+esc(type.name.toLowerCase())+'s (p.'+type.page+')</div><div class="hint">'+esc(type.moves.join(' · '))+'</div></div>':'')
+      +'<div class="th-btns"><button class="cc-btn" data-thresolve="1">'+(t.resolved?'Reopen':'Mark resolved')+'</button><button class="cc-btn danger" data-thdel="1">Delete</button><button class="cc-btn" data-thclose="1">Close</button></div></div>';
+  }
+  return h+'</div>';
+}
+function bindThreats(){
+  var root=buildingPanel.querySelector('#wt-threats');if(!root)return;
+  function rerender(){root.innerHTML=renderThreats();bindThreats();}
+  var add=root.querySelector('#th-add');if(add)add.addEventListener('click',function(){var t={id:uid(),name:'',type:'villain',tracker:'nearby',instinct:'',desc:'',doom:'',portents:[],stakes:'',moves:'',resolved:false};setThreat(t);thOpen=t.id;rerender();var f=root.querySelector('[data-thf="name"]');if(f)f.focus();});
+  root.querySelectorAll('[data-thopen]').forEach(function(r){r.addEventListener('click',function(){var id=r.dataset.thopen;thOpen=thOpen===id?null:id;rerender();});});
+  var t=thOpen&&getThreat(thOpen);if(!t)return;t.portents=t.portents||[];
+  root.querySelectorAll('[data-thf]').forEach(function(el){var f=el.dataset.thf;el.addEventListener('input',function(){t[f]=el.value;});el.addEventListener('change',function(){t[f]=el.value;setThreat(t);if(f==='type'||f==='tracker')rerender();});});
+  root.querySelectorAll('[data-thp]').forEach(function(cb){cb.addEventListener('change',function(){t.portents[+cb.dataset.thp].done=cb.checked;setThreat(t);rerender();});});
+  root.querySelectorAll('[data-thpt]').forEach(function(inp){inp.addEventListener('input',function(){t.portents[+inp.dataset.thpt].t=inp.value;});inp.addEventListener('change',function(){setThreat(t);});});
+  root.querySelectorAll('[data-thprm]').forEach(function(b){b.addEventListener('click',function(){t.portents.splice(+b.dataset.thprm,1);setThreat(t);rerender();});});
+  var ap=root.querySelector('#th-add-portent');if(ap)ap.addEventListener('click',function(){t.portents.push({t:'',done:false});setThreat(t);rerender();var f=root.querySelectorAll('[data-thpt]');if(f.length)f[f.length-1].focus();});
+  root.querySelectorAll('[data-thresolve]').forEach(function(b){b.addEventListener('click',function(){t.resolved=!t.resolved;setThreat(t);rerender();});});
+  root.querySelectorAll('[data-thdel]').forEach(function(b){b.addEventListener('click',function(){if(!confirm('Delete the threat "'+(t.name||'unnamed')+'"?'))return;delThreat(t.id);thOpen=null;rerender();});});
+  root.querySelectorAll('[data-thclose]').forEach(function(b){b.addEventListener('click',function(){thOpen=null;rerender();});});
 }
 
 // ── Chart a Course plan + supply calculator (Book I pp.302–304) ─────────────
@@ -1312,7 +1456,7 @@ function renderBuilding(){
   document.getElementById('building-actions').innerHTML='<span id="bedit-saved">Saved ✓</span>'
     +(k==='Mesh_Longhouse'?'<button id="b-open-graph" class="sm-btn-go">'+ico('web')+' Relationship Map</button>':'')
     +(k==='Mesh_Barrow'?'<button id="b-open-steading" class="sm-btn-go">'+ico('village')+' Village Sheet</button>':'')
-    +(k==='Mesh_Market'?'<button id="b-open-pack" class="sm-btn-go">'+ico('pack')+' Pack &amp; Closet</button>':'')
+    +(k==='Mesh_Market'?'<button id="b-open-pack" class="sm-btn-go">'+ico('pack')+' Pack &amp; Closet</button><button id="b-open-arcana" class="cc-btn">'+ico('key')+' Arcana chest</button>':'')
     +'<button id="bedit-toggle" class="'+(editMode?'on':'')+'">'+(editMode?ico('check')+' Done':ico('pen')+' Edit')+'</button>';
   var html='';
 
@@ -1337,7 +1481,7 @@ function renderBuilding(){
     html+=renderWatchtowerTabs();
     buildingPanel.innerHTML=html;
     bindBuilding();
-    bindWatchtowerTabs();bindTables();bindPlan();
+    bindWatchtowerTabs();bindTables();bindPlan();bindThreats();
     return;
   }
 
@@ -1367,6 +1511,7 @@ function bindBuilding(){
   var bg=document.getElementById('b-open-graph'); if(bg)bg.addEventListener('click',openGraph);
   var bs=document.getElementById('b-open-steading'); if(bs)bs.addEventListener('click',openSteading);
   var bp=document.getElementById('b-open-pack'); if(bp)bp.addEventListener('click',openPack);
+  var ba=document.getElementById('b-open-arcana'); if(ba)ba.addEventListener('click',openArcana);
   if(!editMode) return;
   var c=editable(k);
   // People: live field edits (no re-render, keeps focus)
@@ -2303,6 +2448,38 @@ function buildRuleUI(){
 var rlSearch=document.getElementById('rl-search'); if(rlSearch)rlSearch.addEventListener('input',renderRules);
 buildRuleUI();
 
+// ── Fight tracker (GM only; Book I pp.406–420) ───────────────────────────────
+var FT=null;
+function ftLoad(){var x=store.fight;if(x&&x.data){try{var o=JSON.parse(x.data);o.foes=o.foes||[];return o;}catch(_){}}return {foes:[],notes:'',them:6,us:4};}
+function ftSave(){store.fight={data:JSON.stringify(FT),_t:Date.now()};persist();pushFight();flashSaved();}
+function pushFight(){if(!syncRef||applyingRemote||!store.fight)return;syncRef.child('fight').set({data:store.fight.data,_t:store.fight._t}).catch(function(){setSyncState('error','offline · saved here');});}
+function mergeFight(r){r=r||{};var l=store.fight;if(!l||(r._t||0)>=(l._t||0))store.fight={data:r.data||'',_t:r._t||0};}
+function fightSyncRefresh(){if(!shrineModal.classList.contains('open'))return;var b=document.getElementById('fight-body');if(!b)return;var ae=document.activeElement;if(ae&&b.contains(ae)&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName))return;FT=ftLoad();renderFight();}
+function renderFight(){
+  FT=ftLoad();var b=document.getElementById('fight-body');if(!b)return;var h='';
+  h+='<h2>Fight tracker <span class="gm-badge">GM only</span></h2><span class="pageref">Book I pp.406–420 · no initiative — the fiction decides who acts</span>';
+  h+='<div class="hint" style="margin-bottom:var(--s3)">Several attackers on one foe: roll the best damage die and add +1 per extra attacker (p.414). A group that outnumbers its target gets +1 damage and +1 armor per multiple past 1:1 (p.416). "n piercing" ignores n armor; "ignores armor" treats it as 0 (p.239). At 0 HP a foe is out of the fight; a group at 0 HP is routed.</div>';
+  h+='<div class="ft-head"><button class="sm-btn-go" id="ft-add">'+ico('plus')+' Add foe</button><button class="cc-btn danger" id="ft-clear">Clear the fight</button></div>';
+  h+=FT.foes.length?'<div class="ft-cols t-label"><span>Foe</span><span>HP</span><span>Armor</span><span>Damage</span><span>Tags &amp; notes</span><span></span></div>'+FT.foes.map(function(f,i){
+    return '<div class="ft-row'+(f.hp<=0?' down':'')+'"><input class="cc-in" data-ftf="name" data-i="'+i+'" value="'+esc(f.name||'')+'" placeholder="crinwin"><span class="ft-hp"><span class="cc-step"><button data-fthp="-1" data-i="'+i+'">−</button><span class="cc-stepv" style="font-size:15px">'+f.hp+'</span><button data-fthp="1" data-i="'+i+'">+</button></span><span class="hint">/</span><input class="cc-in ft-max" type="number" data-ftf="maxHp" data-i="'+i+'" value="'+f.maxHp+'" title="max HP"></span><span class="cc-step"><button data-ftar="-1" data-i="'+i+'">−</button><span class="cc-stepv" style="font-size:15px">'+f.armor+'</span><button data-ftar="1" data-i="'+i+'">+</button></span><input class="cc-in" data-ftf="dmg" data-i="'+i+'" value="'+esc(f.dmg||'')+'" placeholder="d6 (hand)"><input class="cc-in" data-ftf="tags" data-i="'+i+'" value="'+esc(f.tags||'')+'" placeholder="horde, small, 1 piercing…"><button class="brm" data-ftrm="'+i+'">✕</button></div>';}).join('')
+    :'<div class="empty">No foes on the field. Add them when a fight starts; at 0 HP they drop out.</div>';
+  var them=FT.them||6,us=FT.us||4,bonus=Math.max(0,Math.floor(them/Math.max(1,us))-1);
+  h+='<div class="cc-sec">Group maths</div><div class="ft-group"><span class="t-label">Their number</span><input class="cc-in ft-max" type="number" id="ft-them" value="'+them+'"><span class="t-label">ours</span><input class="cc-in ft-max" type="number" id="ft-us" value="'+us+'"><span class="hint">'+(bonus?them+' against '+us+' is '+Math.floor(them/Math.max(1,us))+':1 — the group gets <b>+'+bonus+' damage and +'+bonus+' armor</b> while the ratio holds; recount as they fall.':'No outnumbering bonus at '+them+' against '+us+'.')+'</span></div>';
+  h+='<div class="cc-sec">Notes</div><textarea class="cc-area" id="ft-notes" placeholder="who is engaged with whom, what the foes want, the terrain…">'+esc(FT.notes||'')+'</textarea>';
+  b.innerHTML=h;bindFight();
+}
+function bindFight(){
+  var b=document.getElementById('fight-body');if(!b)return;
+  var add=document.getElementById('ft-add');if(add)add.addEventListener('click',function(){FT.foes.push({id:uid(),name:'',hp:6,maxHp:6,armor:0,dmg:'d6',tags:''});ftSave();renderFight();var f=b.querySelectorAll('[data-ftf="name"]');if(f.length)f[f.length-1].focus();});
+  document.getElementById('ft-clear').addEventListener('click',function(){if(!FT.foes.length||confirm('Clear every foe from the fight?')){FT.foes=[];ftSave();renderFight();}});
+  b.querySelectorAll('[data-ftf]').forEach(function(el){el.addEventListener('input',function(){var f=FT.foes[+el.dataset.i];if(!f)return;var k=el.dataset.ftf;f[k]=el.type==='number'?(parseInt(el.value,10)||0):el.value;});el.addEventListener('change',function(){ftSave();if(el.dataset.ftf==='maxHp')renderFight();});});
+  b.querySelectorAll('[data-fthp]').forEach(function(x){x.addEventListener('click',function(){var f=FT.foes[+x.dataset.i];f.hp=Math.max(0,f.hp+(+x.dataset.fthp));ftSave();renderFight();});});
+  b.querySelectorAll('[data-ftar]').forEach(function(x){x.addEventListener('click',function(){var f=FT.foes[+x.dataset.i];f.armor=Math.max(0,f.armor+(+x.dataset.ftar));ftSave();renderFight();});});
+  b.querySelectorAll('[data-ftrm]').forEach(function(x){x.addEventListener('click',function(){FT.foes.splice(+x.dataset.i,1);ftSave();renderFight();});});
+  ['ft-them','ft-us'].forEach(function(id){var el=document.getElementById(id);el.addEventListener('change',function(){FT[id==='ft-them'?'them':'us']=parseInt(el.value,10)||0;ftSave();renderFight();});});
+  var n=document.getElementById('ft-notes');n.addEventListener('input',function(){FT.notes=n.value;});n.addEventListener('change',ftSave);
+}
+
 // Dice roller
 var sd6=function(){return Math.floor(Math.random()*6)+1;};
 var fateBtn=document.getElementById('s-fate-btn');if(fateBtn)fateBtn.addEventListener('click',function(){
@@ -2546,6 +2723,89 @@ function bindPack(){
   if(spSel)spSel.addEventListener('change',function(){var it=pkItem(spSel.value);if(!it)return;
     var cp={id:'k'+uid(),name:it.name,tags:it.tags||'',load:it.load,value:it.value||0};if(it.pips)cp.pips={kind:it.pips.kind,max:it.pips.max};if(it.ammo)cp.ammo=it.ammo.slice();
     PK.closet.push(cp);saveInv();renderPack();});
+}
+
+// ============================================================
+//  ARCANA CHEST — the party's arcana and treasures (Book II App. C & D; Book I pp.438–447)
+//  Each item is a card: the FRONT (what was found, its tags, and what it takes to learn it)
+//  is visible to everyone; the BACK (true name, moves, resource, consequences) is a GM
+//  secret until the GM presses Reveal. Stored per id in store.arcana (LWW + tombstones).
+// ============================================================
+var arcanaModal=document.getElementById('arcana-modal'),arOpen=false;
+function arcanaItems(){if(!store.arcana)store.arcana={};return store.arcana;}
+function getArc(id){var e=arcanaItems()[id];if(!e||e.deleted)return null;try{return JSON.parse(e.data);}catch(_){return null;}}
+function allArc(){var c=arcanaItems();return Object.keys(c).filter(function(id){return c[id]&&!c[id].deleted;}).map(getArc).filter(Boolean).sort(function(a,b){return (a.added||0)-(b.added||0);});}
+function setArc(o){arcanaItems()[o.id]={data:JSON.stringify(o),_t:Date.now(),deleted:false};persist();pushArc(o.id);flashSaved();}
+function delArc(id){var c=arcanaItems();if(c[id]){c[id]={data:c[id].data,_t:Date.now(),deleted:true};persist();pushArc(id);}}
+function pushArc(id){if(!syncRef||applyingRemote)return;var e=arcanaItems()[id];if(!e)return;syncRef.child('arcana').child(id).update({data:e.data,_t:e._t,deleted:!!e.deleted}).catch(function(){setSyncState('error','offline · saved here');});}
+function mergeArcana(rc){rc=rc||{};var c=arcanaItems();Object.keys(rc).forEach(function(id){var r=rc[id]||{},l=c[id];if(!l||(r._t||0)>=(l._t||0))c[id]={data:r.data||'{}',_t:r._t||0,deleted:!!r.deleted};});}
+function arcanaSyncRefresh(){if(!arOpen)return;var b=document.getElementById('arcana-body'),ae=document.activeElement;if(b&&ae&&b.contains(ae)&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName))return;renderArcana();}
+function arcanaEntry(it){ // the card text: from the book by ref, or the item's own custom text
+  var A=window.ARCANA||{minor:[],major:[]};
+  if(it.ref){var m=/^(minor|major)-(\d+)$/.exec(it.ref);if(m){var e=(A[m[1]]||[]).filter(function(x){return x.n===+m[2];})[0];if(e)return e;}}
+  var c=it.custom||{front:{},back:{}};
+  return {front:{name:c.front.name||it.name||'(unnamed)',tags:c.front.tags||[],text:c.front.text||'',requirements:c.front.requirements||[],innate:c.front.innate||'',trackMax:c.front.trackMax||0,trackRule:c.front.trackRule||''},back:{name:c.back.name||'',moves:[],consequences:c.back.consequences||[],consequenceRule:'',notes:c.back.text||'',resource:c.back.resource||null,follower:''}};
+}
+function openArcana(){arcanaModal.classList.add('open');arOpen=true;renderArcana();}
+function closeArcana(){arOpen=false;arcanaModal.classList.remove('open');}
+document.getElementById('arcana-close').addEventListener('click',closeArcana);
+document.getElementById('arcana-backdrop').addEventListener('click',closeArcana);
+function arPips(attr,id,max,count,cls){var h='<span class="pk-pips '+(cls||'')+'">';for(var i=0;i<max;i++)h+='<button class="pk-pip'+(i<count?' used':'')+'" data-'+attr+'="'+id+'" data-i="'+i+'" title="'+(i<count?'unmark':'mark')+'"></button>';return h+'</span>';}
+function arMoveHtml(m){var r=m.results||{};return '<div class="ar-move"><b>'+esc(m.name||'')+'</b>'+(m.requires?' <span class="hint">(requires '+esc(m.requires)+')</span>':'')+(m.trigger?'<div class="rl-trig"><b>When you</b> '+esc(m.trigger.replace(/^When you\s*/i,''))+(m.roll?' <em>(roll '+esc(m.roll)+')</em>':'')+'</div>':'')+((r.strong||r.weak||r.miss)?'<div class="rl-res">'+(r.strong?'<span><b>10+</b>'+esc(r.strong)+'</span>':'')+(r.weak?'<span><b>7–9</b>'+esc(r.weak)+'</span>':'')+(r.miss?'<span><b>6−</b>'+esc(r.miss)+'</span>':'')+'</div>':'')+(m.text?'<div class="rl-text">'+esc(m.text)+'</div>':'')+'</div>';}
+function renderArcana(){
+  var body=document.getElementById('arcana-body'),acts=document.getElementById('arcana-actions'),gm=isGM(),items=allArc(),A=window.ARCANA||{minor:[],major:[]},cs=allChars();
+  var opts='<option value="">+ From the book…</option><optgroup label="Minor arcana">'+(A.minor||[]).map(function(e){return '<option value="minor-'+e.n+'">'+e.n+' · '+esc(e.front.name)+' — '+esc(e.back.name)+'</option>';}).join('')+'</optgroup><optgroup label="Major arcana">'+(A.major||[]).map(function(e){return '<option value="major-'+e.n+'">'+e.n+' · '+esc(e.front.name)+'</option>';}).join('')+'</optgroup>';
+  acts.innerHTML='<select class="cc-sel" id="ar-add-book" title="Only the GM sees this list">'+opts+'</select><button class="cc-btn" id="ar-add-custom">'+ico('plus')+' Custom</button>';
+  var h='';
+  if(!items.length)h+='<div class="empty">The chest is empty. '+(gm?'Add an arcanum from the book or a custom treasure with the buttons above.':'When the party finds an arcanum, the GM will put it here. Its front — what it is and what it takes to learn it — is yours to read; its secrets appear once you unlock them.')+'</div>';
+  items.forEach(function(it){
+    var e=arcanaEntry(it),f=e.front,b=e.back,isMajor=it.kind==='major',rev=!!it.revealed,reqs=f.requirements||[],reqDone=it.reqs||[],allReq=reqs.length&&reqs.every(function(_,i){return reqDone[i];});
+    var holderOpts='<option value="">the party</option>'+cs.map(function(c){return '<option value="'+c.id+'"'+(it.holder===c.id?' selected':'')+'>'+esc(c.name||'Unnamed')+'</option>';}).join('')+'<option value="_else"'+(it.holder==='_else'?' selected':'')+'>elsewhere / stored</option>';
+    h+='<div class="ar-card'+(rev?' revealed':'')+'" data-ar="'+it.id+'">'
+      +'<div class="ar-top"><span class="ar-kind">'+(isMajor?'Major arcanum':'Minor arcanum')+(it.ref?' · '+esc(it.ref.replace('-',' #')):' · custom')+'</span>'
+      +'<span class="ar-name">'+esc(rev&&b.name?b.name:f.name)+'</span>'+(rev&&b.name?'<span class="ar-found">found as: '+esc(f.name)+'</span>':'')
+      +'<span class="ar-spacer"></span><label class="t-label">Held by</label><select class="cc-sel ar-holder" data-arholder="'+it.id+'">'+holderOpts+'</select>'
+      +(gm?'<button class="cc-btn" data-arreveal="'+it.id+'">'+(rev?ico('lock')+' Hide secrets':ico('unlock')+' Reveal')+'</button><button class="brm" data-ardel="'+it.id+'" title="remove from the chest">✕</button>':'')+'</div>';
+    // front
+    if(it.custom&&gm){h+='<div class="ar-edit"><div class="t-label">Front (everyone sees this)</div><input class="cc-in" data-arc="front.name" data-id="'+it.id+'" value="'+esc(f.name)+'" placeholder="what it looks like when found"><textarea class="cc-area" data-arc="front.text" data-id="'+it.id+'" placeholder="description, tags">'+esc(f.text)+'</textarea><textarea class="cc-area" data-arc="front.requirements" data-id="'+it.id+'" placeholder="one unlock requirement per line">'+esc(reqs.join('\n'))+'</textarea></div>';}
+    else if(f.text||f.tags.length)h+='<div class="ar-front">'+esc(f.text)+(f.tags.length?'<div class="ar-tags">'+esc(f.tags.join(', '))+'</div>':'')+'</div>';
+    if(isMajor){h+=(f.innate?'<div class="ar-innate"><b>Innate:</b> '+esc(f.innate)+'</div>':'');
+      if(f.trackMax)h+='<div class="ar-track"><span class="t-label">Track</span>'+arPips('artrack',it.id,f.trackMax,(it.track||[]).filter(Boolean).length)+(f.trackRule?'<span class="hint">'+esc(f.trackRule)+'</span>':'')+'</div>';}
+    if(reqs.length){h+='<div class="t-label" style="margin:var(--s3) 0 4px">To learn its secrets</div>'+reqs.map(function(r,i){return '<label class="cc-check"><input type="checkbox" data-arreq="'+it.id+'" data-i="'+i+'"'+(reqDone[i]?' checked':'')+'><span class="cc-check-name'+(reqDone[i]?' done':'')+'">'+esc(r)+'</span></label>';}).join('')
+      +(allReq&&!rev?'<div class="hint" style="margin-top:4px">Every requirement is met — ask the GM to reveal it.</div>':'');}
+    // back
+    if(rev||gm){
+      var res=b.resource,cnt=it.counter||0;
+      h+='<div class="ar-back'+(rev?'':' secret')+'"><div class="ar-back-h">'+(rev?'<span class="t-label">Its secrets</span>':'<span class="gm-badge">GM only — not yet revealed</span>')+(b.name?'<span class="ar-truename">'+esc(b.name)+'</span>':'')+'</div>';
+      if(it.custom&&gm)h+='<div class="ar-edit"><input class="cc-in" data-arc="back.name" data-id="'+it.id+'" value="'+esc(b.name)+'" placeholder="true name"><textarea class="cc-area" data-arc="back.text" data-id="'+it.id+'" placeholder="rules, moves, costs">'+esc(b.notes)+'</textarea></div>';
+      if(res&&res.max)h+='<div class="ar-track"><span class="t-label">'+esc(res.name||'Charges')+'</span>'+arPips('arcount',it.id,res.max,cnt)+(res.rule?'<span class="hint">'+esc(res.rule)+'</span>':'')+'</div>';
+      else if(res&&res.name)h+='<div class="hint"><b>'+esc(res.name)+':</b> '+esc(res.rule||'')+'</div>';
+      h+=(b.moves||[]).map(arMoveHtml).join('');
+      if(b.follower)h+='<div class="rl-text"><b>Follower:</b> '+esc(b.follower)+'</div>';
+      if((b.consequences||[]).length){var marks=it.marks||[];h+='<div class="t-label" style="margin:var(--s3) 0 4px">Consequences'+(b.consequenceRule?' <span class="hint">'+esc(b.consequenceRule)+'</span>':'')+'</div>'+b.consequences.map(function(c,i){return '<label class="cc-check"><input type="checkbox" data-armark="'+it.id+'" data-i="'+i+'"'+(marks[i]?' checked':'')+'><span class="cc-check-name'+(marks[i]?' done':'')+'">'+esc(c)+'</span></label>';}).join('');}
+      if(!(it.custom&&gm)&&b.notes)h+='<div class="rl-text" style="margin-top:var(--s2)">'+esc(b.notes)+'</div>';
+      h+='</div>';
+    }else h+='<div class="ar-locked">'+ico('lock')+' Its secrets are not yet known.</div>';
+    h+='<textarea class="cc-area ar-notes" data-arnotes="'+it.id+'" placeholder="table notes: where it was found, who has studied it, what it has done…">'+esc(it.notes||'')+'</textarea></div>';
+  });
+  body.innerHTML=h;bindArcana();
+}
+function bindArcana(){
+  var body=document.getElementById('arcana-body');
+  var sel=document.getElementById('ar-add-book');if(sel)sel.addEventListener('change',function(){var v=sel.value;if(!v)return;var kind=v.split('-')[0];setArc({id:uid(),ref:v,kind:kind,holder:'',revealed:false,counter:0,track:[],marks:[],reqs:[],notes:'',added:Date.now()});renderArcana();});
+  var cu=document.getElementById('ar-add-custom');if(cu)cu.addEventListener('click',function(){var n=prompt('What did they find? (the name players see)');if(!n||!n.trim())return;var maj=confirm('Is it a major arcanum (with a progress track)? OK = major, Cancel = minor.');setArc({id:uid(),ref:'',kind:maj?'major':'minor',custom:{front:{name:n.trim(),text:'',requirements:[]},back:{name:'',text:''}},holder:'',revealed:false,counter:0,track:[],marks:[],reqs:[],notes:'',added:Date.now()});renderArcana();});
+  function upd(id,fn){var it=getArc(id);if(!it)return;fn(it);setArc(it);}
+  body.querySelectorAll('[data-arholder]').forEach(function(s){s.addEventListener('change',function(){upd(s.dataset.arholder,function(it){it.holder=s.value;});});});
+  body.querySelectorAll('[data-arreveal]').forEach(function(b){b.addEventListener('click',function(){upd(b.dataset.arreveal,function(it){it.revealed=!it.revealed;});renderArcana();});});
+  body.querySelectorAll('[data-ardel]').forEach(function(b){b.addEventListener('click',function(){var it=getArc(b.dataset.ardel);if(!it)return;if(!confirm('Remove "'+arcanaEntry(it).front.name+'" from the chest?'))return;delArc(it.id);renderArcana();});});
+  body.querySelectorAll('[data-arreq]').forEach(function(cb){cb.addEventListener('change',function(){upd(cb.dataset.arreq,function(it){it.reqs=it.reqs||[];it.reqs[+cb.dataset.i]=cb.checked;});renderArcana();});});
+  body.querySelectorAll('[data-armark]').forEach(function(cb){cb.addEventListener('change',function(){upd(cb.dataset.armark,function(it){it.marks=it.marks||[];it.marks[+cb.dataset.i]=cb.checked;});renderArcana();});});
+  body.querySelectorAll('[data-artrack]').forEach(function(b){b.addEventListener('click',function(){upd(b.dataset.artrack,function(it){var i=+b.dataset.i,n=(it.track||[]).filter(Boolean).length,k=n===i+1?i:i+1;it.track=[];for(var j=0;j<k;j++)it.track.push(true);});renderArcana();});});
+  body.querySelectorAll('[data-arcount]').forEach(function(b){b.addEventListener('click',function(){upd(b.dataset.arcount,function(it){var i=+b.dataset.i;it.counter=(it.counter===i+1)?i:i+1;});renderArcana();});});
+  body.querySelectorAll('[data-arnotes]').forEach(function(t){var it=getArc(t.dataset.arnotes);if(!it)return;t.addEventListener('input',function(){it.notes=t.value;});t.addEventListener('change',function(){setArc(it);});});
+  body.querySelectorAll('[data-arc]').forEach(function(el){var it=getArc(el.dataset.id);if(!it)return;var path=el.dataset.arc.split('.');
+    el.addEventListener('input',function(){it.custom=it.custom||{front:{},back:{}};var v=el.value;if(path[1]==='requirements')v=v.split('\n').map(function(x){return x.trim();}).filter(Boolean);it.custom[path[0]][path[1]]=v;});
+    el.addEventListener('change',function(){setArc(it);});});
 }
 
 // ============================================================
