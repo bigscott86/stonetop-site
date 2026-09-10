@@ -253,14 +253,19 @@ on hover, parchment chips for the Places button, hint strip and sync pill, a **v
 ## Weather & night (built 2026-09-10)
 The steading doc also carries `weather` (`clear|overcast|rain|storm|snow|fog`) and `night`
 (bool). `applySeason()` sets `weather-<x>` / `night` classes on `<body>`, writes them into the
-cartouche, and updates the map's **Sky** button (`#sky`, next to Places), whose menu changes
-season / weather / day-night from the map via `stPatch(fn)` (edits the Village Sheet doc whether
-or not the sheet is open, saving through `saveSteading`). The Village Sheet's Season section has
-the same controls. The effects are the `#weather` overlay (fixed to the viewport, above the map,
-`pointer-events:none`): a multiply tint per weather, two rain stripe layers (faster in a storm,
-plus a lightning `.wx-flash`), two snow dot layers, a drifting blurred fog layer (plus reduced
-contrast), and a dark-blue multiply `.wx-night` with reduced brightness. Animations are pure
-CSS and stop under `prefers-reduced-motion`.
+cartouche, and updates the map's **Sky** button (`#sky`, next to Places, **`gm-only`**), whose
+menu changes season / weather / day-night from the map via `stPatch(fn)` (edits the Village
+Sheet doc whether or not the sheet is open, saving through `saveSteading`). The Village Sheet's
+Season section has the same weather/day-night row, also `gm-only`; the season controls there
+stay visible to everyone. The effects show on every device: the `#weather` overlay sits
+**inside `#map-inner`** (under `#pins`, `pointer-events:none`), so it pans and zooms with the
+parchment and its sizes are map-image pixels: a multiply tint per weather, two rain stripe
+layers (faster in a storm, plus a lightning `.wx-flash`), two snow dot layers, a drifting
+blurred fog layer (plus reduced contrast), and a dark-blue multiply `.wx-night` with reduced
+brightness. Rain and snow scroll by `transform` over layers extended beyond the top/side (an
+exact number of tiles per loop), so the large layers are painted once and only composited per
+frame. Every layer's opacity is set by a class-only rule — an id selector there once pinned
+them all at 0. Animations are pure CSS and stop under `prefers-reduced-motion`.
 
 ## Map atmosphere (built 2026-09-10)
 - **Season tint:** `applySeason()` reads the Village Sheet's `season`/`year`, puts
