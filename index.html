@@ -2993,7 +2993,7 @@ function renderPack(){
     +'<div class="pk-tabs"><button class="pk-tab '+(pkTab==='pack'?'on':'')+'" data-tab="pack">'+ico('pack')+' Pack</button><button class="pk-tab '+(pkTab==='closet'?'on':'')+'" data-tab="closet">'+ico('wardrobe')+' Closet</button></div>'
     +'<button class="pk-btn" id="pk-pinbtn">'+(PK.pin?ico('lock')+' Change PIN':ico('unlock')+' Set PIN')+'</button><button class="pk-btn" id="pk-logout">Log out</button></div>';
   h+=(pkTab==='pack')?renderPackTab(p,pro,uses,tot,band,small,smallMax):renderClosetTab();
-  body.innerHTML=h;bindPack();
+  body.innerHTML=h;bindPack();if(pkTab==='closet')bindArcanaCards(body,renderPack);
 }
 function pkRow(it,on,extra){
   return '<div class="pk-row '+(on?'on':'')+'"><button class="pk-mark" data-mark="'+esc(it.id)+'" title="'+(on?'unmark':'mark as carried')+'">'+pkMark(on,it.load)+'</button>'
@@ -3064,6 +3064,9 @@ function renderClosetTab(){
     +'</select><div class="pk-note">Special items must be acquired by Trade &amp; Barter (p.83): roll +Prosperity minus the item\'s Value; on a 7+ you trade something of appropriate Value.</div></div>';
   var other=PK.closet.filter(function(x){return x.load==='other';});
   if(other.length)h+='<div class="pk-h">Other things <span class="pk-hn">animals, kits, stashed items — not carried</span></div>'+other.map(function(it){return '<div class="pk-row"><span class="pk-mark">∙</span><span class="pk-name">'+esc(it.name)+'</span>'+(it.tags?'<span class="pk-tags">('+esc(it.tags)+')</span>':'')+'</div>';}).join('');
+  var held=allArc().filter(function(it){return it.holder===PK.charId;});
+  h+='<div class="pk-h">Arcana <span class="pk-hn">held by you — only you and the GM see them here</span></div>';
+  h+=held.length?held.map(function(it){return arCard(it,isGM(),allChars());}).join(''):'<div class="pk-note">None. When the GM hands you an arcanum, its card appears here with its requirements, track and consequences. The party\'s shared arcana stay in the chest at the Stables.</div>';
   return h;
 }
 function bindPack(){
@@ -3149,16 +3152,10 @@ document.getElementById('arcana-close').addEventListener('click',closeArcana);
 document.getElementById('arcana-backdrop').addEventListener('click',closeArcana);
 function arPips(attr,id,max,count,cls){var h='<span class="pk-pips '+(cls||'')+'">';for(var i=0;i<max;i++)h+='<button class="pk-pip'+(i<count?' used':'')+'" data-'+attr+'="'+id+'" data-i="'+i+'" title="'+(i<count?'unmark':'mark')+'"></button>';return h+'</span>';}
 function arMoveHtml(m){var r=m.results||{};return '<div class="ar-move"><b>'+esc(m.name||'')+'</b>'+(m.requires?' <span class="hint">(requires '+esc(m.requires)+')</span>':'')+(m.trigger?'<div class="rl-trig"><b>When you</b> '+esc(m.trigger.replace(/^When you\s*/i,''))+(m.roll?' <em>(roll '+esc(m.roll)+')</em>':'')+'</div>':'')+((r.strong||r.weak||r.miss)?'<div class="rl-res">'+(r.strong?'<span><b>10+</b>'+esc(r.strong)+'</span>':'')+(r.weak?'<span><b>7–9</b>'+esc(r.weak)+'</span>':'')+(r.miss?'<span><b>6−</b>'+esc(r.miss)+'</span>':'')+'</div>':'')+(m.text?'<div class="rl-text">'+esc(m.text)+'</div>':'')+'</div>';}
-function renderArcana(){
-  var body=document.getElementById('arcana-body'),acts=document.getElementById('arcana-actions'),gm=isGM(),items=allArc(),A=window.ARCANA||{minor:[],major:[]},cs=allChars();
-  var opts='<option value="">+ From the book…</option><optgroup label="Minor arcana">'+(A.minor||[]).map(function(e){return '<option value="minor-'+e.n+'">'+e.n+' · '+esc(e.front.name)+' — '+esc(e.back.name)+'</option>';}).join('')+'</optgroup><optgroup label="Major arcana">'+(A.major||[]).map(function(e){return '<option value="major-'+e.n+'">'+e.n+' · '+esc(e.front.name)+'</option>';}).join('')+'</optgroup>';
-  acts.innerHTML='<select class="cc-sel" id="ar-add-book" title="Only the GM sees this list">'+opts+'</select><button class="cc-btn" id="ar-add-custom">'+ico('plus')+' Custom</button>';
-  var h='';
-  if(!items.length)h+='<div class="empty">The chest is empty. '+(gm?'Add an arcanum from the book or a custom treasure with the buttons above.':'When the party finds an arcanum, the GM will put it here. Its front — what it is and what it takes to learn it — is yours to read; its secrets appear once you unlock them.')+'</div>';
-  items.forEach(function(it){
+function arCard(it,gm,cs){ // one arcanum's card: used by the chest and by the holder's closet
     var e=arcanaEntry(it),f=e.front,b=e.back,isMajor=it.kind==='major',rev=!!it.revealed,reqs=f.requirements||[],reqDone=it.reqs||[],allReq=reqs.length&&reqs.every(function(_,i){return reqDone[i];});
     var holderOpts='<option value="">the party</option>'+cs.map(function(c){return '<option value="'+c.id+'"'+(it.holder===c.id?' selected':'')+'>'+esc(c.name||'Unnamed')+'</option>';}).join('')+'<option value="_else"'+(it.holder==='_else'?' selected':'')+'>elsewhere / stored</option>';
-    h+='<div class="ar-card'+(rev?' revealed':'')+'" data-ar="'+it.id+'">'
+    var h='<div class="ar-card'+(rev?' revealed':'')+'" data-ar="'+it.id+'">'
       +'<div class="ar-top"><span class="ar-kind">'+(isMajor?'Major arcanum':'Minor arcanum')+(it.ref?' · '+esc(it.ref.replace('-',' #')):' · custom')+'</span>'
       +'<span class="ar-name">'+esc(rev&&b.name?b.name:f.name)+'</span>'+(rev&&b.name?'<span class="ar-found">found as: '+esc(f.name)+'</span>':'')
       +'<span class="ar-spacer"></span><label class="t-label">Held by</label><select class="cc-sel ar-holder" data-arholder="'+it.id+'">'+holderOpts+'</select>'
@@ -3184,21 +3181,36 @@ function renderArcana(){
       h+='</div>';
     }else h+='<div class="ar-locked">'+ico('lock')+' Its secrets are not yet known.</div>';
     h+='<textarea class="cc-area ar-notes" data-arnotes="'+it.id+'" placeholder="table notes: where it was found, who has studied it, what it has done…">'+esc(it.notes||'')+'</textarea></div>';
-  });
+  return h;
+}
+function renderArcana(){
+  var body=document.getElementById('arcana-body'),acts=document.getElementById('arcana-actions'),gm=isGM(),items=allArc(),A=window.ARCANA||{minor:[],major:[]},cs=allChars();
+  var opts='<option value="">+ From the book…</option><optgroup label="Minor arcana">'+(A.minor||[]).map(function(e){return '<option value="minor-'+e.n+'">'+e.n+' · '+esc(e.front.name)+' — '+esc(e.back.name)+'</option>';}).join('')+'</optgroup><optgroup label="Major arcana">'+(A.major||[]).map(function(e){return '<option value="major-'+e.n+'">'+e.n+' · '+esc(e.front.name)+'</option>';}).join('')+'</optgroup>';
+  acts.innerHTML='<select class="cc-sel" id="ar-add-book" title="Only the GM sees this list">'+opts+'</select><button class="cc-btn" id="ar-add-custom">'+ico('plus')+' Custom</button>';
+  var h='';
+  var mine=items.filter(function(it){return !it.holder||it.holder==='_else';}),held=items.filter(function(it){return it.holder&&it.holder!=='_else';});
+  if(!items.length)h+='<div class="empty">The chest is empty. '+(gm?'Add an arcanum from the book or a custom treasure with the buttons above.':'When the party finds an arcanum, the GM will put it here. Its front — what it is and what it takes to learn it — is yours to read; its secrets appear once you unlock them.')+'</div>';
+  else if(!mine.length&&!(gm&&held.length))h+='<div class="empty">Nothing is held in common right now.</div>';
+  h+=mine.map(function(it){return arCard(it,gm,cs);}).join('');
+  if(gm&&held.length){var byH={};held.forEach(function(it){(byH[it.holder]=byH[it.holder]||[]).push(it);});Object.keys(byH).forEach(function(id){var c=getChar(id);h+='<div class="sec gm-only">Held by '+esc((c&&c.name)||'someone')+' <span class="gm-badge">only in their closet</span></div>'+byH[id].map(function(it){return arCard(it,gm,cs);}).join('');});}
+  h+='<div class="hint" style="margin-top:var(--s5)">An arcanum held by one of you is kept in that person\'s closet (Home), not here — so its secrets and consequences stay theirs. Set "Held by" to hand one over.</div>';
   body.innerHTML=h;bindArcana();
 }
 function bindArcana(){
   var body=document.getElementById('arcana-body');
   var sel=document.getElementById('ar-add-book');if(sel)sel.addEventListener('change',function(){var v=sel.value;if(!v)return;var kind=v.split('-')[0];setArc({id:uid(),ref:v,kind:kind,holder:'',revealed:false,counter:0,track:[],marks:[],reqs:[],notes:'',added:Date.now()});renderArcana();});
   var cu=document.getElementById('ar-add-custom');if(cu)cu.addEventListener('click',function(){var n=prompt('What did they find? (the name players see)');if(!n||!n.trim())return;var maj=confirm('Is it a major arcanum (with a progress track)? OK = major, Cancel = minor.');setArc({id:uid(),ref:'',kind:maj?'major':'minor',custom:{front:{name:n.trim(),text:'',requirements:[]},back:{name:'',text:''}},holder:'',revealed:false,counter:0,track:[],marks:[],reqs:[],notes:'',added:Date.now()});renderArcana();});
+  bindArcanaCards(body,renderArcana);
+}
+function bindArcanaCards(body,rerender){ // card controls, in the chest or in a closet
   function upd(id,fn){var it=getArc(id);if(!it)return;fn(it);setArc(it);}
-  body.querySelectorAll('[data-arholder]').forEach(function(s){s.addEventListener('change',function(){upd(s.dataset.arholder,function(it){it.holder=s.value;});});});
-  body.querySelectorAll('[data-arreveal]').forEach(function(b){b.addEventListener('click',function(){upd(b.dataset.arreveal,function(it){it.revealed=!it.revealed;});renderArcana();});});
-  body.querySelectorAll('[data-ardel]').forEach(function(b){b.addEventListener('click',function(){var it=getArc(b.dataset.ardel);if(!it)return;if(!confirm('Remove "'+arcanaEntry(it).front.name+'" from the chest?'))return;delArc(it.id);renderArcana();});});
-  body.querySelectorAll('[data-arreq]').forEach(function(cb){cb.addEventListener('change',function(){upd(cb.dataset.arreq,function(it){it.reqs=it.reqs||[];it.reqs[+cb.dataset.i]=cb.checked;});renderArcana();});});
-  body.querySelectorAll('[data-armark]').forEach(function(cb){cb.addEventListener('change',function(){upd(cb.dataset.armark,function(it){it.marks=it.marks||[];it.marks[+cb.dataset.i]=cb.checked;});renderArcana();});});
-  body.querySelectorAll('[data-artrack]').forEach(function(b){b.addEventListener('click',function(){upd(b.dataset.artrack,function(it){var i=+b.dataset.i,n=(it.track||[]).filter(Boolean).length,k=n===i+1?i:i+1;it.track=[];for(var j=0;j<k;j++)it.track.push(true);});renderArcana();});});
-  body.querySelectorAll('[data-arcount]').forEach(function(b){b.addEventListener('click',function(){upd(b.dataset.arcount,function(it){var i=+b.dataset.i;it.counter=(it.counter===i+1)?i:i+1;});renderArcana();});});
+  body.querySelectorAll('[data-arholder]').forEach(function(s){s.addEventListener('change',function(){upd(s.dataset.arholder,function(it){it.holder=s.value;});rerender();});});
+  body.querySelectorAll('[data-arreveal]').forEach(function(b){b.addEventListener('click',function(){upd(b.dataset.arreveal,function(it){it.revealed=!it.revealed;});rerender();});});
+  body.querySelectorAll('[data-ardel]').forEach(function(b){b.addEventListener('click',function(){var it=getArc(b.dataset.ardel);if(!it)return;if(!confirm('Remove "'+arcanaEntry(it).front.name+'" from the chest?'))return;delArc(it.id);rerender();});});
+  body.querySelectorAll('[data-arreq]').forEach(function(cb){cb.addEventListener('change',function(){upd(cb.dataset.arreq,function(it){it.reqs=it.reqs||[];it.reqs[+cb.dataset.i]=cb.checked;});rerender();});});
+  body.querySelectorAll('[data-armark]').forEach(function(cb){cb.addEventListener('change',function(){upd(cb.dataset.armark,function(it){it.marks=it.marks||[];it.marks[+cb.dataset.i]=cb.checked;});rerender();});});
+  body.querySelectorAll('[data-artrack]').forEach(function(b){b.addEventListener('click',function(){upd(b.dataset.artrack,function(it){var i=+b.dataset.i,n=(it.track||[]).filter(Boolean).length,k=n===i+1?i:i+1;it.track=[];for(var j=0;j<k;j++)it.track.push(true);});rerender();});});
+  body.querySelectorAll('[data-arcount]').forEach(function(b){b.addEventListener('click',function(){upd(b.dataset.arcount,function(it){var i=+b.dataset.i;it.counter=(it.counter===i+1)?i:i+1;});rerender();});});
   body.querySelectorAll('[data-arnotes]').forEach(function(t){var it=getArc(t.dataset.arnotes);if(!it)return;t.addEventListener('input',function(){it.notes=t.value;});t.addEventListener('change',function(){setArc(it);});});
   body.querySelectorAll('[data-arc]').forEach(function(el){var it=getArc(el.dataset.id);if(!it)return;var path=el.dataset.arc.split('.');
     el.addEventListener('input',function(){it.custom=it.custom||{front:{},back:{}};var v=el.value;if(path[1]==='requirements')v=v.split('\n').map(function(x){return x.trim();}).filter(Boolean);it.custom[path[0]][path[1]]=v;});

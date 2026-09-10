@@ -218,8 +218,14 @@ net Surplus delta. The Surplus stepper and a manual "Add" row also write ledger 
   effect and progress track); the **back** (true name, moves, resource pips, consequences)
   renders only when `revealed` or on a GM device, where it is boxed as "GM only — not yet
   revealed". GM actions (`#arcana-actions`, `gm-only`): add from the book (a select over all 82)
-  or a custom item with editable front/back; Reveal/Hide; remove. Holder is a roster character
-  or "the party".
+  or a custom item with editable front/back; Reveal/Hide; remove. Holder is a roster character,
+  "the party", or "elsewhere / stored". **Where a card shows depends on the holder (2026-09-10):**
+  party/stored items sit in the chest for everyone; an item held by a specific character leaves
+  the players' chest and appears only in that character's **Closet** (Pack & Closet, after their
+  login), so its secrets and consequences stay theirs. GM screens still see held items in the
+  chest under a "Held by <name>" heading. The card is one shared renderer, `arCard(it,gm,cs)`, and
+  its controls are bound by `bindArcanaCards(root,rerender)` (the chest passes `renderArcana`, the
+  closet passes `renderPack`); the holder select on the card is how an item is handed over or back.
 
 ## Townsfolk directory (Common House, built 2026-09-10)
 The Common House's People section is now a **directory built from the relationship map**: the
