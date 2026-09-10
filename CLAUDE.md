@@ -294,7 +294,11 @@ tile — `ox=((MV.tx%Tw)+Tw)%Tw-Tw` — and its tile `Tw=tw*s` scales with the z
 direction (`WX_LAYERS` = name, tile w/h in map px, horizontal motion `l`/`r`/`w`(sway)/none, moves
 down?); the inner scrolls by a CSS animation over exactly one tile (`@keyframes` use `var(--tw)`
 /`var(--th)` set on the outer; the animation is restarted on zoom/resize so the distance follows
-the new tile). Layers: `wx-tint` (multiply gradient per weather), `wx-cloud` (fractal-noise cloud
+the new tile). Only the current sky's layers are composited: `wxSetActive()` (from `applySeason`)
+marks them `.wx-on` per `WX_USES` and hides the rest (`visibility:hidden`) once they have faded;
+placement runs on every view change but re-tiling (which repaints) waits 150 ms for the zoom to
+settle, and happens at once only when the sky changes. The noise tiles carry **no blur**: a blur
+fades at the tile edge and draws the tile grid as bright lines. Layers: `wx-tint` (multiply gradient per weather), `wx-cloud` (fractal-noise cloud
 shadows, multiply; overcast/rain/storm/snow), `wx-rain1/2` (generated SVG streak tiles; the far
 faint streaks are baked into rain2; faster in a storm), `wx-flash1/2` (two radial lightning
 strikes on unrelated timers), `wx-snow1..3` (flake tiles that sway), `wx-frost` (screen-blended

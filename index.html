@@ -137,7 +137,8 @@
      pixels. The inner <i> scrolls by transform over one tile, so each layer paints once. */
   #weather{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
   .wx-tint,.wx-m,.wx-flash1,.wx-flash2,.wx-night,.wx-vig{position:absolute;inset:0;opacity:0;transition:opacity 1.4s var(--ease);}
-  .wx-m{inset:auto;left:0;top:0;width:100%;height:100%;will-change:transform;}
+  .wx-m{inset:auto;left:0;top:0;width:100%;height:100%;visibility:hidden;}
+  .wx-m.wx-on{visibility:visible;will-change:transform;}
   .wx-m>i{position:absolute;inset:0;display:block;background-repeat:repeat;background-size:var(--tw,300px) var(--th,300px);}
   .wx-tint{mix-blend-mode:multiply;background:#fff;transition:opacity 1.4s var(--ease),background 1.4s var(--ease);}
   body.weather-overcast .wx-tint{background:linear-gradient(180deg,#aeb3bb,#c3c6cc);opacity:.4;}
@@ -151,7 +152,7 @@
   @keyframes wx-snowa{0%{transform:translate3d(0,0,0);}50%{transform:translate3d(calc(var(--tw)*.18),calc(var(--th)*.5),0);}100%{transform:translate3d(0,var(--th),0);}}
   @keyframes wx-snowb{0%{transform:translate3d(0,0,0);}50%{transform:translate3d(calc(var(--tw)*-.16),calc(var(--th)*.5),0);}100%{transform:translate3d(0,var(--th),0);}}
   /* cloud shadows drifting across the fields */
-  .wx-cloud{mix-blend-mode:multiply;} .wx-cloud>i{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='700' height='700'%3E%3Cfilter id='f' x='0' y='0' width='100%' height='100%'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0022' numOctaves='3' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.6 -0.35'/%3E%3CfeGaussianBlur stdDeviation='9'/%3E%3C/filter%3E%3Crect width='700' height='700' filter='url(%23f)'/%3E%3C/svg%3E");}
+  .wx-cloud{mix-blend-mode:multiply;} .wx-cloud>i{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='700' height='700'%3E%3Cfilter id='f' x='0' y='0' width='100%' height='100%'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0022' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.7 -0.4'/%3E%3C/filter%3E%3Crect width='700' height='700' filter='url(%23f)'/%3E%3C/svg%3E");}
   body.weather-overcast .wx-cloud{opacity:.5;} body.weather-overcast .wx-cloud>i{animation:wx-driftl 60s linear infinite;}
   body.weather-rain .wx-cloud{opacity:.55;} body.weather-rain .wx-cloud>i{animation:wx-driftl 42s linear infinite;}
   body.weather-storm .wx-cloud{opacity:.7;} body.weather-storm .wx-cloud>i{animation:wx-driftl 24s linear infinite;}
@@ -174,10 +175,10 @@
   body.weather-snow .wx-snow1{opacity:.9;} body.weather-snow .wx-snow1>i{animation:wx-snowa 5.5s ease-in-out infinite;}
   body.weather-snow .wx-snow2{opacity:.7;} body.weather-snow .wx-snow2>i{animation:wx-snowb 8s ease-in-out infinite;}
   body.weather-snow .wx-snow3{opacity:.75;} body.weather-snow .wx-snow3>i{animation:wx-snowa 4.2s ease-in-out infinite;}
-  .wx-frost{mix-blend-mode:screen;} .wx-frost>i{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600'%3E%3Cfilter id='f' x='0' y='0' width='100%' height='100%'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02' numOctaves='2' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.2 -0.35'/%3E%3CfeGaussianBlur stdDeviation='2'/%3E%3C/filter%3E%3Crect width='600' height='600' filter='url(%23f)'/%3E%3C/svg%3E");}
+  .wx-frost{mix-blend-mode:screen;} .wx-frost>i{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600'%3E%3Cfilter id='f' x='0' y='0' width='100%' height='100%'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02' numOctaves='2' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.2 -0.35'/%3E%3C/filter%3E%3Crect width='600' height='600' filter='url(%23f)'/%3E%3C/svg%3E");}
   body.weather-snow .wx-frost{opacity:.55;}
   /* fog: two sheets of noise rolling opposite ways */
-  .wx-fog1>i{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='1200'%3E%3Cfilter id='f' x='0' y='0' width='100%' height='100%'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0012' numOctaves='4' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 3.2 -1.35'/%3E%3CfeGaussianBlur stdDeviation='16'/%3E%3C/filter%3E%3Crect width='1200' height='1200' filter='url(%23f)'/%3E%3C/svg%3E");} .wx-fog2>i{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='1200'%3E%3Cfilter id='f' x='0' y='0' width='100%' height='100%'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0011' numOctaves='4' seed='23' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 3.0 -1.25'/%3E%3CfeGaussianBlur stdDeviation='18'/%3E%3C/filter%3E%3Crect width='1200' height='1200' filter='url(%23f)'/%3E%3C/svg%3E");}
+  .wx-fog1>i{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='1200'%3E%3Cfilter id='f' x='0' y='0' width='100%' height='100%'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0012' numOctaves='3' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 3.2 -1.35'/%3E%3C/filter%3E%3Crect width='1200' height='1200' filter='url(%23f)'/%3E%3C/svg%3E");} .wx-fog2>i{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='1200'%3E%3Cfilter id='f' x='0' y='0' width='100%' height='100%'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0011' numOctaves='3' seed='23' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 3.0 -1.25'/%3E%3C/filter%3E%3Crect width='1200' height='1200' filter='url(%23f)'/%3E%3C/svg%3E");}
   body.weather-fog .wx-fog1{opacity:.8;} body.weather-fog .wx-fog1>i{animation:wx-driftl 70s linear infinite;}
   body.weather-fog .wx-fog2{opacity:.65;} body.weather-fog .wx-fog2>i{animation:wx-driftr 105s linear infinite;}
   body.weather-fog #map-inner{filter:contrast(.8);}
@@ -1064,17 +1065,29 @@ function applyView(){
 // origin is the map origin modulo one tile, and its tile scales with the zoom up to a cap.
 // [name, tile w, tile h (map px), horizontal motion l/r/w(sway)/none, moves down?]
 var WX_LAYERS=[['cloud',700,700,'l',0],['rain1',320,480,'l',1],['rain2',280,420,'l',1],['snow1',400,400,'w',1],['snow2',520,520,'w',1],['snow3',300,300,'w',1],['frost',600,600,'',0],['fog1',1200,1200,'l',0],['fog2',1200,1200,'r',0]];
-var wxEls=null,wxKey='';
-function wxLayout(){
-  if(!wxEls){wxEls=WX_LAYERS.map(function(d){var el=document.querySelector('.wx-'+d[0]);return el?{el:el,tw:d[1],th:d[2],h:d[3],v:d[4]}:null;}).filter(Boolean);}
-  var s=Math.min(MV.s,(MV.fit||MV.s)*1.6),vw=innerWidth,vh=innerHeight,key=s.toFixed(4)+'|'+vw+'|'+vh,resized=key!==wxKey;wxKey=key;
-  wxEls.forEach(function(L){
-    var Tw=L.tw*s,Th=L.th*s,ox=((MV.tx%Tw)+Tw)%Tw-Tw,oy=((MV.ty%Th)+Th)%Th-Th,st=L.el.style;
-    var lx=ox-(L.h==='l'||!L.h?0:Tw),ly=oy-(L.v?Th:0); // layers that move right or sway need a tile of room on the left; falling ones a tile above
-    st.transform='translate3d('+lx.toFixed(1)+'px,'+ly.toFixed(1)+'px,0)';
-    if(resized){st.width=(vw+Tw*(L.h==='w'?3:(L.h?2:1))).toFixed(0)+'px';st.height=(vh+Th*(L.v?2:1)).toFixed(0)+'px';st.setProperty('--tw',Tw.toFixed(2)+'px');st.setProperty('--th',Th.toFixed(2)+'px');
-      var i=L.el.firstElementChild;if(i){i.style.animation='none';void i.offsetWidth;i.style.animation='';}} // restart the loop so its distance uses the new tile
-  });
+var WX_USES={overcast:['cloud'],rain:['cloud','rain1','rain2','fog2'],storm:['cloud','rain1','rain2'],snow:['cloud','snow1','snow2','snow3','frost'],fog:['fog1','fog2']};
+var wxEls=null,wxKey='',wxTimer=null,wxActive={},wxOff={};
+function wxInit(){if(wxEls)return;wxEls=WX_LAYERS.map(function(d){var el=document.querySelector('.wx-'+d[0]);return el?{k:d[0],el:el,tw:d[1],th:d[2],h:d[3],v:d[4],Tw:0,Th:0}:null;}).filter(Boolean);}
+function wxSetActive(){ // which textured layers the current sky uses; the others are hidden once they have faded
+  wxInit();var b=document.body.classList,w='';Object.keys(WX_USES).forEach(function(k){if(b.contains('weather-'+k))w=k;});
+  var on={};(WX_USES[w]||[]).forEach(function(k){on[k]=1;});wxActive=on;
+  wxEls.forEach(function(L){clearTimeout(wxOff[L.k]);if(on[L.k])L.el.classList.add('wx-on');else wxOff[L.k]=setTimeout(function(){L.el.classList.remove('wx-on');},1600);});
+  wxKey='';wxLayout(true);
+}
+function wxSize(L,s,vw,vh){ // re-tile one layer (repaints it): viewport plus a tile of room per motion direction
+  var Tw=L.tw*s,Th=L.th*s,st=L.el.style;L.Tw=Tw;L.Th=Th;
+  st.width=(vw+Tw*(L.h==='w'?3:(L.h?2:1))).toFixed(0)+'px';st.height=(vh+Th*(L.v?2:1)).toFixed(0)+'px';st.setProperty('--tw',Tw.toFixed(2)+'px');st.setProperty('--th',Th.toFixed(2)+'px');
+  var i=L.el.firstElementChild;if(i){i.style.animation='none';void i.offsetWidth;i.style.animation='';} // restart the loop so its distance uses the new tile
+}
+function wxPlace(L){ // pin the texture origin to the map origin (modulo one tile); layers moving right or swaying get a tile of room on the left, falling ones a tile above
+  if(!L.Tw)return;var Tw=L.Tw,Th=L.Th,ox=((MV.tx%Tw)+Tw)%Tw-Tw,oy=((MV.ty%Th)+Th)%Th-Th;
+  L.el.style.transform='translate3d('+(ox-(L.h==='l'||!L.h?0:Tw)).toFixed(1)+'px,'+(oy-(L.v?Th:0)).toFixed(1)+'px,0)';
+}
+function wxLayout(now){ // every view change: cheap placement; re-tiling only once zoom/resize settles (or at once when the sky changes)
+  wxInit();var s=Math.min(MV.s,(MV.fit||MV.s)*1.6),vw=innerWidth,vh=innerHeight,key=s.toFixed(3)+'|'+vw+'|'+vh;
+  function resize(){wxKey=key;wxEls.forEach(function(L){if(wxActive[L.k]){wxSize(L,s,vw,vh);wxPlace(L);}});}
+  if(key!==wxKey){clearTimeout(wxTimer);if(now)resize();else wxTimer=setTimeout(resize,150);}
+  wxEls.forEach(function(L){if(wxActive[L.k])wxPlace(L);});
 }
 function zoomAt(f,cx,cy){ // multiply the scale by f, keeping the map point under (cx,cy) fixed
   var s0=MV.s, s1=Math.max(MV.min,Math.min(MV.fit*MAX_ZOOM,s0*f)); if(s1===s0)return;
@@ -1227,7 +1240,7 @@ function applySeason(){ // the map wears the Village Sheet's season, weather and
   var wl=(WEATHERS.filter(function(w){return w[0]===wx;})[0]||WEATHERS[0]);
   var el=document.getElementById('brand-season');if(el)el.textContent=(season?SEASON_NAMES[season]+(yr?' · year '+yr:''):'')+(wx!=='clear'?' · '+wl[1]:'')+(night?' · Night':'');
   var sb=document.getElementById('sky-btn');if(sb)sb.innerHTML=ico(night&&wx==='clear'?'moon':wl[2])+'<span>'+(night?'Night':wl[1])+'</span>';
-  renderSkyMenu();
+  renderSkyMenu();if(typeof wxSetActive==='function')wxSetActive();
 }
 function renderSkyMenu(){
   var m=document.getElementById('sky-menu');if(!m)return;var st=stLoad(),season=st.season||'spring',wx=st.weather||'clear',night=!!st.night;
