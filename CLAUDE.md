@@ -47,6 +47,7 @@ awk '/^<script>$/{f=1;next} /^<\/script>$/{f=0} f' index.html > /tmp/check.js &&
 | `moves.js` | Hand-summarised extra rules appended to `window.RULES` (24 entries: follower, expedition and homefront moves from Book I pp.76–85, plus the Die of Fate) and `window.TABLES` (weather by season p.325, night p.335, perilous travel p.323) for the Watchtower's roll buttons. Entries with `live:` show numbers computed from the Village Sheet (`ruleLive`). |
 | `townsfolk.js` | `window.TOWNSFOLK` — the DM's 30-NPC register transcribed from `registerpage1/2.png` (name, age, sex, occupation, traits, alive/dead). Imported into the relationship map. Campaign data, not rules. |
 | `gear.js` | Hand-transcribed `window.GEAR` — the Inventory insert's common items (p.95/p.142, ~50) and the special items (pp.96–97, ~55) with `load` (0 small / 1 ◆ / 2 ◆◆ / `'other'` not carried), tags, Value, hour/use `pips`, and `ammo` states. Powers Pack & Closet. |
+| `lore.js` | Generated `window.LORE` — the **encyclopedia**: ~75 player-facing setting entries (`{id,title,cat,page,gist,text,tales[],related[]}`) written in our own words from Book II's topic chapters (common knowledge and tales only; the GM's secrets, hooks, questions, stats and site keys stay in the book) plus Book I pp.10–11. Assembled by the scratch `assemble_lore.py` from subagent batches; categories are the `LO_CATS` list in index.html. |
 | `playbooks.js` | Generated `window.PBDATA` — complete per-playbook data (moves, possessions, resources, invocations, arcana, follower inserts) for all 9 playbooks, extracted from Book I pp.103–146. Loaded before the inline script; powers the character creator's checklists. Regenerate from `/tmp/pb/*.json` if re-extracting. |
 | `map-vicinity.jpg` / `map-world.jpg` | Map art (~3.4 MB JPEGs each) for the Watchtower route-drawing feature. Loaded lazily by `<img>` only when the Chart Your Course tab opens — kept as external files (NOT inlined) to keep `index.html` small. |
 | `docs/` | Rules guides distilled from the rulebook (pp. 1–165) to drive the interactive features. See `docs/README.md`. |
@@ -108,6 +109,7 @@ console). Rough layout by section:
 | `Mesh_Barrow` | The Granary | The Village Sheet | **Direct**: `openPlace` opens the Village Sheet (steading modal); its old People/Notes panel is gone (the Chronicle and Common House cover that) |
 | `Mesh_Market` | The Stables | Travel & the Pack | **Editable** + "Pack for the road" (opens Pack & Closet on the Pack tab) + Arcana chest |
 | `Mesh_Home` | Home | Closets & Possessions | **Direct**: `openPlace` opens Pack & Closet on the Closet tab (wardrobe icon); no building panel, no stored content |
+| `Mesh_Lore` | The Old Wall | Encyclopedia | **Direct**: `openPlace` opens the Encyclopedia modal (`#lore-modal`); no building panel, no stored building content |
 | `Mesh_Watchtower` | The Watchtower | The Wider World | **Editable** |
 | `Mesh_Well` | The Chronicle | Session Recaps | **Editable** (log labeled "The Chronicle") |
 
@@ -249,6 +251,22 @@ a "GM screen on" line when set), parchment-and-ink **pin badges** with plaque la
 on hover, parchment chips for the Places button, hint strip and sync pill, a **vignette frame**
 (`#map-frame`) darkening the edges with a hairline inner border, and a **compass rose**
 (`#compass`, inline SVG, bottom-left). Modals stay dark; only the map layer uses parchment.
+
+## Encyclopedia — the Old Wall (built 2026-09-10)
+A player-facing lore reference opened by the **Old Wall** pin (on the ring east of the Smithy) or
+from the Places list. `#lore-modal` is a two-pane page: a sticky side column with a search box
+(matches title, then gist, then text and tales; the list re-renders without losing focus),
+category chips (`LO_CATS`: Stonetop, The Vicinity, The Wider World, Peoples, Gods & Faith, The
+Makers & the Past, Creatures & Powers, Wonders, plus "Ours" when the table has added entries), the
+entry list, and an article pane (`loreArticle`: kicker with category and Book II page, title,
+gist, paragraphs, an "As the tales tell it" quote block, "See also" chips that jump between
+entries by title). On phones the list and article stack and the article gets a "‹ All entries"
+button (`.lo-wrap.reading`). Book entries come from `lore.js`; **anyone can add entries** (`+ Add
+entry`: title, category, one line, text, tales one per line, and on GM screens a "GM only"
+checkbox that hides the entry from players' screens — a curtain, the data still syncs). Custom
+entries live in `store.lore` as a per-id collection like threats (`setLore/delLore/pushLore/
+mergeLore`, LWW + tombstones) and show an "ours"/"GM" tag; `loreSyncRefresh` re-renders on remote
+change unless a field is focused or the editor is open. Escape closes it unless an input has focus.
 
 ## Weather & night (built 2026-09-10)
 The steading doc also carries `weather` (`clear|overcast|rain|storm|snow|fog`) and `night`

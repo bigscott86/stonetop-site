@@ -251,3 +251,7 @@ for a trusted home group and should be documented as such.
 | Flora samples + generator tables; artifact-creation tables | Book II PDF pp.458–463, 498–507 | 7 + 5 tables; ~13 tables |
 | Settlement blocks, trade goods, travel times, public lore | Book II gazetteer, ~55 entries | 300–500 goods lines |
 | Region terrain/discovery tables | Book II per region | ~20–30 tables |
+
+### Encyclopedia — ✅ BUILT 2026-09-10 (the Old Wall)
+Player-facing setting lore from Book II's topic chapters (common knowledge and tales only), searchable by
+category, with cross-links and entries the table can add itself. See CLAUDE.md → Encyclopedia.

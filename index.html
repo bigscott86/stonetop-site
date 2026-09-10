@@ -12,6 +12,7 @@
 <script src="./moves.js"></script>
 <script src="./gm.js"></script>
 <script src="./arcana.js"></script>
+<script src="./lore.js"></script>
 <style>
   /* ══════════════════════════════════════════════════════════════════════
      DESIGN TOKENS — the only place colours, sizes and spacing are defined.
@@ -606,6 +607,39 @@
 
   /* ── Responsive ──────────────────────────────────────────────────────── */
   @media (pointer:coarse){:root{--ctl:40px;} .btn-icon,.brm,.cc-rm,.pk-x{width:40px;height:40px;} .place{min-height:48px;}}
+  /* encyclopedia (the Old Wall) */
+  #lore-box{width:min(1180px,90vw);}
+  .lo-wrap{display:grid;grid-template-columns:300px minmax(0,1fr);gap:var(--s6);align-items:start;}
+  .lo-side{position:sticky;top:0;display:flex;flex-direction:column;gap:var(--s3);max-height:calc(min(860px,88vh) - 150px);}
+  .lo-side .input{width:100%;}
+  .lo-cats{display:flex;flex-wrap:wrap;gap:var(--s1);}
+  .lo-list{flex:1;min-height:120px;overflow-y:auto;border:1px solid var(--line-0);}
+  .lo-item{display:block;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line-0);padding:var(--s2) var(--s3);color:var(--text-2);font:inherit;cursor:pointer;}
+  .lo-item:hover{background:var(--ink-1);}
+  .lo-item.on{background:var(--ink-1);box-shadow:inset 2px 0 0 var(--accent);}
+  .lo-item b{display:block;font-size:14px;font-weight:normal;color:var(--text-1);}
+  .lo-item.on b{color:var(--text-0);}
+  .lo-item small{display:block;font-size:12px;color:var(--text-3);line-height:1.4;margin-top:2px;}
+  .lo-tag{float:right;font-style:normal;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent-text);border:1px solid var(--line-1);padding:1px 5px;margin-left:var(--s2);}
+  .lo-main{min-width:0;}
+  .lo-kicker{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--accent-text);margin-bottom:var(--s2);}
+  .lo-title{font-size:22px;font-weight:normal;letter-spacing:1px;color:var(--text-0);margin:0 0 var(--s3);}
+  .lo-gist{font-style:italic;color:var(--text-2);margin:0 0 var(--s4);font-size:15px;max-width:62ch;}
+  .lo-text p{margin:0 0 var(--s4);max-width:62ch;}
+  .lo-tales{margin:var(--s5) 0;padding:var(--s3) var(--s4);border-left:2px solid var(--accent);background:var(--ink-1);max-width:62ch;}
+  .lo-tales blockquote{margin:var(--s2) 0 0;font-style:italic;color:var(--text-1);}
+  .lo-rel{margin-top:var(--s5);display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center;}
+  .lo-rel .t-label{flex-basis:100%;}
+  .lo-actions{margin-top:var(--s5);margin-left:0;}
+  .lo-form .t-label{display:block;margin:var(--s4) 0 var(--s1);}
+  .lo-form .input{width:100%;max-width:62ch;}
+  .lo-check{display:flex;align-items:center;gap:var(--s2);margin-top:var(--s4);font-size:13px;color:var(--text-2);}
+  .lo-back{display:none;margin-bottom:var(--s3);}
+  .lo-welcome{max-width:62ch;} .lo-welcome p{margin:0 0 var(--s4);}
+  @media (max-width:640px){
+    .lo-wrap{grid-template-columns:1fr;} .lo-side{position:static;max-height:none;} .lo-list{max-height:50vh;}
+    .lo-wrap.reading .lo-side{display:none;} .lo-wrap.reading .lo-back{display:inline-flex;}
+  }
   @media (max-width:640px){
     .modal-box{width:96vw;height:94vh;}
     .modal-head{padding:var(--s3) 56px var(--s3) var(--s4);min-height:52px;}
@@ -627,7 +661,7 @@
 </style>
 </head>
 <body>
-<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true"><symbol id="i-stone" viewBox="0 0 24 24"><path d="M9 21V8l3-5 3 5v13"/><path d="M6 21h12"/><path d="M12 10v3"/></symbol><symbol id="i-longhouse" viewBox="0 0 24 24"><path d="M3 11l9-6 9 6"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></symbol><symbol id="i-forge" viewBox="0 0 24 24"><path d="M5 9h12l2 2-3 3h-5v4h3v2H8v-2h3v-4H8L5 11z"/></symbol><symbol id="i-granary" viewBox="0 0 24 24"><path d="M12 21V9"/><path d="M12 9c-3 0-5-3-5-6 3 0 5 3 5 6z"/><path d="M12 9c3 0 5-3 5-6-3 0-5 3-5 6z"/><path d="M12 14c-3 0-5-2-5-5 3 0 5 2 5 5z"/><path d="M12 14c3 0 5-2 5-5-3 0-5 2-5 5z"/><path d="M8 21h8"/></symbol><symbol id="i-stables" viewBox="0 0 24 24"><path d="M6 19v-8a6 6 0 0 1 12 0v8"/><path d="M4 19h4M16 19h4"/></symbol><symbol id="i-tower" viewBox="0 0 24 24"><path d="M7 21V6h10v15"/><path d="M7 6V3h2v2h2V3h2v2h2V3h2v3"/><path d="M11 21v-5h2v5"/><path d="M5 21h14"/></symbol><symbol id="i-scroll" viewBox="0 0 24 24"><path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H8"/><path d="M6 4a2 2 0 0 0-2 2v1h4V6a2 2 0 0 0-2-2z"/><path d="M8 20a2 2 0 0 1-2-2V6"/><path d="M10 9h6M10 13h6"/></symbol><symbol id="i-pack" viewBox="0 0 24 24"><path d="M8 7V5a4 4 0 0 1 8 0v2"/><rect x="5" y="7" width="14" height="14" rx="2"/><path d="M5 12h14"/><path d="M9 16h6"/></symbol><symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M15 12v2"/></symbol><symbol id="i-web" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M12 7v5M12 12l-5.5 4.5M12 12l5.5 4.5"/></symbol><symbol id="i-village" viewBox="0 0 24 24"><path d="M2 20h20"/><path d="M4 20v-8l3.5-4L11 12v8"/><path d="M13 20v-6l3.5-4L20 14v6"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol><symbol id="i-unlock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></symbol><symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 3h6l-1 6 3 3H7l3-3z"/><path d="M12 12v9"/></symbol><symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M14 7l3 3"/></symbol><symbol id="i-eraser" viewBox="0 0 24 24"><path d="M4 16l9-9 5 5-9 9H6z"/><path d="M6 21h14"/></symbol><symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></symbol><symbol id="i-tidy" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l3 3M15 15l3 3M6 18l3-3M15 9l3-3"/></symbol><symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></symbol><symbol id="i-import" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol><symbol id="i-list" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol><symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></symbol><symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 11a3.5 3.5 0 0 0 1 7z"/></symbol><symbol id="i-rain" viewBox="0 0 24 24"><path d="M7 15h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 8a3.5 3.5 0 0 0 1 7z"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/></symbol><symbol id="i-storm" viewBox="0 0 24 24"><path d="M7 14h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 7a3.5 3.5 0 0 0 1 7z"/><path d="M13 14l-2 4h3l-2 4"/></symbol><symbol id="i-snow" viewBox="0 0 24 24"><path d="M7 15h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 8a3.5 3.5 0 0 0 1 7z"/><circle cx="8" cy="19" r=".9"/><circle cx="12" cy="21" r=".9"/><circle cx="16" cy="19" r=".9"/></symbol><symbol id="i-fog" viewBox="0 0 24 24"><path d="M4 8h16M7 12h13M4 16h16M8 20h9"/></symbol><symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a7 7 0 1 0 10.5 10.5z"/></symbol><symbol id="i-wardrobe" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M12 3v18M10 11v2M14 11v2M5 21v1M19 21v1"/></symbol><symbol id="i-map" viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></symbol></svg>
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true"><symbol id="i-stone" viewBox="0 0 24 24"><path d="M9 21V8l3-5 3 5v13"/><path d="M6 21h12"/><path d="M12 10v3"/></symbol><symbol id="i-longhouse" viewBox="0 0 24 24"><path d="M3 11l9-6 9 6"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></symbol><symbol id="i-forge" viewBox="0 0 24 24"><path d="M5 9h12l2 2-3 3h-5v4h3v2H8v-2h3v-4H8L5 11z"/></symbol><symbol id="i-granary" viewBox="0 0 24 24"><path d="M12 21V9"/><path d="M12 9c-3 0-5-3-5-6 3 0 5 3 5 6z"/><path d="M12 9c3 0 5-3 5-6-3 0-5 3-5 6z"/><path d="M12 14c-3 0-5-2-5-5 3 0 5 2 5 5z"/><path d="M12 14c3 0 5-2 5-5-3 0-5 2-5 5z"/><path d="M8 21h8"/></symbol><symbol id="i-stables" viewBox="0 0 24 24"><path d="M6 19v-8a6 6 0 0 1 12 0v8"/><path d="M4 19h4M16 19h4"/></symbol><symbol id="i-tower" viewBox="0 0 24 24"><path d="M7 21V6h10v15"/><path d="M7 6V3h2v2h2V3h2v2h2V3h2v3"/><path d="M11 21v-5h2v5"/><path d="M5 21h14"/></symbol><symbol id="i-scroll" viewBox="0 0 24 24"><path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H8"/><path d="M6 4a2 2 0 0 0-2 2v1h4V6a2 2 0 0 0-2-2z"/><path d="M8 20a2 2 0 0 1-2-2V6"/><path d="M10 9h6M10 13h6"/></symbol><symbol id="i-book" viewBox="0 0 24 24"><path d="M12 7c-1.5-1.5-3.6-2.2-6.3-2.2H4.5v12.7h1.2c2.7 0 4.8.7 6.3 2.2 1.5-1.5 3.6-2.2 6.3-2.2h1.2V4.8h-1.2C15.6 4.8 13.5 5.5 12 7zM12 7v12.7"/></symbol><symbol id="i-pack" viewBox="0 0 24 24"><path d="M8 7V5a4 4 0 0 1 8 0v2"/><rect x="5" y="7" width="14" height="14" rx="2"/><path d="M5 12h14"/><path d="M9 16h6"/></symbol><symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M15 12v2"/></symbol><symbol id="i-web" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M12 7v5M12 12l-5.5 4.5M12 12l5.5 4.5"/></symbol><symbol id="i-village" viewBox="0 0 24 24"><path d="M2 20h20"/><path d="M4 20v-8l3.5-4L11 12v8"/><path d="M13 20v-6l3.5-4L20 14v6"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol><symbol id="i-unlock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></symbol><symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 3h6l-1 6 3 3H7l3-3z"/><path d="M12 12v9"/></symbol><symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M14 7l3 3"/></symbol><symbol id="i-eraser" viewBox="0 0 24 24"><path d="M4 16l9-9 5 5-9 9H6z"/><path d="M6 21h14"/></symbol><symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></symbol><symbol id="i-tidy" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l3 3M15 15l3 3M6 18l3-3M15 9l3-3"/></symbol><symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></symbol><symbol id="i-import" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol><symbol id="i-list" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol><symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></symbol><symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 11a3.5 3.5 0 0 0 1 7z"/></symbol><symbol id="i-rain" viewBox="0 0 24 24"><path d="M7 15h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 8a3.5 3.5 0 0 0 1 7z"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/></symbol><symbol id="i-storm" viewBox="0 0 24 24"><path d="M7 14h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 7a3.5 3.5 0 0 0 1 7z"/><path d="M13 14l-2 4h3l-2 4"/></symbol><symbol id="i-snow" viewBox="0 0 24 24"><path d="M7 15h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 8a3.5 3.5 0 0 0 1 7z"/><circle cx="8" cy="19" r=".9"/><circle cx="12" cy="21" r=".9"/><circle cx="16" cy="19" r=".9"/></symbol><symbol id="i-fog" viewBox="0 0 24 24"><path d="M4 8h16M7 12h13M4 16h16M8 20h9"/></symbol><symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a7 7 0 1 0 10.5 10.5z"/></symbol><symbol id="i-wardrobe" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M12 3v18M10 11v2M14 11v2M5 21v1M19 21v1"/></symbol><symbol id="i-map" viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></symbol></svg>
 <div id="cc">
   <div id="map">
     <div id="map-inner">
@@ -880,6 +914,14 @@
     </div>
 
     <!-- ARCANA CHEST MODAL -->
+    <div id="lore-modal" class="modal">
+      <div id="lore-backdrop" class="modal-backdrop"></div>
+      <div id="lore-box" class="modal-box">
+        <button id="lore-close" class="modal-close" aria-label="Close">✕</button>
+        <div id="lore-header" class="modal-head"><div id="lore-title" class="modal-title"><svg class="ic"><use href="#i-book"/></svg>Encyclopedia</div><div class="modal-sub">The World's End, as folk tell it</div><div class="modal-actions" id="lore-actions"><button id="lore-add" class="btn"><svg class="ic"><use href="#i-plus"/></svg> Add entry</button></div></div>
+        <div id="lore-body" class="modal-body"></div>
+      </div>
+    </div>
     <div id="arcana-modal" class="modal">
       <div id="arcana-backdrop" class="modal-backdrop"></div>
       <div id="arcana-box" class="modal-box">
@@ -920,6 +962,7 @@ var BLDGS = {
   Mesh_Market:     { title:"The Stables",      sub:"Travel & the Pack",        icon:"stables", desc:"On fair days, traders from the lowlands bring salt, cloth, and news.", x:66.4, y:52.5, npcs:[], notes:"" },
   Mesh_Watchtower: { title:"The Watchtower",   sub:"The Wider World",          icon:"tower", desc:"A tall wooden tower at the edge of the village.", x:44.5, y:25.5, npcs:[], notes:"" },
   Mesh_Home:       { title:"Home",             sub:"Closets & Possessions",    icon:"wardrobe", desc:"What each of you owns but doesn't carry: the closet.", x:33.0, y:31.0, npcs:[], notes:"", direct:"closet" },
+  Mesh_Lore:       { title:"The Old Wall",     sub:"Encyclopedia",             icon:"book",   desc:"The World's End and its wonders, as folk tell it.", x:59.5, y:40.5, npcs:[], notes:"", direct:"lore" },
   Mesh_Well:       { title:"The Chronicle",    sub:"Session Recaps",           icon:"scroll", desc:"A record of all that has passed in Stonetop.", x:38.7, y:43.0, npcs:[], notes:"" }
 };
 
@@ -986,6 +1029,7 @@ function openPlace(k){
   if(k==='Mesh_Forge'){openSmithy();return;}
   if(k==='Mesh_Home'){openPack('closet');return;}
   if(k==='Mesh_Barrow'){openSteading();return;}
+  if(k==='Mesh_Lore'){openLore();return;}
   openBuilding(k);
 }
 function showHl(k,e){
@@ -1200,6 +1244,7 @@ function applyRemote(remote){
     if(k==='routes'){mergeRoutes(remote.routes);return;}               // Watchtower route drawings (string-encoded, whole-doc LWW)
     if(k==='wpins'){mergeWPins(remote.wpins);return;}                  // Watchtower map pins with notes (string-encoded, whole-doc LWW)
     if(k==='threats'){mergeThreats(remote.threats);return;}            // GM threat tracker (string-encoded per id, LWW + tombstones)
+    if(k==='lore'){mergeLore(remote.lore);return;}                     // encyclopedia entries added at the table (same shape)
     if(k==='fight'){mergeFight(remote.fight);return;}                  // GM fight tracker (string-encoded, whole-doc LWW)
     if(k==='arcana'){mergeArcana(remote.arcana);return;}               // arcana chest (string-encoded per id, LWW + tombstones)
     var r=remote[k]||{}, l=store[k];
@@ -1221,6 +1266,7 @@ function applyRemote(remote){
   if(typeof threatsSyncRefresh==='function')threatsSyncRefresh();
   if(typeof fightSyncRefresh==='function')fightSyncRefresh();
   if(typeof arcanaSyncRefresh==='function')arcanaSyncRefresh();
+  if(typeof loreSyncRefresh==='function')loreSyncRefresh();
   if(typeof applySeason==='function')applySeason();
   applyingRemote=false;
 }
@@ -2739,6 +2785,76 @@ function buildRuleUI(){
 }
 var rlSearch=document.getElementById('rl-search'); if(rlSearch)rlSearch.addEventListener('input',renderRules);
 buildRuleUI();
+
+// ── Encyclopedia (the Old Wall): Book II lore from lore.js + entries the table adds ────────
+var loreModal=document.getElementById('lore-modal'),loOpen=false,loSel=null,loCat='All',loQ='',loEdit=null;
+var LO_CATS=["Stonetop","The Vicinity","The Wider World","Peoples","Gods & Faith","The Makers & the Past","Creatures & Powers","Wonders"];
+function loreStore(){if(!store.lore)store.lore={};return store.lore;}
+function loreCustom(){var c=loreStore(),out=[];Object.keys(c).forEach(function(id){var e=c[id];if(!e||e.deleted)return;try{var o=JSON.parse(e.data);o.id=id;o.custom=true;out.push(o);}catch(_){}});return out;}
+function loreAll(){return (window.LORE||[]).concat(loreCustom()).filter(function(e){return !e.gm||isGM();});}
+function loreById(id){return loreAll().filter(function(e){return e.id===id;})[0];}
+function loreByTitle(t){t=(t||'').toLowerCase();return loreAll().filter(function(e){return (e.title||'').toLowerCase()===t;})[0];}
+function setLore(o){loreStore()[o.id]={data:JSON.stringify(o),_t:Date.now(),deleted:false};persist();pushLore(o.id);flashSaved();}
+function delLore(id){var c=loreStore();if(c[id]){c[id]={data:c[id].data,_t:Date.now(),deleted:true};persist();pushLore(id);}}
+function pushLore(id){if(!syncRef||applyingRemote)return;var e=loreStore()[id];if(!e)return;syncRef.child('lore').child(id).update({data:e.data,_t:e._t,deleted:!!e.deleted}).catch(syncFail);}
+function mergeLore(rc){rc=rc||{};var c=loreStore();Object.keys(rc).forEach(function(id){var r=rc[id]||{},l=c[id];if(!l||(r._t||0)>=(l._t||0))c[id]={data:r.data||'{}',_t:r._t||0,deleted:!!r.deleted};});}
+function loreSyncRefresh(){if(!loOpen||loEdit)return;var ae=document.activeElement,body=document.getElementById('lore-body');if(ae&&body.contains(ae)&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName))return;renderLore();}
+function openLore(id){loreModal.classList.add('open');loOpen=true;loEdit=null;if(id)loSel=id;if(!loSel&&window.innerWidth>640){var f=loreById('stonetop')||loreAll().filter(function(e){return e.cat==='Stonetop';})[0]||loreAll()[0];loSel=f?f.id:null;}renderLore();}
+function closeLore(){loOpen=false;loEdit=null;loreModal.classList.remove('open');}
+function loreMatch(e,q){if(!q)return 3;var t=(e.title||'').toLowerCase(),g=(e.gist||'').toLowerCase(),x=(e.text||'').toLowerCase()+' '+(e.tales||[]).join(' ').toLowerCase();if(t.indexOf(q)>=0)return 3;if(g.indexOf(q)>=0)return 2;if(x.indexOf(q)>=0)return 1;return 0;}
+function loreList(){var all=loreAll(),q=loQ.trim().toLowerCase();var list=all.filter(function(e){return (loCat==='All'||(loCat==='Ours'?e.custom:e.cat===loCat))&&loreMatch(e,q)>0;});if(q)list.sort(function(a,b){return loreMatch(b,q)-loreMatch(a,q)||a.title.localeCompare(b.title);});return list;}
+function loreListHtml(list){return list.length?list.map(function(e){return '<button class="lo-item'+(e.id===loSel?' on':'')+'" data-loid="'+esc(e.id)+'"><b>'+esc(e.title)+(e.custom?'<i class="lo-tag">'+(e.gm?'GM':'ours')+'</i>':'')+'</b><small>'+esc(e.gist||'')+'</small></button>';}).join(''):'<div class="empty">Nothing matches.</div>';}
+function renderLore(){
+  var body=document.getElementById('lore-body'),all=loreAll(),list=loreList();
+  var cats=['All'].concat(LO_CATS.filter(function(c){return all.some(function(e){return e.cat===c;});}));if(all.some(function(e){return e.custom;}))cats.push('Ours');
+  body.innerHTML='<div class="lo-wrap'+(loSel||loEdit?' reading':'')+'"><aside class="lo-side">'
+    +'<input id="lo-search" class="input" type="search" placeholder="Search the lore…" value="'+esc(loQ)+'" autocomplete="off">'
+    +'<div class="lo-cats">'+cats.map(function(c){return '<button class="chip'+(c===loCat?' on':'')+'" data-locat="'+esc(c)+'">'+esc(c)+'</button>';}).join('')+'</div>'
+    +'<div class="lo-list" id="lo-list">'+loreListHtml(list)+'</div>'
+    +'<div class="hint" id="lo-count">'+list.length+' of '+all.length+' entries</div></aside>'
+    +'<article class="lo-main'+(loEdit?' lo-form':'')+'" id="lo-main">'+(loEdit?loreForm():loreArticle(loreById(loSel),all.length))+'</article></div>';
+  bindLore();
+}
+function loreArticle(e,n){
+  if(!e)return '<div class="lo-welcome"><div class="lo-kicker">The Old Wall</div><h2 class="lo-title">What everyone knows</h2><p>The World\'s End as the folk of Stonetop tell it: the village and its neighbours, the roads and the wild places, the gods, the Makers who were here long before, and the things wise folk only whisper about. '+n+' entries, common knowledge and tales only.</p><p>Pick an entry from the list, search it, or add one of your own — a place you\'ve been, a story you were told, something the table has learned.</p></div>';
+  var paras=(e.text||'').split(/\n\s*\n/).map(function(p){return '<p>'+esc(p).replace(/\n/g,'<br>')+'</p>';}).join('');
+  var h='<button class="btn lo-back" data-loback>‹ All entries</button>';
+  h+='<div class="lo-kicker">'+esc(e.cat||'')+(e.custom?' · '+(e.gm?'GM notes':'our table'):(e.page?' · Book II p.'+e.page:' · Book I'))+'</div><h2 class="lo-title">'+esc(e.title)+'</h2>';
+  if(e.gist)h+='<p class="lo-gist">'+esc(e.gist)+'</p>';
+  h+='<div class="lo-text">'+paras+'</div>';
+  if(e.tales&&e.tales.length)h+='<div class="lo-tales"><div class="t-label">As the tales tell it</div>'+e.tales.map(function(t){return '<blockquote>'+esc(t)+'</blockquote>';}).join('')+'</div>';
+  var rel=(e.related||[]).map(function(t){return loreByTitle(t);}).filter(function(r){return r&&r.id!==e.id;});
+  if(rel.length)h+='<div class="lo-rel"><div class="t-label">See also</div>'+rel.map(function(r){return '<button class="chip" data-loid="'+esc(r.id)+'">'+esc(r.title)+'</button>';}).join('')+'</div>';
+  if(e.custom)h+='<div class="modal-actions lo-actions"><button class="btn" data-loedit="'+esc(e.id)+'">'+ico('pen')+' Edit</button><button class="btn btn-danger" data-lodel="'+esc(e.id)+'">Delete</button></div>';
+  return h;
+}
+function loreForm(){
+  var e=loEdit;
+  return '<button class="btn lo-back" data-loback>‹ All entries</button><div class="lo-kicker">'+(e.id?'Edit entry':'New entry')+'</div>'
+    +'<label class="t-label" for="lo-f-title">Title</label><input class="input" id="lo-f-title" value="'+esc(e.title||'')+'" placeholder="What is it called?">'
+    +'<label class="t-label" for="lo-f-cat">Category</label><select class="input" id="lo-f-cat">'+LO_CATS.map(function(c){return '<option'+(c===(e.cat||'Stonetop')?' selected':'')+'>'+esc(c)+'</option>';}).join('')+'</select>'
+    +'<label class="t-label" for="lo-f-gist">One line</label><input class="input" id="lo-f-gist" value="'+esc(e.gist||'')+'" placeholder="A short summary for the list">'
+    +'<label class="t-label" for="lo-f-text">The lore</label><textarea class="input" id="lo-f-text" rows="10" placeholder="Leave a blank line between paragraphs.">'+esc(e.text||'')+'</textarea>'
+    +'<label class="t-label" for="lo-f-tales">Tales and sayings, one per line</label><textarea class="input" id="lo-f-tales" rows="3">'+esc((e.tales||[]).join('\n'))+'</textarea>'
+    +'<label class="lo-check gm-only"><input type="checkbox" id="lo-f-gm"'+(e.gm?' checked':'')+'> GM only — hidden on players\' screens</label>'
+    +'<div class="modal-actions lo-actions"><button class="btn btn-primary" id="lo-f-save">Save</button><button class="btn" id="lo-f-cancel">Cancel</button></div>';
+}
+function bindLore(){
+  var body=document.getElementById('lore-body');
+  function bindItems(root){root.querySelectorAll('[data-loid]').forEach(function(b){b.addEventListener('click',function(){loSel=b.dataset.loid;loEdit=null;renderLore();var m=document.getElementById('lo-main');if(m&&window.innerWidth<=640)m.scrollIntoView({block:'start'});});});}
+  var s=body.querySelector('#lo-search');if(s)s.addEventListener('input',function(){loQ=s.value;var list=loreList(),el=document.getElementById('lo-list');el.innerHTML=loreListHtml(list);document.getElementById('lo-count').textContent=list.length+' of '+loreAll().length+' entries';bindItems(el);});
+  body.querySelectorAll('[data-locat]').forEach(function(b){b.addEventListener('click',function(){loCat=b.dataset.locat;renderLore();});});
+  bindItems(body);
+  body.querySelectorAll('[data-loback]').forEach(function(b){b.addEventListener('click',function(){loSel=null;loEdit=null;renderLore();});});
+  body.querySelectorAll('[data-loedit]').forEach(function(b){b.addEventListener('click',function(){var e=loreById(b.dataset.loedit);if(e){loEdit=JSON.parse(JSON.stringify(e));renderLore();}});});
+  body.querySelectorAll('[data-lodel]').forEach(function(b){b.addEventListener('click',function(){var e=loreById(b.dataset.lodel);if(e&&confirm('Delete "'+e.title+'" for everyone?')){delLore(e.id);loSel=null;renderLore();}});});
+  var sv=body.querySelector('#lo-f-save');if(sv)sv.addEventListener('click',function(){var ti=body.querySelector('#lo-f-title'),t=ti.value.trim();if(!t){ti.focus();return;}var gm=body.querySelector('#lo-f-gm');var o={id:loEdit.id||('c'+Date.now().toString(36)),title:t,cat:body.querySelector('#lo-f-cat').value,gist:body.querySelector('#lo-f-gist').value.trim(),text:body.querySelector('#lo-f-text').value.trim(),tales:body.querySelector('#lo-f-tales').value.split('\n').map(function(x){return x.trim();}).filter(Boolean),gm:!!(gm&&gm.checked),related:loEdit.related||[]};setLore(o);loSel=o.id;loEdit=null;renderLore();});
+  var cn=body.querySelector('#lo-f-cancel');if(cn)cn.addEventListener('click',function(){loEdit=null;renderLore();});
+}
+document.getElementById('lore-close').addEventListener('click',closeLore);
+document.getElementById('lore-backdrop').addEventListener('click',closeLore);
+document.getElementById('lore-add').addEventListener('click',function(){loEdit={};renderLore();var t=document.getElementById('lo-f-title');if(t)t.focus();});
+window.addEventListener('keydown',function(e){if(e.key==='Escape'&&loOpen){var ae=document.activeElement;if(ae&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName))return;closeLore();}});
 
 // ── Fight tracker (GM only; Book I pp.406–420) ───────────────────────────────
 var FT=null;
