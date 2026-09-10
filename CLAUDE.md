@@ -41,6 +41,7 @@ awk '/^<script>$/{f=1;next} /^<\/script>$/{f=0} f' index.html > /tmp/check.js &&
 | `registerpage1.png` / `registerpage2.png` | Screenshots of the DM's townsfolk register (30 NPCs: name, age, occupation, traits, alive/dead). Not used by the app yet — candidate seed data for the Common House people list / relationship graph. |
 | `Handout_-_*.pdf`, `Playbook_-_Steading_(spreads).pdf` | Player handouts uploaded through the GitHub web UI on 2026-09-09 (which bypasses the `*.pdf` gitignore rule). Not used by the app. Netlify serves everything in the repo, so anything committed here is public. |
 | `netlify.toml` | Sets the MIME header for `.js`. Site deploys to Netlify as static files. |
+| `server.js` / `run-server.command` | **Local-network server** (Node ≥18, no dependencies): serves the site and syncs the shared store over the Wi-Fi, saving to `data/store.json` (gitignored). `node server.js` or double-click the `.command` on a Mac; it prints the LAN URLs. The client probes `/api/ping` on load and, if it answers, syncs through `/api/store` (PUT = set, PATCH = update) and `/api/events` (SSE, full-store snapshots) via `LanRef`, which mirrors the slice of Firebase's ref API the code uses; otherwise it falls back to Firebase. |
 | `Books/` (gitignored, local only) | The rulebooks: `Book_I_-_Stonetop_(single_pages).pdf` (614 pp; PDF page = book page) and `Book_II_-_The_Wider_World_and_Other_Wonders_(single_pages).pdf` (602 pp, has a PDF outline), plus spreads versions and the original zip. Copyrighted — never commit or deploy. Extract text with PyMuPDF (`fitz`) in a scratch venv; `docs/gameplay-assist.md` is the survey of tool-worthy mechanics. |
 | `Book_I_-_Stonetop_(spreads).pdf` | Older root-level copy of Book I (gitignored). Source for the `docs/` guides. |
 | `moves.js` | Hand-summarised extra rules appended to `window.RULES` (24 entries: follower, expedition and homefront moves from Book I pp.76–85, plus the Die of Fate) and `window.TABLES` (weather by season p.325, night p.335, perilous travel p.323) for the Watchtower's roll buttons. Entries with `live:` show numbers computed from the Village Sheet (`ruleLive`). |
@@ -445,7 +446,13 @@ state in `wtState`. Wired via a `Mesh_Watchtower` branch in `renderBuilding`.
   `map-vicinity.jpg` / `map-world.jpg` and can replace them (convert CMYK→sRGB first, see
   Gotchas). Longer term the three maps could nest: village → vicinity → wider world.
 
-### 3. Shared sync across all computers — ✅ LIVE
+### 3. Shared sync across all computers — ✅ LIVE (two backends since 2026-09-10)
+**Local network (game night):** run `server.js` on the DM's laptop; every device on the Wi-Fi
+opens the printed address and syncs through it (pill: "synced · this network"). No internet,
+no accounts, nothing expires; data is `data/store.json` on that laptop. **Internet (Netlify +
+Firebase):** unchanged below, for use away from the table. The client chooses at load: if
+`/api/ping` answers it uses the local server, else Firebase. Both speak the same
+`set/update/on('value')` shape, so every feature's sync code is backend-agnostic.
 Implemented as a **Firebase Realtime Database** layer in `index.html`, and **the real
 database is configured and verified**:
 `FIREBASE_CONFIG = { databaseURL: "https://stone-7ed10-default-rtdb.firebaseio.com" }`.
@@ -524,6 +531,11 @@ How it works:
 - **The P hotkey** is ignored while any `[id$="-modal"].open` exists or an input is focused —
   keep new modal ids ending in `-modal` so that guard keeps working.
 - **Deploy:** static files to Netlify. Changes are local until deployed.
+- **Per-building merges happen in place.** `applyRemote` mutates the existing `store[k]` object
+  (and ignores echoes of our own write, same `_t`) instead of replacing it, because `bindBuilding`
+  closures hold a reference to that object while someone types. Replacing it made edits after
+  the first sync echo go into a stale object and vanish — the bug behind "text disappears while
+  typing" (fixed 2026-09-10, verified with two live pages on the LAN server).
 - **Sync rules expire.** On 2026-09-10 the Firebase database answered "Permission denied" to every
   read and write (test-mode rules had lapsed), so all devices were silently local-only. The pill now
   says "sync blocked · database rules" in that state (`syncFail`); the fix is republishing the open

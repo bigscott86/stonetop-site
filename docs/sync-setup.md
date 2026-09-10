@@ -1,4 +1,26 @@
-# Shared Sync Setup (Firebase, free)
+# Sync setup
+
+There are two ways the table's devices share one set of data. Use whichever fits the moment;
+the site picks automatically.
+
+## A. Game night on your own Wi-Fi (no internet needed)
+
+1. On the laptop that will host, open Terminal in the `stonetop-site` folder and run
+   `node server.js` — or double-click `run-server.command` in Finder. (Needs Node.js, the LTS
+   download from https://nodejs.org, installed once.)
+2. It prints addresses like `http://192.168.1.23:8732`. Everyone on the same Wi-Fi opens one of
+   them; on Macs and iPhones the `http://<your-mac-name>.local:8732` form also works.
+3. The status pill on every device should read **synced · this network**. Every change is saved
+   to `data/store.json` on the host laptop and pushed live to the others.
+4. Keep that Terminal window open while you play. Ctrl+C stops it. The first time, macOS may ask
+   whether to allow incoming connections for Node — allow it.
+
+Tips: if the address changes between sessions, that's your router handing out a new IP — the
+`.local` name avoids that. The host's browser seeds the server with whatever it already had, so
+the first person to open the site should be the DM's laptop.
+
+## B. Away from the table (Netlify + Firebase)
+
 
 This makes all notes, recaps, and people **shared live across every device** — the DM's
 laptop, players' phones, everyone. Until you do this, the site still works fine, but

@@ -1122,7 +1122,10 @@ function applyRemote(remote){
     if(k==='arcana'){mergeArcana(remote.arcana);return;}               // arcana chest (string-encoded per id, LWW + tombstones)
     var r=remote[k]||{}, l=store[k];
     // per-building last-write-wins; Firebase drops empty arrays, so restore them
-    if(!l||(r._t||0)>=(l._t||0)) store[k]=Object.assign({},r,{npcs:r.npcs||[],log:r.log||[],_t:r._t||0});
+    // per-building last-write-wins, updated IN PLACE so an open editor's reference stays live;
+    // an echo of our own write (same _t) is ignored, so typing is never clobbered mid-word
+    if(!l){store[k]=Object.assign({},r,{npcs:r.npcs||[],log:r.log||[],_t:r._t||0});}
+    else if((r._t||0)>(l._t||0)){Object.keys(l).forEach(function(x){delete l[x];});Object.assign(l,r,{npcs:r.npcs||[],log:r.log||[],_t:r._t||0});}
   });
   try{localStorage.setItem(STORE_KEY,JSON.stringify(store));}catch(e){}
   // refresh an open (non-editing) panel so other devices' edits appear live
@@ -1139,9 +1142,30 @@ function applyRemote(remote){
   if(typeof applySeason==='function')applySeason();
   applyingRemote=false;
 }
+// ── Local-network sync (server.js): the same small API surface the site uses from Firebase ──
+function LanRef(path){this.path=path||[];}
+LanRef.prototype.child=function(k){return new LanRef(this.path.concat(String(k).split('/')));};
+LanRef.prototype._url=function(){return '/api/store'+(this.path.length?'/'+this.path.map(encodeURIComponent).join('/'):'');};
+LanRef.prototype.set=function(v){return fetch(this._url(),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(v)}).then(function(r){if(!r.ok)throw new Error('LAN '+r.status);});};
+LanRef.prototype.update=function(v){return fetch(this._url(),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(v)}).then(function(r){if(!r.ok)throw new Error('LAN '+r.status);});};
+LanRef.prototype.on=function(ev,cb){var es=new EventSource('/api/events');es.onmessage=function(m){var d;try{d=JSON.parse(m.data);}catch(_){return;}cb({val:function(){return d;}});};es.onerror=function(){setSyncState('error','offline · saved here');};this._es=es;};
 function initSync(){
-  if(!FIREBASE_CONFIG){setSyncState('local','this device only');return;}
   setSyncState('connecting','connecting…');
+  fetch('/api/ping',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}).then(function(pong){
+    if(pong&&pong.ok){startLan();return;}                       // served by server.js: sync over this network
+    if(!FIREBASE_CONFIG){setSyncState('local','this device only');return;}
+    startFirebase();
+  });
+}
+function startLan(){
+  syncRef=new LanRef([]);
+  syncRef.on('value',function(snap){
+    applyRemote(snap.val());
+    setSyncState('synced','synced · this network');
+    if(firstSync){firstSync=false;pushRemote();}               // share what this device already has (after merging)
+  });
+}
+function startFirebase(){
   var urls=['https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
             'https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js'];
   (function next(i){
@@ -1161,7 +1185,7 @@ function initSync(){
         setSyncState('synced','synced');
         if(firstSync){firstSync=false;pushRemote();} // share what this device already has (after merging remote)
       },syncFail);
-    }catch(e){setSyncState('error','offline · saved here');}
+    }catch(e){syncFail(e);}
   }
 }
 
