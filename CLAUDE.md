@@ -217,6 +217,23 @@ net Surplus delta. The Surplus stepper and a manual "Add" row also write ledger 
   or a custom item with editable front/back; Reveal/Hide; remove. Holder is a roster character
   or "the party".
 
+## Map pins with notes on the Vicinity / World's End maps (built 2026-09-10)
+Watchtower → Chart Your Course: each map's toolbar has a **Pin** tool; with it active, a click or
+tap on the map drops a pin (`addWPin`) and opens its card (`openWPin`: name with a datalist of
+Book II place names from `window.WORLD_PLACES` in `moves.js`, a notes box, Done, Delete). Pins are
+stored as **percentages of the rendered map image** (`imgBox()` computes the object-fit:contain
+box), so they stay on the right spot on any screen; `store.wpins = {data: JSON {vic:[…],
+world:[…]}, _t}` is whole-doc LWW with a targeted push (`pushWPins`) and `wpinsSyncRefresh`.
+Pins sit in `.wt-pins` above the drawing canvas; clicking one opens its card in any tool mode.
+
+## Village map page, ink-and-parchment pass (2026-09-10)
+The map screen's chrome is now drawn in the map's own materials rather than the panels' dark UI:
+a title **cartouche** (`#brand`, parchment with a double ink border, showing season and year and
+a "GM screen on" line when set), parchment-and-ink **pin badges** with plaque labels that invert
+on hover, parchment chips for the Places button, hint strip and sync pill, a **vignette frame**
+(`#map-frame`) darkening the edges with a hairline inner border, and a **compass rose**
+(`#compass`, inline SVG, bottom-left). Modals stay dark; only the map layer uses parchment.
+
 ## Map atmosphere (built 2026-09-10)
 - **Season tint:** `applySeason()` reads the Village Sheet's `season`/`year`, puts
   `season-<name>` on `<body>` and writes "Spring · year 2" into `#brand-season`. `#map-tint`

@@ -108,3 +108,6 @@ window.TABLES = {
   night: {page:335, name:'Something in the night', rows:[[[1],'Something dangerous approaches, inclined to do harm'],[[2],'Something dangerous approaches, curious but not aggressive'],[[3],'Something annoying happens: critters in the food, rain, an argument…'],[[4,5],'The night passes uneventfully'],[[6],'They observe something interesting, find something useful, or gain some small boon; or the night passes uneventfully']]},
   peril: {page:323, name:'Perilous travel', rows:[[[1],'A danger springs on them, unavoidable'],[[2,3],'Introduce a danger, right in front of them'],[[4,5],'Point to a looming danger'],[[6],'Point to a looming danger, but also present a discovery']]}
 };
+
+// Places of the wider world (Book II chapter titles) — a name list for map pins.
+window.WORLD_PLACES = ['Barrier Pass','Blackwater Lake','The Dread River','Ferrier\'s Fen','The Flats','The Foothills','The Frozen Wastes','The Golden Oak','Gordin\'s Delve','The Great Wood','Huffel Peaks','The Labyrinth','Lygos','The Makers\' Roads','Marshedge','The Maw','North Manmarch','The Red Groves','The Ruined Tower','South Manmarch','The Steplands','The Stream','Three Coven Lake','Titan Bones','Ustrina','Vor Svetelik','The Whitefang Mountains','Stonetop'];

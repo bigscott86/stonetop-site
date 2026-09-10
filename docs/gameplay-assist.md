@@ -134,7 +134,7 @@ book-wide), plus **waystone** and **Makers' Road** encounter tables (Book II PDF
 Existing gap: Watchtower strokes are per-browser and lost on reload. Store canvas data in the
 synced store.
 
-### C5. Wider World lookup on the maps
+### C5. Wider World lookup on the maps — ✅ user-placed pins with notes BUILT 2026-09-10 (book lore per place still to do)
 Book II settlements open with an identical block: size, Population/Prosperity/Defenses, trade
 partners and goods, resources; regions have Impressions by season, a travel section, terrain and
 discovery tables, dangers. Travel times are stated where they matter (Barrier Pass "five days
