@@ -583,6 +583,12 @@ How it works:
   read and write (test-mode rules had lapsed), so all devices were silently local-only. The pill now
   says "sync blocked · database rules" in that state (`syncFail`); the fix is republishing the open
   rules in the Firebase console — see the last section of docs/sync-setup.md.
+- **Collections only hold records.** `characters`, `inventory`, `threats`, `arcana` and `lore` are
+  maps of `{data,_t,deleted}`; a stray `_t` clock once leaked into `characters/` and became a phantom,
+  undeletable "unnamed" character (its data was `{}`, so the card had no id to delete by). Now
+  `goodRec(id,r)` gates every merge (ids starting with `_` and non-records are ignored),
+  `scrubStore()` drops such junk from the local cache at start, and `getChar` falls back to the map
+  key as the id. The phantom was deleted from the live database on 2026-09-10.
 - **Rolls happen in person.** The group rolls physical dice. Nothing in the app rolls for them:
   the Seasons Change runner, the Stone's roll reader and the Watchtower tables all take the result
   the table rolled (dropdowns), and the Watchtower shows the tables to read against a d6.

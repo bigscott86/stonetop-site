@@ -1502,7 +1502,7 @@ function allThreats(){var t=threats();return Object.keys(t).filter(function(id){
 function setThreat(o){threats()[o.id]={data:JSON.stringify(o),_t:Date.now(),deleted:false};persist();pushThreat(o.id);flashSaved();}
 function delThreat(id){var t=threats();if(t[id]){t[id]={data:t[id].data,_t:Date.now(),deleted:true};persist();pushThreat(id);}}
 function pushThreat(id){if(!syncRef||applyingRemote)return;var e=threats()[id];if(!e)return;syncRef.child('threats').child(id).update({data:e.data,_t:e._t,deleted:!!e.deleted}).catch(syncFail);}
-function mergeThreats(rc){rc=rc||{};var c=threats();Object.keys(rc).forEach(function(id){var r=rc[id]||{},l=c[id];if(!l||(r._t||0)>=(l._t||0))c[id]={data:r.data||'{}',_t:r._t||0,deleted:!!r.deleted};});}
+function mergeThreats(rc){rc=rc||{};var c=threats();Object.keys(rc).forEach(function(id){var r=rc[id],l=c[id];if(!goodRec(id,r))return;if(!l||(r._t||0)>=(l._t||0))c[id]={data:r.data||'{}',_t:r._t||0,deleted:!!r.deleted};});}
 function threatsSyncRefresh(){if(!buildingModal.classList.contains('open')||curBldg!=='Mesh_Watchtower')return;var root=buildingPanel.querySelector('#wt-threats');if(!root)return;var ae=document.activeElement;if(ae&&root.contains(ae)&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName))return;root.innerHTML=renderThreats();bindThreats();}
 function threatType(key){return (window.THREAT_TYPES||[]).filter(function(x){return x.key===key;})[0];}
 function renderThreats(){
@@ -1937,7 +1937,10 @@ function persist(){try{localStorage.setItem(STORE_KEY,JSON.stringify(store));}ca
 
 // --- character store (synced collection, string-encoded per id; last-write-wins + tombstones) ---
 function chars(){if(!store.characters)store.characters={};return store.characters;}
-function getChar(id){var e=chars()[id];if(!e||e.deleted)return null;try{return JSON.parse(e.data);}catch(_){return null;}}
+function goodRec(id,r){return !!r&&typeof r==='object'&&typeof r.data==='string'&&typeof id==='string'&&id.charAt(0)!=='_';}
+var COLLECTIONS=['characters','inventory','threats','arcana','lore'];
+function scrubStore(){var n=0;COLLECTIONS.forEach(function(k){var c=store[k];if(!c||typeof c!=='object')return;Object.keys(c).forEach(function(id){if(!goodRec(id,c[id])){delete c[id];n++;}});});if(n){persist();console.warn('sync: dropped '+n+' malformed record(s)');}}
+function getChar(id){var e=chars()[id];if(!goodRec(id,e)||e.deleted)return null;try{var o=JSON.parse(e.data);if(!o||typeof o!=='object')return null;o.id=o.id||id;return o;}catch(_){return null;}}
 function allChars(){var c=chars();return Object.keys(c).filter(function(id){return c[id]&&!c[id].deleted;}).map(getChar).filter(Boolean);}
 function setChar(o){var c=chars();c[o.id]={data:JSON.stringify(o),_t:Date.now(),deleted:false};persist();pushChar(o.id);flashSaved();}
 function delChar(id){var c=chars();if(c[id]){c[id]={data:c[id].data,_t:Date.now(),deleted:true};persist();pushChar(id);}}
@@ -1949,7 +1952,7 @@ function pushChar(id){
 function mergeCharacters(rc){
   rc=rc||{};var c=chars();
   Object.keys(rc).forEach(function(id){
-    var r=rc[id]||{}, l=c[id];
+    var r=rc[id], l=c[id]; if(!goodRec(id,r))return; // ignore junk keys (a stray _t clock, non-records)
     if(!l||(r._t||0)>=(l._t||0)) c[id]={data:r.data||'{}',_t:r._t||0,deleted:!!r.deleted};
   });
 }
@@ -2798,7 +2801,7 @@ function loreByTitle(t){t=(t||'').toLowerCase();return loreAll().filter(function
 function setLore(o){loreStore()[o.id]={data:JSON.stringify(o),_t:Date.now(),deleted:false};persist();pushLore(o.id);flashSaved();}
 function delLore(id){var c=loreStore();if(c[id]){c[id]={data:c[id].data,_t:Date.now(),deleted:true};persist();pushLore(id);}}
 function pushLore(id){if(!syncRef||applyingRemote)return;var e=loreStore()[id];if(!e)return;syncRef.child('lore').child(id).update({data:e.data,_t:e._t,deleted:!!e.deleted}).catch(syncFail);}
-function mergeLore(rc){rc=rc||{};var c=loreStore();Object.keys(rc).forEach(function(id){var r=rc[id]||{},l=c[id];if(!l||(r._t||0)>=(l._t||0))c[id]={data:r.data||'{}',_t:r._t||0,deleted:!!r.deleted};});}
+function mergeLore(rc){rc=rc||{};var c=loreStore();Object.keys(rc).forEach(function(id){var r=rc[id],l=c[id];if(!goodRec(id,r))return;if(!l||(r._t||0)>=(l._t||0))c[id]={data:r.data||'{}',_t:r._t||0,deleted:!!r.deleted};});}
 function loreSyncRefresh(){if(!loOpen||loEdit)return;var ae=document.activeElement,body=document.getElementById('lore-body');if(ae&&body.contains(ae)&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName))return;renderLore();}
 function openLore(id){loreModal.classList.add('open');loOpen=true;loEdit=null;if(id)loSel=id;if(!loSel&&window.innerWidth>640){var f=loreById('stonetop')||loreAll().filter(function(e){return e.cat==='Stonetop';})[0]||loreAll()[0];loSel=f?f.id:null;}renderLore();}
 function closeLore(){loOpen=false;loEdit=null;loreModal.classList.remove('open');}
@@ -2931,7 +2934,7 @@ function invLoad(id){
 }
 function saveInv(){if(!PK)return;invs()[PK.charId]={data:JSON.stringify(PK),_t:Date.now()};persist();pushInv(PK.charId);flashSaved();}
 function pushInv(id){if(!syncRef||applyingRemote)return;var e=invs()[id];if(!e)return;syncRef.child('inventory').child(id).set({data:e.data,_t:e._t}).catch(syncFail);}
-function mergeInventory(ri){ri=ri||{};var l=invs();Object.keys(ri).forEach(function(id){var r=ri[id]||{},x=l[id];if(!x||(r._t||0)>=(x._t||0))l[id]={data:r.data||'',_t:r._t||0};});}
+function mergeInventory(ri){ri=ri||{};var l=invs();Object.keys(ri).forEach(function(id){var r=ri[id],x=l[id];if(!goodRec(id,r))return;if(!x||(r._t||0)>=(x._t||0))l[id]={data:r.data||'',_t:r._t||0};});}
 function packSyncRefresh(){
   if(!pkOpen||!PK)return;
   var ae=document.activeElement,body=document.getElementById('pack-body');
@@ -3138,7 +3141,7 @@ function allArc(){var c=arcanaItems();return Object.keys(c).filter(function(id){
 function setArc(o){arcanaItems()[o.id]={data:JSON.stringify(o),_t:Date.now(),deleted:false};persist();pushArc(o.id);flashSaved();}
 function delArc(id){var c=arcanaItems();if(c[id]){c[id]={data:c[id].data,_t:Date.now(),deleted:true};persist();pushArc(id);}}
 function pushArc(id){if(!syncRef||applyingRemote)return;var e=arcanaItems()[id];if(!e)return;syncRef.child('arcana').child(id).update({data:e.data,_t:e._t,deleted:!!e.deleted}).catch(syncFail);}
-function mergeArcana(rc){rc=rc||{};var c=arcanaItems();Object.keys(rc).forEach(function(id){var r=rc[id]||{},l=c[id];if(!l||(r._t||0)>=(l._t||0))c[id]={data:r.data||'{}',_t:r._t||0,deleted:!!r.deleted};});}
+function mergeArcana(rc){rc=rc||{};var c=arcanaItems();Object.keys(rc).forEach(function(id){var r=rc[id],l=c[id];if(!goodRec(id,r))return;if(!l||(r._t||0)>=(l._t||0))c[id]={data:r.data||'{}',_t:r._t||0,deleted:!!r.deleted};});}
 function arcanaSyncRefresh(){if(!arOpen)return;var b=document.getElementById('arcana-body'),ae=document.activeElement;if(b&&ae&&b.contains(ae)&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName))return;renderArcana();}
 function arcanaEntry(it){ // the card text: from the book by ref, or the item's own custom text
   var A=window.ARCANA||{minor:[],major:[]};
@@ -3220,6 +3223,7 @@ function bindArcanaCards(body,rerender){ // card controls, in the chest or in a 
 // ============================================================
 //  START
 // ============================================================
+scrubStore();
 initMap();
 initSync();
 
