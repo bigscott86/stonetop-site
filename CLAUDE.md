@@ -41,7 +41,7 @@ awk '/^<script>$/{f=1;next} /^<\/script>$/{f=0} f' index.html > /tmp/check.js &&
 | `registerpage1.png` / `registerpage2.png` | Screenshots of the DM's townsfolk register (30 NPCs: name, age, occupation, traits, alive/dead). Not used by the app yet — candidate seed data for the Common House people list / relationship graph. |
 | `Handout_-_*.pdf`, `Playbook_-_Steading_(spreads).pdf` | Player handouts uploaded through the GitHub web UI on 2026-09-09 (which bypasses the `*.pdf` gitignore rule). Not used by the app. Netlify serves everything in the repo, so anything committed here is public. |
 | `netlify.toml` | Sets the MIME header for `.js`. Site deploys to Netlify as static files. |
-| `server.js` / `run-server.command` | **Local-network server** (Node ≥18, no dependencies): serves the site and syncs the shared store over the Wi-Fi, saving to `data/store.json` (gitignored). `node server.js` or double-click the `.command` on a Mac; it prints the LAN URLs. The client probes `/api/ping` on load and, if it answers, syncs through `/api/store` (PUT = set, PATCH = update) and `/api/events` (SSE, full-store snapshots) via `LanRef`, which mirrors the slice of Firebase's ref API the code uses; otherwise it falls back to Firebase. |
+| `server.js` / `run-server.command` | **Local-network server** (Node ≥18, no dependencies). Default `node server.js` only serves the site on the Wi-Fi (devices still sync through Firebase, so the data matches the Netlify site — the group's chosen setup while Netlify isn't linked to the repo). `node server.js --offline` also syncs through this machine, saving to `data/store.json` (gitignored): the client probes `/api/ping`, and when it answers `sync:'local'` it uses `/api/store` (PUT = set, PATCH = update) and `/api/events` (SSE, full-store snapshots) via `LanRef`, which mirrors the slice of Firebase's ref API the code uses. |
 | `Books/` (gitignored, local only) | The rulebooks: `Book_I_-_Stonetop_(single_pages).pdf` (614 pp; PDF page = book page) and `Book_II_-_The_Wider_World_and_Other_Wonders_(single_pages).pdf` (602 pp, has a PDF outline), plus spreads versions and the original zip. Copyrighted — never commit or deploy. Extract text with PyMuPDF (`fitz`) in a scratch venv; `docs/gameplay-assist.md` is the survey of tool-worthy mechanics. |
 | `Book_I_-_Stonetop_(spreads).pdf` | Older root-level copy of Book I (gitignored). Source for the `docs/` guides. |
 | `moves.js` | Hand-summarised extra rules appended to `window.RULES` (24 entries: follower, expedition and homefront moves from Book I pp.76–85, plus the Die of Fate) and `window.TABLES` (weather by season p.325, night p.335, perilous travel p.323) for the Watchtower's roll buttons. Entries with `live:` show numbers computed from the Village Sheet (`ruleLive`). |
@@ -105,8 +105,9 @@ console). Rough layout by section:
 | `Mesh_Forge` | The Smithy | Classes & Characters | Smithy (rich, special) |
 | `Mesh_Shrine` | The Stone | How to Play | Shrine (rich, special) |
 | `Mesh_Longhouse` | The Common House | Townsfolk & Relationships | **Editable** |
-| `Mesh_Barrow` | The Granary | The Homefront | **Editable** |
-| `Mesh_Market` | The Stables | Travel Info | **Editable** + 🎒 Pack & Closet button |
+| `Mesh_Barrow` | The Granary | The Village Sheet | **Direct**: `openPlace` opens the Village Sheet (steading modal); its old People/Notes panel is gone (the Chronicle and Common House cover that) |
+| `Mesh_Market` | The Stables | Travel & the Pack | **Editable** + "Pack for the road" (opens Pack & Closet on the Pack tab) + Arcana chest |
+| `Mesh_Home` | Home | Closets & Possessions | **Direct**: `openPlace` opens Pack & Closet on the Closet tab (wardrobe icon); no building panel, no stored content |
 | `Mesh_Watchtower` | The Watchtower | The Wider World | **Editable** |
 | `Mesh_Well` | The Chronicle | Session Recaps | **Editable** (log labeled "The Chronicle") |
 
@@ -248,6 +249,18 @@ a "GM screen on" line when set), parchment-and-ink **pin badges** with plaque la
 on hover, parchment chips for the Places button, hint strip and sync pill, a **vignette frame**
 (`#map-frame`) darkening the edges with a hairline inner border, and a **compass rose**
 (`#compass`, inline SVG, bottom-left). Modals stay dark; only the map layer uses parchment.
+
+## Weather & night (built 2026-09-10)
+The steading doc also carries `weather` (`clear|overcast|rain|storm|snow|fog`) and `night`
+(bool). `applySeason()` sets `weather-<x>` / `night` classes on `<body>`, writes them into the
+cartouche, and updates the map's **Sky** button (`#sky`, next to Places), whose menu changes
+season / weather / day-night from the map via `stPatch(fn)` (edits the Village Sheet doc whether
+or not the sheet is open, saving through `saveSteading`). The Village Sheet's Season section has
+the same controls. The effects are the `#weather` overlay (fixed to the viewport, above the map,
+`pointer-events:none`): a multiply tint per weather, two rain stripe layers (faster in a storm,
+plus a lightning `.wx-flash`), two snow dot layers, a drifting blurred fog layer (plus reduced
+contrast), and a dark-blue multiply `.wx-night` with reduced brightness. Animations are pure
+CSS and stop under `prefers-reduced-motion`.
 
 ## Map atmosphere (built 2026-09-10)
 - **Season tint:** `applySeason()` reads the Village Sheet's `season`/`year`, puts
@@ -410,7 +423,7 @@ reference browser.
 - **Still not modeled:** full per-arcanum/invocation rules *text* (names + gists only).
 
 ### 4. The Steading (village) sheet — ✅ BUILT
-A shared, editable **Village Sheet** opened from the **Granary** ("Homefront") panel
+A shared, editable **Village Sheet**, opened directly by the **Granary** pin (since 2026-09-10; before that via a button on the Granary's panel)
 (🏘 Village Sheet button). Driven by `window.STEADING` in `playbooks.js` (Stonetop steading
 playbook, Book I pp.154–161): editable name/size/population; the five steading **stats** as
 steppers (Surplus, Fortunes, Population, Prosperity, Defenses) seeded to their book starting
@@ -447,9 +460,10 @@ state in `wtState`. Wired via a `Mesh_Watchtower` branch in `renderBuilding`.
   Gotchas). Longer term the three maps could nest: village → vicinity → wider world.
 
 ### 3. Shared sync across all computers — ✅ LIVE (two backends since 2026-09-10)
-**Local network (game night):** run `server.js` on the DM's laptop; every device on the Wi-Fi
-opens the printed address and syncs through it (pill: "synced · this network"). No internet,
-no accounts, nothing expires; data is `data/store.json` on that laptop. **Internet (Netlify +
+**Local network:** run `server.js` on the DM's laptop; every device on the Wi-Fi opens the
+printed address. By default they still sync through Firebase (the group's setup). With
+`--offline` they sync through the laptop instead (pill: "synced · this network"; data in
+`data/store.json`) — for nights without internet. **Internet (Netlify +
 Firebase):** unchanged below, for use away from the table. The client chooses at load: if
 `/api/ping` answers it uses the local server, else Firebase. Both speak the same
 `set/update/on('value')` shape, so every feature's sync code is backend-agnostic.

@@ -89,7 +89,52 @@
   #hl{position:absolute;display:none;background:var(--ink-0);border:1px solid var(--line-1);color:var(--text-0);font-size:13px;letter-spacing:.5px;padding:var(--s2) var(--s3);pointer-events:none;line-height:1.5;max-width:320px;box-shadow:var(--shadow);}
   #hl .hl-sub{font-size:11px;letter-spacing:1px;color:var(--text-3);display:block;margin-top:2px;}
   /* places list (keyboard / phone navigation) */
-  #places{position:absolute;top:var(--s4);right:var(--s4);pointer-events:auto;display:flex;flex-direction:column;align-items:flex-end;gap:var(--s2);}
+  #topright{position:absolute;top:var(--s4);right:var(--s4);display:flex;align-items:flex-start;gap:var(--s2);pointer-events:none;}
+  #places,#sky{position:relative;pointer-events:auto;display:flex;flex-direction:column;align-items:flex-end;gap:var(--s2);}
+  #sky-btn{display:inline-flex;align-items:center;gap:var(--s2);min-height:var(--ctl);padding:0 var(--s3);background:rgba(243,230,196,.92);border:1px solid var(--line-0);color:var(--line-0);font-size:11px;letter-spacing:2px;text-transform:uppercase;transition:background var(--dur),color var(--dur);}
+  #sky-btn:hover,#sky.open #sky-btn{background:var(--line-0);color:var(--parchment);}
+  #sky-btn .ic{width:16px;height:16px;}
+  #sky-menu{display:none;position:absolute;right:0;top:calc(var(--ctl) + var(--s2));background:var(--ink-0);border:1px solid var(--line-1);box-shadow:var(--shadow);padding:var(--s3) var(--s4);min-width:300px;}
+  #sky.open #sky-menu{display:block;}
+  .sky-row{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2);margin-bottom:var(--s2);}
+  .sky-row .t-label{flex-basis:100%;margin-bottom:2px;}
+  .sky-row .seg-btn{padding:0 var(--s2);min-height:32px;font-size:10px;letter-spacing:1px;}
+  .sky-row .seg-btn .ic{width:14px;height:14px;}
+  /* weather layers (fixed to the viewport; pointer-events none) */
+  #weather{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+  #weather>div{position:absolute;inset:-15%;}
+  .wx-tint,.wx-rain1,.wx-rain2,.wx-snow1,.wx-snow2,.wx-fog,.wx-flash,.wx-night{opacity:0;transition:opacity 1.6s var(--ease);}
+  .wx-tint{mix-blend-mode:multiply;background:#fff;}
+  body.weather-overcast .wx-tint{background:#b9bcc2;opacity:.35;}
+  body.weather-rain .wx-tint{background:#98a2b2;opacity:.45;}
+  body.weather-storm .wx-tint{background:#6c7588;opacity:.6;}
+  body.weather-snow .wx-tint{background:#dfe6ef;opacity:.28;}
+  body.weather-fog .wx-tint{background:#d5d8dd;opacity:.32;}
+  .wx-rain1,.wx-rain2{background-image:repeating-linear-gradient(106deg,transparent 0 9px,rgba(225,232,242,.7) 9px 10px,transparent 10px 24px);background-size:70px 110px;}
+  .wx-rain2{background-image:repeating-linear-gradient(104deg,transparent 0 14px,rgba(225,232,242,.45) 14px 15px,transparent 15px 34px);background-size:90px 160px;}
+  @keyframes wx-rainfall{to{background-position:-70px 880px;}}
+  body.weather-rain .wx-rain1{opacity:.45;animation:wx-rainfall 1.1s linear infinite;}
+  body.weather-rain .wx-rain2{opacity:.3;animation:wx-rainfall 1.7s linear infinite;}
+  body.weather-storm .wx-rain1{opacity:.6;animation:wx-rainfall .7s linear infinite;}
+  body.weather-storm .wx-rain2{opacity:.45;animation:wx-rainfall 1.1s linear infinite;}
+  @keyframes wx-flash{0%,89%,100%{opacity:0;}90%{opacity:.55;}91.5%{opacity:0;}93%{opacity:.35;}94.5%{opacity:0;}}
+  .wx-flash{background:#fff;mix-blend-mode:screen;}
+  body.weather-storm .wx-flash{animation:wx-flash 8s linear infinite;}
+  .wx-snow1{background-image:radial-gradient(circle,rgba(255,255,255,.95) 1.6px,transparent 2.6px);background-size:46px 46px;}
+  .wx-snow2{background-image:radial-gradient(circle,rgba(255,255,255,.7) 2.4px,transparent 3.6px);background-size:88px 88px;filter:blur(.6px);}
+  @keyframes wx-snowfall{to{background-position:40px 640px;}}
+  body.weather-snow .wx-snow1{opacity:.8;animation:wx-snowfall 9s linear infinite;}
+  body.weather-snow .wx-snow2{opacity:.6;animation:wx-snowfall 15s linear infinite;}
+  .wx-fog{background:radial-gradient(ellipse at 20% 40%,rgba(255,255,255,.75),transparent 55%),radial-gradient(ellipse at 70% 65%,rgba(255,255,255,.6),transparent 50%),radial-gradient(ellipse at 45% 85%,rgba(255,255,255,.5),transparent 45%);filter:blur(28px);}
+  @keyframes wx-fogdrift{from{transform:translateX(-5%);}to{transform:translateX(5%);}}
+  body.weather-fog .wx-fog{opacity:.7;animation:wx-fogdrift 40s ease-in-out infinite alternate;}
+  body.weather-fog #map-inner{filter:contrast(.8);}
+  .wx-night{background:#16213f;mix-blend-mode:multiply;}
+  body.night .wx-night{opacity:.55;}
+  body.night #map-inner{filter:brightness(.82);}
+  body.night.weather-fog #map-inner{filter:brightness(.82) contrast(.8);}
+  body.night .pin-label{background:rgba(243,230,196,.72);}
+  @media (prefers-reduced-motion:reduce){#weather>div{animation:none!important;}}
   #places-btn{display:inline-flex;align-items:center;gap:var(--s2);min-height:var(--ctl);padding:0 var(--s3);background:rgba(243,230,196,.92);border:1px solid var(--line-0);color:var(--line-0);font-size:11px;letter-spacing:2px;text-transform:uppercase;transition:background var(--dur),color var(--dur);}
   #places-btn:hover,#places.open #places-btn{background:var(--line-0);color:var(--parchment);}
   #places-list{display:none;flex-direction:column;background:var(--ink-0);border:1px solid var(--line-1);box-shadow:var(--shadow);min-width:240px;}
@@ -566,6 +611,7 @@
     .modal-actions{margin-left:0;width:100%;}
     #brand{top:var(--s3);left:var(--s3);padding:var(--s2) var(--s3);} #brand b{font-size:15px;letter-spacing:4px;} #brand small{display:none;} #brand-season{display:block!important;font-size:9px;letter-spacing:2px;}
     #compass{width:56px;height:56px;left:var(--s3);bottom:64px;} #map-frame{box-shadow:inset 0 0 70px 10px rgba(38,28,14,.5);}
+    #topright{top:var(--s3);right:var(--s3);} #sky-btn span{display:none;} #sky-menu{min-width:260px;}
     #inst{white-space:normal;text-align:center;width:calc(100% - 32px);bottom:var(--s3);}
     #sync-dot{bottom:auto;top:64px;right:var(--s4);}
     .cc-stats{grid-template-columns:repeat(3,1fr);}
@@ -578,7 +624,7 @@
 </style>
 </head>
 <body>
-<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true"><symbol id="i-stone" viewBox="0 0 24 24"><path d="M9 21V8l3-5 3 5v13"/><path d="M6 21h12"/><path d="M12 10v3"/></symbol><symbol id="i-longhouse" viewBox="0 0 24 24"><path d="M3 11l9-6 9 6"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></symbol><symbol id="i-forge" viewBox="0 0 24 24"><path d="M5 9h12l2 2-3 3h-5v4h3v2H8v-2h3v-4H8L5 11z"/></symbol><symbol id="i-granary" viewBox="0 0 24 24"><path d="M12 21V9"/><path d="M12 9c-3 0-5-3-5-6 3 0 5 3 5 6z"/><path d="M12 9c3 0 5-3 5-6-3 0-5 3-5 6z"/><path d="M12 14c-3 0-5-2-5-5 3 0 5 2 5 5z"/><path d="M12 14c3 0 5-2 5-5-3 0-5 2-5 5z"/><path d="M8 21h8"/></symbol><symbol id="i-stables" viewBox="0 0 24 24"><path d="M6 19v-8a6 6 0 0 1 12 0v8"/><path d="M4 19h4M16 19h4"/></symbol><symbol id="i-tower" viewBox="0 0 24 24"><path d="M7 21V6h10v15"/><path d="M7 6V3h2v2h2V3h2v2h2V3h2v3"/><path d="M11 21v-5h2v5"/><path d="M5 21h14"/></symbol><symbol id="i-scroll" viewBox="0 0 24 24"><path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H8"/><path d="M6 4a2 2 0 0 0-2 2v1h4V6a2 2 0 0 0-2-2z"/><path d="M8 20a2 2 0 0 1-2-2V6"/><path d="M10 9h6M10 13h6"/></symbol><symbol id="i-pack" viewBox="0 0 24 24"><path d="M8 7V5a4 4 0 0 1 8 0v2"/><rect x="5" y="7" width="14" height="14" rx="2"/><path d="M5 12h14"/><path d="M9 16h6"/></symbol><symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M15 12v2"/></symbol><symbol id="i-web" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M12 7v5M12 12l-5.5 4.5M12 12l5.5 4.5"/></symbol><symbol id="i-village" viewBox="0 0 24 24"><path d="M2 20h20"/><path d="M4 20v-8l3.5-4L11 12v8"/><path d="M13 20v-6l3.5-4L20 14v6"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol><symbol id="i-unlock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></symbol><symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 3h6l-1 6 3 3H7l3-3z"/><path d="M12 12v9"/></symbol><symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M14 7l3 3"/></symbol><symbol id="i-eraser" viewBox="0 0 24 24"><path d="M4 16l9-9 5 5-9 9H6z"/><path d="M6 21h14"/></symbol><symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></symbol><symbol id="i-tidy" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l3 3M15 15l3 3M6 18l3-3M15 9l3-3"/></symbol><symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></symbol><symbol id="i-import" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol><symbol id="i-list" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol><symbol id="i-map" viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></symbol></svg>
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true"><symbol id="i-stone" viewBox="0 0 24 24"><path d="M9 21V8l3-5 3 5v13"/><path d="M6 21h12"/><path d="M12 10v3"/></symbol><symbol id="i-longhouse" viewBox="0 0 24 24"><path d="M3 11l9-6 9 6"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></symbol><symbol id="i-forge" viewBox="0 0 24 24"><path d="M5 9h12l2 2-3 3h-5v4h3v2H8v-2h3v-4H8L5 11z"/></symbol><symbol id="i-granary" viewBox="0 0 24 24"><path d="M12 21V9"/><path d="M12 9c-3 0-5-3-5-6 3 0 5 3 5 6z"/><path d="M12 9c3 0 5-3 5-6-3 0-5 3-5 6z"/><path d="M12 14c-3 0-5-2-5-5 3 0 5 2 5 5z"/><path d="M12 14c3 0 5-2 5-5-3 0-5 2-5 5z"/><path d="M8 21h8"/></symbol><symbol id="i-stables" viewBox="0 0 24 24"><path d="M6 19v-8a6 6 0 0 1 12 0v8"/><path d="M4 19h4M16 19h4"/></symbol><symbol id="i-tower" viewBox="0 0 24 24"><path d="M7 21V6h10v15"/><path d="M7 6V3h2v2h2V3h2v2h2V3h2v3"/><path d="M11 21v-5h2v5"/><path d="M5 21h14"/></symbol><symbol id="i-scroll" viewBox="0 0 24 24"><path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H8"/><path d="M6 4a2 2 0 0 0-2 2v1h4V6a2 2 0 0 0-2-2z"/><path d="M8 20a2 2 0 0 1-2-2V6"/><path d="M10 9h6M10 13h6"/></symbol><symbol id="i-pack" viewBox="0 0 24 24"><path d="M8 7V5a4 4 0 0 1 8 0v2"/><rect x="5" y="7" width="14" height="14" rx="2"/><path d="M5 12h14"/><path d="M9 16h6"/></symbol><symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M15 12v2"/></symbol><symbol id="i-web" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M12 7v5M12 12l-5.5 4.5M12 12l5.5 4.5"/></symbol><symbol id="i-village" viewBox="0 0 24 24"><path d="M2 20h20"/><path d="M4 20v-8l3.5-4L11 12v8"/><path d="M13 20v-6l3.5-4L20 14v6"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol><symbol id="i-unlock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></symbol><symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 3h6l-1 6 3 3H7l3-3z"/><path d="M12 12v9"/></symbol><symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M14 7l3 3"/></symbol><symbol id="i-eraser" viewBox="0 0 24 24"><path d="M4 16l9-9 5 5-9 9H6z"/><path d="M6 21h14"/></symbol><symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></symbol><symbol id="i-tidy" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l3 3M15 15l3 3M6 18l3-3M15 9l3-3"/></symbol><symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></symbol><symbol id="i-import" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol><symbol id="i-list" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol><symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></symbol><symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 11a3.5 3.5 0 0 0 1 7z"/></symbol><symbol id="i-rain" viewBox="0 0 24 24"><path d="M7 15h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 8a3.5 3.5 0 0 0 1 7z"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/></symbol><symbol id="i-storm" viewBox="0 0 24 24"><path d="M7 14h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 7a3.5 3.5 0 0 0 1 7z"/><path d="M13 14l-2 4h3l-2 4"/></symbol><symbol id="i-snow" viewBox="0 0 24 24"><path d="M7 15h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 8a3.5 3.5 0 0 0 1 7z"/><circle cx="8" cy="19" r=".9"/><circle cx="12" cy="21" r=".9"/><circle cx="16" cy="19" r=".9"/></symbol><symbol id="i-fog" viewBox="0 0 24 24"><path d="M4 8h16M7 12h13M4 16h16M8 20h9"/></symbol><symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a7 7 0 1 0 10.5 10.5z"/></symbol><symbol id="i-wardrobe" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M12 3v18M10 11v2M14 11v2M5 21v1M19 21v1"/></symbol><symbol id="i-map" viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></symbol></svg>
 <div id="cc">
   <div id="map">
     <div id="map-inner">
@@ -586,12 +632,16 @@
       <div id="map-tint"></div>
       <div id="pins"></div>
     </div>
+    <div id="weather" aria-hidden="true"><div class="wx-tint"></div><div class="wx-rain1"></div><div class="wx-rain2"></div><div class="wx-snow1"></div><div class="wx-snow2"></div><div class="wx-fog"></div><div class="wx-flash"></div><div class="wx-night"></div></div>
     <div id="map-frame"></div>
     <svg id="compass" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="50" cy="50" r="34" fill="none" stroke="currentColor" stroke-width=".6" stroke-dasharray="2 3"/><path d="M50 6L56 50 50 94 44 50Z" fill="currentColor" opacity=".85"/><path d="M6 50L50 44 94 50 50 56Z" fill="currentColor" opacity=".45"/><path d="M50 6L54 50 50 50Z" fill="#f3e6c4" opacity=".9"/><circle cx="50" cy="50" r="3" fill="#f3e6c4" stroke="currentColor" stroke-width="1.2"/><text x="50" y="3.5" text-anchor="middle" font-family="Georgia,serif" font-size="9" fill="currentColor">N</text></svg>
   </div>
   <div id="ui">
     <div id="brand"><b>Stonetop</b><small>A hearth-fantasy campaign</small><small id="brand-season"></small><small id="brand-gm" hidden>GM screen on</small></div>
-    <div id="places"><button id="places-btn" aria-expanded="false" aria-controls="places-list"><svg class="ic"><use href="#i-list"/></svg> Places</button><div id="places-list" role="menu"></div></div>
+    <div id="topright">
+      <div id="sky"><button id="sky-btn" aria-expanded="false" aria-controls="sky-menu" title="Season, weather and time of day"></button><div id="sky-menu"></div></div>
+      <div id="places"><button id="places-btn" aria-expanded="false" aria-controls="places-list"><svg class="ic"><use href="#i-list"/></svg> Places</button><div id="places-list" role="menu"></div></div>
+    </div>
     <div id="inst">Click a place &nbsp;·&nbsp; drag to pan &nbsp;·&nbsp; scroll or pinch to zoom</div>
     <div id="hl"></div>
 
@@ -821,7 +871,7 @@
       <div id="pack-backdrop" class="modal-backdrop"></div>
       <div id="pack-box" class="modal-box">
         <button id="pack-close" class="modal-close" aria-label="Close">✕</button>
-        <div id="pack-header" class="modal-head"><div id="pack-title" class="modal-title"><svg class="ic"><use href="#i-pack"/></svg>Pack &amp; Closet</div></div>
+        <div id="pack-header" class="modal-head"><div id="pack-title" class="modal-title"><svg class="ic"><use href="#i-pack"/></svg>Pack &amp; Closet</div><div class="modal-hint">The <b>pack</b> is what you carry on the road (the Stables). The <b>closet</b> is what stays at home.</div></div>
         <div id="pack-body" class="modal-body"></div>
       </div>
     </div>
@@ -861,11 +911,12 @@ var BLDGS = {
   // x / y = pin position as a percentage of the map image. Press P on the map for
   // placement mode (click to read coordinates). Keys are the stored data keys — keep them.
   Mesh_Forge:      { title:"The Smithy",       sub:"Classes & Characters",     icon:"forge",  desc:"The heart of Stonetop's craft.", x:50.8, y:42.5, npcs:[], notes:"" },
-  Mesh_Barrow:     { title:"The Granary",      sub:"The Homefront",            icon:"granary", desc:"A grassy mound older than Stonetop itself.", x:23.5, y:47.0, npcs:[], notes:"" },
+  Mesh_Barrow:     { title:"The Granary",      sub:"The Village Sheet",        icon:"granary", desc:"Stonetop itself: stats, seasons, stores, improvements.", x:23.5, y:47.0, npcs:[], notes:"", direct:"steading" },
   Mesh_Longhouse:  { title:"The Common House", sub:"Townsfolk & Relationships", icon:"longhouse", desc:"The communal soul of Stonetop.", x:50.6, y:33.5, npcs:[{name:"Mama Odie",role:"Elder, keeper of village memory"},{name:"Brand",role:"Young headman, uncertain of himself"}], notes:"Brand is worried about the missing hunters." },
   Mesh_Shrine:     { title:"The Stone",        sub:"How to Play",              icon:"stone",  desc:"A quiet grove at the village edge.", x:41.6, y:38.5, npcs:[], notes:"" },
-  Mesh_Market:     { title:"The Stables",      sub:"Travel Info",              icon:"stables", desc:"On fair days, traders from the lowlands bring salt, cloth, and news.", x:66.4, y:52.5, npcs:[], notes:"" },
+  Mesh_Market:     { title:"The Stables",      sub:"Travel & the Pack",        icon:"stables", desc:"On fair days, traders from the lowlands bring salt, cloth, and news.", x:66.4, y:52.5, npcs:[], notes:"" },
   Mesh_Watchtower: { title:"The Watchtower",   sub:"The Wider World",          icon:"tower", desc:"A tall wooden tower at the edge of the village.", x:44.5, y:25.5, npcs:[], notes:"" },
+  Mesh_Home:       { title:"Home",             sub:"Closets & Possessions",    icon:"wardrobe", desc:"What each of you owns but doesn't carry: the closet.", x:33.0, y:31.0, npcs:[], notes:"", direct:"closet" },
   Mesh_Well:       { title:"The Chronicle",    sub:"Session Recaps",           icon:"scroll", desc:"A record of all that has passed in Stonetop.", x:38.7, y:43.0, npcs:[], notes:"" }
 };
 
@@ -930,6 +981,8 @@ function pinAt(e){var t=e.target&&e.target.closest?e.target.closest('.pin'):null
 function openPlace(k){
   if(k==='Mesh_Shrine'){openShrine();return;}
   if(k==='Mesh_Forge'){openSmithy();return;}
+  if(k==='Mesh_Home'){openPack('closet');return;}
+  if(k==='Mesh_Barrow'){openSteading();return;}
   openBuilding(k);
 }
 function showHl(k,e){
@@ -1036,11 +1089,37 @@ function buildPlaces(){
   window.addEventListener('keydown',function(e){if(e.key==='Escape')setOpen(false);});
 }
 var SEASON_NAMES={spring:'Spring',summer:'Summer',autumn:'Autumn',winter:'Winter'};
-function applySeason(){ // the parchment takes the colour of the Village Sheet's current season
+var WEATHERS=[['clear','Clear','sun'],['overcast','Overcast','cloud'],['rain','Rain','rain'],['storm','Storm','storm'],['snow','Snow','snow'],['fog','Fog','fog']];
+function stPatch(fn){ // change the Village Sheet doc from anywhere (the sheet may or may not be open)
+  var live=stOpen&&ST,o=live||stLoad();fn(o);var prev=ST;ST=o;saveSteading();if(!live)ST=prev;if(stOpen)renderSteading();
+}
+function applySeason(){ // the map wears the Village Sheet's season, weather and time of day
   var st=null;try{st=stLoad();}catch(_){}
-  var season=(st&&st.season)||'',yr=(st&&st.year)||0;
+  var season=(st&&st.season)||'',yr=(st&&st.year)||0,wx=(st&&st.weather)||'clear',night=!!(st&&st.night);
   ['spring','summer','autumn','winter'].forEach(function(k){document.body.classList.toggle('season-'+k,k===season);});
-  var el=document.getElementById('brand-season');if(el)el.textContent=season?(SEASON_NAMES[season]+(yr?' · year '+yr:'')):'';
+  WEATHERS.forEach(function(w){document.body.classList.toggle('weather-'+w[0],w[0]===wx);});
+  document.body.classList.toggle('night',night);
+  var wl=(WEATHERS.filter(function(w){return w[0]===wx;})[0]||WEATHERS[0]);
+  var el=document.getElementById('brand-season');if(el)el.textContent=(season?SEASON_NAMES[season]+(yr?' · year '+yr:''):'')+(wx!=='clear'?' · '+wl[1]:'')+(night?' · Night':'');
+  var sb=document.getElementById('sky-btn');if(sb)sb.innerHTML=ico(night&&wx==='clear'?'moon':wl[2])+'<span>'+(night?'Night':wl[1])+'</span>';
+  renderSkyMenu();
+}
+function renderSkyMenu(){
+  var m=document.getElementById('sky-menu');if(!m)return;var st=stLoad(),season=st.season||'spring',wx=st.weather||'clear',night=!!st.night;
+  m.innerHTML='<div class="sky-row"><span class="t-label">Season</span><div class="seg">'+SEASONS.map(function(k){return '<button class="seg-btn'+(k===season?' on':'')+'" data-skyseason="'+k+'">'+SEASON_INFO[k].name+'</button>';}).join('')+'</div></div>'
+    +'<div class="sky-row"><span class="t-label">Weather</span><div class="seg">'+WEATHERS.map(function(w){return '<button class="seg-btn'+(w[0]===wx?' on':'')+'" data-skywx="'+w[0]+'" title="'+w[1]+'">'+ico(w[2])+' '+w[1]+'</button>';}).join('')+'</div></div>'
+    +'<div class="sky-row"><span class="t-label">Time</span><div class="seg"><button class="seg-btn'+(night?'':' on')+'" data-skynight="0">'+ico('sun')+' Day</button><button class="seg-btn'+(night?' on':'')+'" data-skynight="1">'+ico('moon')+' Night</button></div></div>'
+    +'<div class="hint">Changes here show on every screen. The Village Sheet has the same controls.</div>';
+  m.querySelectorAll('[data-skyseason]').forEach(function(b){b.addEventListener('click',function(){stPatch(function(o){o.season=b.dataset.skyseason;});});});
+  m.querySelectorAll('[data-skywx]').forEach(function(b){b.addEventListener('click',function(){stPatch(function(o){o.weather=b.dataset.skywx;});});});
+  m.querySelectorAll('[data-skynight]').forEach(function(b){b.addEventListener('click',function(){stPatch(function(o){o.night=b.dataset.skynight==='1';});});});
+}
+function buildSky(){
+  var wrap=document.getElementById('sky'),btn=document.getElementById('sky-btn');if(!wrap||!btn)return;
+  function setOpen(on){wrap.classList.toggle('open',on);btn.setAttribute('aria-expanded',on?'true':'false');}
+  btn.addEventListener('click',function(e){e.stopPropagation();setOpen(!wrap.classList.contains('open'));});
+  document.addEventListener('pointerdown',function(e){if(wrap.classList.contains('open')&&!wrap.contains(e.target))setOpen(false);});
+  window.addEventListener('keydown',function(e){if(e.key==='Escape')setOpen(false);});
 }
 var mapTouched=false;
 function revealMap(){ // ease in from slightly closer to the fitted view; skip under reduced motion or once the user takes hold
@@ -1052,7 +1131,7 @@ function revealMap(){ // ease in from slightly closer to the fitted view; skip u
   (function step(now){if(mapTouched)return;var t=Math.min(1,(now-t0)/D),e=1-Math.pow(1-t,3),sc=s0+(s1-s0)*e;MV.s=sc;MV.tx=cx-FOCUS.x*MV.w*sc;MV.ty=cy-FOCUS.y*MV.h*sc;applyView();if(t<1)requestAnimationFrame(step);})(t0);
 }
 function initMap(){
-  buildPins();buildPlaces();applySeason();
+  buildPins();buildPlaces();buildSky();applySeason();
   mapImg.onload=function(){
     MV.w=mapImg.naturalWidth; MV.h=mapImg.naturalHeight; MV.ready=true;
     mapInner.style.width=MV.w+'px'; mapInner.style.height=MV.h+'px';
@@ -1152,7 +1231,7 @@ LanRef.prototype.on=function(ev,cb){var es=new EventSource('/api/events');es.onm
 function initSync(){
   setSyncState('connecting','connecting…');
   fetch('/api/ping',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}).then(function(pong){
-    if(pong&&pong.ok){startLan();return;}                       // served by server.js: sync over this network
+    if(pong&&pong.ok&&pong.sync==='local'){startLan();return;}  // server.js --offline: sync over this network
     if(!FIREBASE_CONFIG){setSyncState('local','this device only');return;}
     startFirebase();
   });
@@ -1648,8 +1727,7 @@ function renderBuilding(){
   var addLogLabel=isChronicle(k)?'+ Add recap':'+ Add note';
   document.getElementById('building-actions').innerHTML='<span id="bedit-saved">Saved ✓</span>'
     +(k==='Mesh_Longhouse'?'<button id="b-open-graph" class="sm-btn-go">'+ico('web')+' Relationship Map</button>':'')
-    +(k==='Mesh_Barrow'?'<button id="b-open-steading" class="sm-btn-go">'+ico('village')+' Village Sheet</button>':'')
-    +(k==='Mesh_Market'?'<button id="b-open-pack" class="sm-btn-go">'+ico('pack')+' Pack &amp; Closet</button><button id="b-open-arcana" class="cc-btn">'+ico('key')+' Arcana chest</button>':'')
+    +(k==='Mesh_Market'?'<button id="b-open-pack" class="sm-btn-go">'+ico('pack')+' Pack for the road</button><button id="b-open-arcana" class="cc-btn">'+ico('key')+' Arcana chest</button>':'')
     +'<button id="bedit-toggle" class="'+(editMode?'on':'')+'">'+(editMode?ico('check')+' Done':ico('pen')+' Edit')+'</button>';
   var html='';
 
@@ -1708,8 +1786,7 @@ function bindBuilding(){
   var k=curBldg;
   document.getElementById('bedit-toggle').addEventListener('click',function(){editMode=!editMode;renderBuilding();});
   var bg=document.getElementById('b-open-graph'); if(bg)bg.addEventListener('click',openGraph);
-  var bs=document.getElementById('b-open-steading'); if(bs)bs.addEventListener('click',openSteading);
-  var bp=document.getElementById('b-open-pack'); if(bp)bp.addEventListener('click',openPack);
+  var bp=document.getElementById('b-open-pack'); if(bp)bp.addEventListener('click',function(){openPack('pack');});
   var ba=document.getElementById('b-open-arcana'); if(ba)ba.addEventListener('click',openArcana);
   if(!editMode) return;
   var c=editable(k);
@@ -2498,6 +2575,9 @@ function renderSeasonSection(){
     +'<span class="t-label">Year</span><span class="cc-step"><button data-year="-1">−</button><span class="cc-stepv" style="font-size:16px">'+yr+'</span><button data-year="1">+</button></span>'
     +(SR.active?'':'<button class="sm-btn-go" id="st-run">'+ico('tidy')+' Run Seasons Change → '+SEASON_INFO[nx].name+'</button>')
     +'</div>';
+  var wx=ST.weather||'clear',night=!!ST.night;
+  h+='<div class="st-season" style="margin-top:var(--s2)"><span class="t-label">Sky</span><div class="seg">'+WEATHERS.map(function(w){return '<button class="seg-btn'+(w[0]===wx?' on':'')+'" data-weather="'+w[0]+'">'+ico(w[2])+' '+w[1]+'</button>';}).join('')+'</div>'
+    +'<div class="seg"><button class="seg-btn'+(night?'':' on')+'" data-night="0">'+ico('sun')+' Day</button><button class="seg-btn'+(night?' on':'')+'" data-night="1">'+ico('moon')+' Night</button></div><span class="hint">tints the map on every screen</span></div>';
   if(SR.active)h+=renderSeasonRunner();
   return h;
 }
@@ -2583,6 +2663,8 @@ function bindSeasons(){
   var body=document.getElementById('steading-body');
   body.querySelectorAll('[data-season]').forEach(function(b){b.addEventListener('click',function(){ST.season=b.dataset.season;saveSteading();renderSteading();});});
   body.querySelectorAll('[data-year]').forEach(function(b){b.addEventListener('click',function(){ST.year=Math.max(1,(ST.year||1)+(+b.dataset.year));saveSteading();renderSteading();});});
+  body.querySelectorAll('[data-weather]').forEach(function(b){b.addEventListener('click',function(){ST.weather=b.dataset.weather;saveSteading();renderSteading();});});
+  body.querySelectorAll('[data-night]').forEach(function(b){b.addEventListener('click',function(){ST.night=b.dataset.night==='1';saveSteading();renderSteading();});});
   var run=document.getElementById('st-run');if(run)run.addEventListener('click',function(){SR={active:true,season:seasonNext(),rolls:{},picks:{gains:[]}};renderSteading();var el=document.querySelector('.st-runner');if(el)el.scrollIntoView({block:'nearest'});});
   var cancel=document.getElementById('st-cancel');if(cancel)cancel.addEventListener('click',function(){SR={active:false};renderSteading();});
   var apply=document.getElementById('st-apply');if(apply)apply.addEventListener('click',srApply);
@@ -2755,7 +2837,8 @@ function pkFindChar(name){
   var pre=cs.filter(function(c){return (c.name||'').trim().toLowerCase().indexOf(name)===0;});return pre.length===1?pre[0]:null;
 }
 
-function openPack(){packModal.classList.add('open');pkOpen=true;if(PK)renderPack();else renderPackLogin();}
+var pkWant='pack';
+function openPack(tab){pkWant=(tab==='closet')?'closet':'pack';packModal.classList.add('open');pkOpen=true;if(PK){pkTab=pkWant;renderPack();}else renderPackLogin();}
 function closePack(){pkOpen=false;packModal.classList.remove('open');}
 function pkLogout(){PK=null;pkChar=null;renderPackLogin();}
 document.getElementById('pack-close').addEventListener('click',closePack);
@@ -2764,7 +2847,7 @@ document.getElementById('pack-backdrop').addEventListener('click',closePack);
 function renderPackLogin(msg){
   var body=document.getElementById('pack-body');
   var names=allChars().map(function(c){return c.name;}).filter(Boolean);
-  body.innerHTML='<div class="pk-login"><h3>Whose pack is this?</h3><p>Type your character\'s name to open their closet and pack. Characters are made in the Smithy.</p>'
+  body.innerHTML='<div class="pk-login"><h3>'+(pkWant==='closet'?'Whose closet is this?':'Whose pack is this?')+'</h3><p>Type your character\'s name to open their '+(pkWant==='closet'?'closet':'pack')+'. Characters are made in the Smithy.</p>'
     +'<input id="pk-name" class="pk-in" list="pk-names" placeholder="Character name" autocomplete="off"><datalist id="pk-names">'+names.map(function(n){return '<option value="'+esc(n)+'">';}).join('')+'</datalist>'
     +'<input id="pk-pin" class="pk-in" type="password" inputmode="numeric" placeholder="PIN" style="display:none">'
     +'<button id="pk-go" class="sm-btn-go">Open</button><div id="pk-msg" class="pk-msg">'+esc(msg||'')+'</div></div>';
@@ -2775,7 +2858,7 @@ function renderPackLogin(msg){
     if(!c){msgEl.textContent=names.length?'No character by that name. Check the spelling, or make them in the Smithy.':'No characters yet — make one in the Smithy first.';return;}
     var inv=invLoad(c.id);
     if(inv.pin&&pkHash((pinEl.value||'').trim())!==inv.pin){pinEl.style.display='block';msgEl.textContent='That PIN isn\'t right.';pinEl.focus();return;}
-    PK=inv;pkChar=c;pkTab='pack';renderPack();
+    PK=inv;pkChar=c;pkTab=pkWant;renderPack();
   }
   document.getElementById('pk-go').addEventListener('click',go);
   nameEl.addEventListener('keydown',function(e){if(e.key==='Enter')go();});
@@ -2787,7 +2870,7 @@ function renderPack(){
   var body=document.getElementById('pack-body'),p=PK.pack,pro=prosperity(),uses=pkUses(),tot=pkTotal(),band=pkBand(tot),small=pkSmall(),smallMax=Math.max(0,4+pro);
   var c=getChar(PK.charId)||pkChar||{},PB=(window.PBDATA||{})[c.playbook]||{};
   var h='<div class="pk-top"><div class="pk-who">'+esc(c.name||'?')+'<small>'+esc(PB.name||c.playbook||'')+' · Prosperity '+fmtMod(pro)+'</small></div>'
-    +'<div class="pk-tabs"><button class="pk-tab '+(pkTab==='pack'?'on':'')+'" data-tab="pack">'+ico('pack')+' Pack</button><button class="pk-tab '+(pkTab==='closet'?'on':'')+'" data-tab="closet">'+ico('key')+' Closet</button></div>'
+    +'<div class="pk-tabs"><button class="pk-tab '+(pkTab==='pack'?'on':'')+'" data-tab="pack">'+ico('pack')+' Pack</button><button class="pk-tab '+(pkTab==='closet'?'on':'')+'" data-tab="closet">'+ico('wardrobe')+' Closet</button></div>'
     +'<button class="pk-btn" id="pk-pinbtn">'+(PK.pin?ico('lock')+' Change PIN':ico('unlock')+' Set PIN')+'</button><button class="pk-btn" id="pk-logout">Log out</button></div>';
   h+=(pkTab==='pack')?renderPackTab(p,pro,uses,tot,band,small,smallMax):renderClosetTab();
   body.innerHTML=h;bindPack();

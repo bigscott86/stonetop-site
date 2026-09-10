@@ -3,16 +3,20 @@
 There are two ways the table's devices share one set of data. Use whichever fits the moment;
 the site picks automatically.
 
-## A. Game night on your own Wi-Fi (no internet needed)
+## A. Serve it from your own laptop on the Wi-Fi
 
 1. On the laptop that will host, open Terminal in the `stonetop-site` folder and run
    `node server.js` — or double-click `run-server.command` in Finder. (Needs Node.js, the LTS
    download from https://nodejs.org, installed once.)
 2. It prints addresses like `http://192.168.1.23:8732`. Everyone on the same Wi-Fi opens one of
    them; on Macs and iPhones the `http://<your-mac-name>.local:8732` form also works.
-3. The status pill on every device should read **synced · this network**. Every change is saved
-   to `data/store.json` on the host laptop and pushed live to the others.
-4. Keep that Terminal window open while you play. Ctrl+C stops it. The first time, macOS may ask
+3. In this default mode the laptop only serves the pages; the shared data still lives in
+   Firebase (part B), so the pill reads **synced** and everything matches the Netlify site.
+4. **No internet at the table?** Run `node server.js --offline` instead. Then the laptop also
+   does the syncing: the pill reads **synced · this network**, and every change is saved to
+   `data/store.json` on the host and pushed live to the others. Note that offline-mode data is
+   separate from Firebase's.
+5. Keep that Terminal window open while you play. Ctrl+C stops it. The first time, macOS may ask
    whether to allow incoming connections for Node — allow it.
 
 Tips: if the address changes between sessions, that's your router handing out a new IP — the

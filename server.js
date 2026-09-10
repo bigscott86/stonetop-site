@@ -1,12 +1,13 @@
 #!/usr/bin/env node
-// Stonetop LAN server — serves the site and syncs the shared store over your own network.
+// Stonetop LAN server — serves the site to everyone on your own Wi-Fi.
 //
-//   node server.js            (or double-click run-server.command on a Mac)
+//   node server.js              serve the site; devices sync through Firebase as usual
+//   node server.js --offline    serve the site AND sync it here (data/store.json), no internet
 //
-// Everyone on the same Wi-Fi opens the address it prints. Every change any device makes is
-// saved to data/store.json on this machine and pushed live to every other device. No accounts,
-// no internet needed, nothing that expires. The site uses this automatically when it is served
-// from here; served from Netlify it falls back to Firebase as before.
+// (or double-click run-server.command on a Mac). Everyone on the same Wi-Fi opens the address it
+// prints. In the default mode this is only a file server, so the shared data is Firebase's and
+// stays in step with the Netlify site. In --offline mode every change is saved to
+// data/store.json on this machine and pushed live to the other devices instead.
 //
 // Zero dependencies — Node 18 or newer.
 'use strict';
@@ -14,6 +15,7 @@ const http = require('http'), fs = require('fs'), path = require('path'), os = r
 const ROOT = __dirname;
 const PORT = parseInt(process.env.PORT, 10) || 8732;
 const DATA = path.join(ROOT, 'data'), FILE = path.join(DATA, 'store.json');
+const OFFLINE = process.argv.includes('--offline') || process.env.SYNC === 'local';
 
 let store = {};
 try { store = JSON.parse(fs.readFileSync(FILE, 'utf8')) || {}; } catch (_) {}
@@ -75,7 +77,8 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://local');
   const p = url.pathname;
 
-  if (p === '/api/ping') return json(res, 200, { ok: true, name: 'stonetop-lan', clients: clients.size });
+  if (p === '/api/ping') return json(res, 200, { ok: true, name: 'stonetop-lan', sync: OFFLINE ? 'local' : 'firebase', clients: clients.size });
+  if (!OFFLINE && p.startsWith('/api/')) return json(res, 404, { error: 'run with --offline to sync through this server' });
 
   if (p === '/api/events') {
     res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store', 'Connection': 'keep-alive' });
@@ -117,5 +120,6 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log('\n  Stonetop is up. On this machine:  http://localhost:' + PORT);
   if (ips.length) { console.log('  On your Wi-Fi, open one of these on any phone or laptop:'); ips.forEach(ip => console.log('    http://' + ip + ':' + PORT)); }
   console.log('    http://' + os.hostname().replace(/\.local$/, '') + '.local:' + PORT + '   (Macs and iPhones)');
-  console.log('\n  Shared data lives in data/store.json. Keep this window open while you play. Ctrl+C stops it.\n');
+  console.log(OFFLINE ? '\n  OFFLINE MODE: shared data lives in data/store.json on this machine.' : '\n  Devices sync through Firebase (run with --offline to sync through this machine instead).');
+  console.log('  Keep this window open while you play. Ctrl+C stops it.\n');
 });
