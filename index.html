@@ -332,6 +332,27 @@
   .cc-fol-top{display:flex;gap:var(--s2);margin-bottom:var(--s2);}
   .cc-fol-top .cc-in{flex:1;min-width:0;}
 
+  /* ── Village sheet: seasons + ledger ─────────────────────────────────── */
+  .st-season{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s3) var(--s4);}
+  .st-runner{border:1px solid var(--accent);background:var(--ink-1);padding:var(--s4) var(--s5);margin-top:var(--s3);display:flex;flex-direction:column;gap:var(--s3);}
+  .st-runner-h b{display:block;color:var(--text-1);font-size:15px;font-weight:normal;letter-spacing:1px;margin-bottom:2px;}
+  .st-step{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2) var(--s3);padding:var(--s2) 0;border-bottom:1px solid var(--line-0);}
+  .st-step-l{min-width:220px;color:var(--text-1);}
+  .st-step input{width:90px;}
+  .st-gains{padding:var(--s2) 0;}
+  .st-preview{background:var(--ink-0);border:1px solid var(--line-1);padding:var(--s3) var(--s4);}
+  .st-preview ul{margin:0 0 var(--s2) 18px;} .st-preview li{margin-bottom:var(--s1);}
+  .st-delta{color:var(--text-2);font-size:13px;} .st-delta b{color:var(--text-1);}
+  .st-runner-btns{display:flex;gap:var(--s2);}
+  .st-led{display:flex;align-items:baseline;gap:var(--s3);padding:var(--s2) 0;border-bottom:1px solid var(--line-0);font-size:13.5px;}
+  .st-led-when{flex:0 0 190px;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--text-3);}
+  .st-led-delta{flex:0 0 40px;text-align:center;font-weight:bold;color:var(--text-3);}
+  .st-led-delta.pos{color:var(--ok);} .st-led-delta.neg{color:var(--danger-hi);}
+  .st-led-text{flex:1;color:var(--text-2);}
+  .st-led .brm{align-self:center;}
+  .st-led-add{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2);margin-top:var(--s3);}
+  @media (max-width:640px){.st-led{flex-wrap:wrap;} .st-led-when{flex-basis:100%;} .st-step-l{min-width:0;flex-basis:100%;}}
+
   /* ── Relationship map ────────────────────────────────────────────────── */
   #graph-canvas{position:relative;flex:1;overflow:hidden;background:radial-gradient(circle at 50% 40%,rgba(40,32,20,.25),transparent 70%);cursor:grab;touch-action:none;}
   #graph-canvas.panning{cursor:grabbing;}
@@ -1985,7 +2006,7 @@ function seedSteading(){
   var T=window.STEADING||{stats:[],places:[]};
   var s={name:T.name||'Stonetop',size:T.size||'',population:T.population||'',stats:{},debilities:[],defenses:'',
     places:(T.places||[]).map(function(p){return {name:p.name||'',note:p.note||''};}),
-    improvements:[],silver:0,gold:0,assetsNotes:'',notes:''};
+    improvements:[],silver:0,gold:0,assetsNotes:'',notes:'',season:'spring',year:1,ledger:[]};
   (T.stats||[]).forEach(function(x){s.stats[x.key]=x.start||0;});
   return s;
 }
@@ -2001,6 +2022,7 @@ function renderSteading(){
   h+='<div class="cc-row"><div class="cc-field"><label>Name</label><input class="cc-in" id="st-name" value="'+esc(s.name)+'"></div>'
     +'<div class="cc-field"><label>Size</label><input class="cc-in" id="st-size" value="'+esc(s.size)+'"></div>'
     +'<div class="cc-field"><label>Population</label><input class="cc-in" id="st-pop" value="'+esc(s.population)+'"></div></div>';
+  h+=renderSeasonSection();
   h+='<div class="cc-sec">Stats</div><div class="cc-stats" style="grid-template-columns:repeat(5,1fr);">'
     +T.stats.map(function(x){var v=(s.stats[x.key]!=null?s.stats[x.key]:(x.start||0));
       return '<div class="cc-stat"><label>'+esc(x.name)+'</label><div class="cc-step"><button data-sdec="'+x.key+'">−</button><span class="cc-stepv" id="st-sv-'+x.key+'">'+v+'</span><button data-sinc="'+x.key+'" data-min="'+(x.min==null?'':x.min)+'" data-max="'+(x.max==null?'':x.max)+'">+</button></div></div>';
@@ -2021,6 +2043,7 @@ function renderSteading(){
   h+='<div class="cc-sec">Treasury</div>'+(T.treasuryNote?'<div class="cc-hint">'+esc(T.treasuryNote)+'</div>':'')
     +'<div class="cc-row"><div class="cc-field cc-num"><label>Silver</label><input class="cc-in" type="number" id="st-silver" value="'+(s.silver||0)+'"></div>'
     +'<div class="cc-field cc-num"><label>Gold</label><input class="cc-in" type="number" id="st-gold" value="'+(s.gold||0)+'"></div></div>';
+  h+=renderLedger();
   if(T.assets&&T.assets.length)h+='<div class="cc-sec">Assets</div><div class="cc-hint">'+T.assets.map(function(a){return '<b>'+esc(a.name)+':</b> '+esc(a.gist||'');}).join('<br>')+'</div>';
   h+='<textarea class="cc-area" id="st-assets-notes" placeholder="holdings, herds, stores, tools…">'+esc(s.assetsNotes||'')+'</textarea>';
   h+='<div class="cc-sec">Content guidelines</div><div class="cc-hint">From session zero (pp.18–19): <b>Excluded</b> means it will not be in the game, period. <b>Veiled</b> means it happens off-camera only. Anyone can add to these at any time.</div>'
@@ -2037,8 +2060,8 @@ function bindSteading(){
   txt('st-name','name');txt('st-size','size');txt('st-pop','population');txt('st-defenses','defenses');
   txt('st-silver','silver',1);txt('st-gold','gold',1);txt('st-assets-notes','assetsNotes');txt('st-notes','notes');txt('st-excluded','excluded');txt('st-veiled','veiled');
   // stat steppers (in-place)
-  body.querySelectorAll('[data-sinc]').forEach(function(b){b.addEventListener('click',function(){var k=b.dataset.sinc,mx=(b.dataset.max===''?999:+b.dataset.max);ST.stats[k]=Math.min(mx,(ST.stats[k]||0)+1);document.getElementById('st-sv-'+k).textContent=ST.stats[k];save();});});
-  body.querySelectorAll('[data-sdec]').forEach(function(b){b.addEventListener('click',function(){var k=b.dataset.sdec,inc=body.querySelector('[data-sinc="'+k+'"]'),mn=(inc&&inc.dataset.min!==''?+inc.dataset.min:-99);ST.stats[k]=Math.max(mn,(ST.stats[k]||0)-1);document.getElementById('st-sv-'+k).textContent=ST.stats[k];save();});});
+  body.querySelectorAll('[data-sinc]').forEach(function(b){b.addEventListener('click',function(){var k=b.dataset.sinc,mx=(b.dataset.max===''?999:+b.dataset.max);var was=ST.stats[k]||0;ST.stats[k]=Math.min(mx,was+1);document.getElementById('st-sv-'+k).textContent=ST.stats[k];if(k==='surplus'&&ST.stats[k]!==was)ledgerAdd(1,'adjusted by hand');save();if(k==='surplus')renderSteading();});});
+  body.querySelectorAll('[data-sdec]').forEach(function(b){b.addEventListener('click',function(){var k=b.dataset.sdec,inc=body.querySelector('[data-sinc="'+k+'"]'),mn=(inc&&inc.dataset.min!==''?+inc.dataset.min:-99);var was=ST.stats[k]||0;ST.stats[k]=Math.max(mn,was-1);document.getElementById('st-sv-'+k).textContent=ST.stats[k];if(k==='surplus'&&ST.stats[k]!==was)ledgerAdd(-1,'adjusted by hand');save();if(k==='surplus')renderSteading();});});
   // grievances + improvements checklists
   body.querySelectorAll('[data-sdeb]').forEach(function(cb){cb.addEventListener('change',function(){toggleIn(ST.debilities,cb.dataset.sdeb,cb.checked);save();});});
   body.querySelectorAll('[data-imp]').forEach(function(cb){cb.addEventListener('change',function(){toggleIn(ST.improvements,cb.dataset.imp,cb.checked);save();});});
@@ -2046,6 +2069,132 @@ function bindSteading(){
   body.querySelectorAll('[data-place]').forEach(function(inp){inp.addEventListener('input',function(){ST.places[+inp.dataset.place][inp.dataset.pk]=inp.value;});inp.addEventListener('change',save);});
   body.querySelectorAll('[data-rmplace]').forEach(function(b){b.addEventListener('click',function(){ST.places.splice(+b.dataset.rmplace,1);save();renderSteading();});});
   var ap=document.getElementById('st-add-place');if(ap)ap.addEventListener('click',function(){ST.places.push({name:'',note:''});save();renderSteading();var r=body.querySelectorAll('[data-pk="name"]');if(r.length)r[r.length-1].focus();});
+  bindSeasons();bindLedger();
+}
+
+// ── Seasons Change runner (Book I pp.84–85, 516–523) + Surplus ledger ────────
+var SEASONS=['spring','summer','autumn','winter'];
+var SEASON_INFO={spring:{name:'Spring',who:'whoever is most hopeful',line:'When spring bursts forth upon the land'},summer:{name:'Summer',who:'whoever is most content',line:'When the hot days of summer settle across the land'},autumn:{name:'Autumn',who:'whoever is most determined',line:'When autumn falls and the land is ripe for harvest'},winter:{name:'Winter',who:'whoever is weariest',line:'When winter grips the land'}};
+var GAINS=[['Population boom','Youth come of age and/or outsiders settle here: Population +1 (max +3).'],['Tor\'s blessing','Fine weather: +1 to Pull Together this season; roll weather twice and pick.'],['Unexpected bounty','A sudden influx of game, trade, or another resource: +1 Surplus now.'],['Trade opportunity','Someone offers something valuable at a good price, or something unique at a fair one.'],['Interesting news','A chance to improve fortunes, knowledge, or relations, or to progress an improvement.'],['Valuable insight','You learn something that lets you address a threat plaguing the steading.']];
+var WINTER_CONSEQ=[['pop','Reduce Population by 1 (min −1): death, decrepitude, departure'],['resource','An important resource (a horse, the cistern…) is lost or not maintained'],['npc','An important NPC dies, their role unfilled'],['pc','A PC dies, leaves, or retires from play']];
+var DISASTER_PICK=[['Diminished','The steading marks diminished (injuries, sickness, doubt)'],['Lacking','The steading marks lacking (shortages, hoarding, distrust)'],['Malcontent','The steading marks malcontent (fear, anger, despair)'],['pop','Folks start to leave: Population −1']];
+var SR={active:false};
+function seasonNext(){var i=SEASONS.indexOf(ST.season||'spring');return SEASONS[(i+1)%4];}
+function isMalcontent(){return (ST.debilities||[]).some(function(d){return String(d).toLowerCase().indexOf('malcontent')>=0;});}
+function ledgerAdd(delta,text,season,year){ST.ledger=ST.ledger||[];ST.ledger.unshift({ts:today(),season:season||ST.season||'',year:year||ST.year||1,delta:delta||0,text:text||''});}
+function renderSeasonSection(){
+  var cur=ST.season||'spring',yr=ST.year||1,nx=seasonNext(),h='';
+  h+='<div class="cc-sec">Season</div><div class="st-season">'
+    +'<div class="seg">'+SEASONS.map(function(k){return '<button class="seg-btn'+(k===cur?' on':'')+'" data-season="'+k+'">'+SEASON_INFO[k].name+'</button>';}).join('')+'</div>'
+    +'<span class="t-label">Year</span><span class="cc-step"><button data-year="-1">−</button><span class="cc-stepv" style="font-size:16px">'+yr+'</span><button data-year="1">+</button></span>'
+    +(SR.active?'':'<button class="sm-btn-go" id="st-run">'+ico('tidy')+' Run Seasons Change → '+SEASON_INFO[nx].name+'</button>')
+    +'</div>';
+  if(SR.active)h+=renderSeasonRunner();
+  return h;
+}
+function srRollInput(key,label,hint){var v=SR.rolls[key];return '<div class="st-step"><span class="st-step-l">'+label+'</span><button class="cc-btn" data-srroll="'+key+'">Roll</button><input class="cc-in" type="number" data-srin="'+key+'" value="'+(v==null?'':v)+'" placeholder="total"><span class="hint">'+hint+'</span></div>';}
+function srCompute(){
+  var s=SR.season,f=steadingStat('fortunes'),pop=steadingStat('population'),sur=steadingStat('surplus');
+  var o={lines:[],d:{surplus:0,fortunes:0,population:0},gains:0,ready:false,needConseq:false,needConseq2:false,needDisaster:false,reset:isMalcontent()?0:1,threat:false};
+  var main=SR.rolls.main;
+  if(s!=='winter'){
+    if(main==null)o.lines.push('Waiting for the +Fortunes roll.');
+    else{var band=main>=10?'strong':main>=7?'weak':'miss';
+      if(s==='summer'){o.gains=band==='strong'?2:band==='weak'?1:0;o.lines.push(band==='strong'?'10+: pick 2 seasonal gains.':band==='weak'?'7–9: pick 1 seasonal gain.':'6−: a threat to the steading makes itself known or gets worse. Don\'t mark XP.');o.threat=band==='miss';}
+      else{o.gains=band==='miss'?0:1;o.lines.push(band==='strong'?'10+: pick 1 seasonal gain.':band==='weak'?'7–9: pick 1 seasonal gain, but a threat to the steading makes itself known or gets worse.':'6−: threats abound. Don\'t mark XP.');o.threat=band!=='strong';}}
+    if(s==='summer'){if(SR.rolls.surplus==null)o.lines.push('Roll 1d4−1 for the Surplus the steading generates.');else{o.d.surplus+=SR.rolls.surplus;o.lines.push('The steading generates '+SR.rolls.surplus+' Surplus.');}}
+    if(s==='autumn'){if(SR.rolls.surplus==null)o.lines.push('When the harvest is complete, roll 1d4 for Surplus.');else{o.d.surplus+=SR.rolls.surplus;o.lines.push('The harvest brings '+SR.rolls.surplus+' Surplus.');}}
+    SR.picks.gains.slice(0,o.gains).forEach(function(g){if(g==='Population boom'&&pop+o.d.population<3)o.d.population+=1;if(g==='Unexpected bounty')o.d.surplus+=1;});
+    o.ready=main!=null&&(s==='spring'||SR.rolls.surplus!=null)&&SR.picks.gains.length===o.gains;
+  }else{
+    var c=SR.rolls.consume;
+    if(c==null)o.lines.push('Roll 1d4 + Population ('+fmtMod(pop)+') for the Surplus the steading consumes.');
+    else{var need=Math.max(0,c);
+      if(sur>=need){o.d.surplus-=need;o.lines.push('The steading consumes '+need+' Surplus ('+sur+' → '+(sur-need)+').');}
+      else{o.d.surplus=-sur;o.d.fortunes-=1;o.needConseq=true;o.lines.push('Not enough Surplus ('+sur+' of '+need+'): Surplus falls to 0 and the steading Meets with Disaster — Fortunes −1'+(f-1<-1?', which would drop below −1, so the GM picks a consequence instead':'')+'. Then pick 1 winter consequence.');if(f-1<-1)o.needDisaster=true;}}
+    var m2=SR.rolls.second;
+    if(c!=null){if(m2==null)o.lines.push('Then roll +Fortunes ('+fmtMod(f+o.d.fortunes)+').');
+      else{var b2=m2>=10?'strong':m2>=7?'weak':'miss';
+        if(b2==='strong')o.lines.push('10+: a relatively mild winter. Each player names a local NPC whose relationship with them improves at least a little.');
+        else{o.lines.push((b2==='weak'?'7–9: ':'6−: threats abound (don\'t mark XP), and ')+'the steading must consume another 1d4 + Population Surplus before winter ends or suffer the consequences.');o.threat=b2==='miss';
+          var e=SR.rolls.extra;if(e==null)o.lines.push('Roll 1d4 + Population again for the extra consumption.');
+          else{var have=sur+o.d.surplus;if(have>=e){o.d.surplus-=e;o.lines.push('Extra consumption: '+e+' Surplus.');}else{o.d.surplus-=have;o.d.fortunes-=1;o.needConseq2=true;o.lines.push('Not enough for the extra '+e+': Surplus falls to 0, Meet with Disaster again, and pick another consequence.');}}}}}
+    o.ready=c!=null&&m2!=null&&(m2>=10||SR.rolls.extra!=null)&&(!o.needConseq||!!SR.picks.conseq)&&(!o.needConseq2||!!SR.picks.conseq2)&&(!o.needDisaster||!!SR.picks.disaster);
+  }
+  return o;
+}
+function renderSeasonRunner(){
+  var s=SR.season,I=SEASON_INFO[s],o=srCompute(),f=steadingStat('fortunes'),pop=steadingStat('population'),yr=(ST.year||1)+((s==='spring'&&(ST.season||'spring')==='winter')?1:0),h='';
+  h+='<div class="st-runner"><div class="st-runner-h"><b>Seasons Change — '+I.name+', year '+yr+'</b><span class="hint">'+I.line+', '+I.who+' rolls. Type the total from your dice, or press Roll.</span></div>';
+  if(s!=='winter'){
+    h+=srRollInput('main','Roll +Fortunes ('+fmtMod(f)+')','2d6 + Fortunes');
+    if(s==='summer')h+=srRollInput('surplus','Surplus generated','1d4 − 1');
+    if(s==='autumn')h+=srRollInput('surplus','Harvest Surplus','1d4');
+    if(o.gains>0)h+='<div class="st-gains"><div class="t-label" style="margin-bottom:6px">Pick '+o.gains+' seasonal gain'+(o.gains>1?'s':'')+' ('+SR.picks.gains.length+' of '+o.gains+')</div>'+GAINS.map(function(g){var on=SR.picks.gains.indexOf(g[0])>=0;return '<label class="cc-check"><input type="checkbox" data-srgain="'+esc(g[0])+'"'+(on?' checked':'')+(!on&&SR.picks.gains.length>=o.gains?' disabled':'')+'><span class="cc-check-name">'+esc(g[0])+'</span><span class="cc-check-gist">'+esc(g[1])+'</span></label>';}).join('')+'</div>';
+  }else{
+    h+=srRollInput('consume','Surplus consumed','1d4 + Population ('+fmtMod(pop)+')');
+    if(o.needDisaster)h+='<div class="st-gains"><div class="t-label" style="margin-bottom:6px">Fortunes would fall below −1 — the GM picks 1 instead</div>'+DISASTER_PICK.map(function(g){return '<label class="cc-check"><input type="radio" name="srdis" data-srdis="'+g[0]+'"'+(SR.picks.disaster===g[0]?' checked':'')+'><span class="cc-check-name">'+esc(g[1])+'</span></label>';}).join('')+'</div>';
+    if(o.needConseq)h+='<div class="st-gains"><div class="t-label" style="margin-bottom:6px">Winter consequence — pick 1</div>'+WINTER_CONSEQ.map(function(g){return '<label class="cc-check"><input type="radio" name="src1" data-srconseq="'+g[0]+'"'+(SR.picks.conseq===g[0]?' checked':'')+'><span class="cc-check-name">'+esc(g[1])+'</span></label>';}).join('')+'</div>';
+    if(SR.rolls.consume!=null)h+=srRollInput('second','Then roll +Fortunes ('+fmtMod(f+o.d.fortunes)+')','2d6 + Fortunes');
+    if(SR.rolls.second!=null&&SR.rolls.second<10)h+=srRollInput('extra','Extra Surplus consumed','1d4 + Population ('+fmtMod(pop)+')');
+    if(o.needConseq2)h+='<div class="st-gains"><div class="t-label" style="margin-bottom:6px">Second consequence — pick 1</div>'+WINTER_CONSEQ.map(function(g){return '<label class="cc-check"><input type="radio" name="src2" data-srconseq2="'+g[0]+'"'+(SR.picks.conseq2===g[0]?' checked':'')+'><span class="cc-check-name">'+esc(g[1])+'</span></label>';}).join('')+'</div>';
+  }
+  h+='<div class="st-preview"><div class="t-label" style="margin-bottom:6px">What happens</div><ul>'+o.lines.map(function(l){return '<li>'+esc(l)+'</li>';}).join('')+'<li>Fortunes resets to '+fmtMod(o.reset)+(o.reset===0?' (malcontent)':'')+'.</li></ul>'
+    +'<div class="st-delta">Surplus '+steadingStat('surplus')+' → <b>'+Math.max(0,steadingStat('surplus')+o.d.surplus)+'</b>'+(o.d.population?' · Population '+fmtMod(pop)+' → <b>'+fmtMod(Math.max(-1,Math.min(3,pop+o.d.population)))+'</b>':'')+' · Fortunes → <b>'+fmtMod(o.reset)+'</b></div></div>';
+  h+='<div class="st-runner-btns"><button class="sm-btn-go" id="st-apply"'+(o.ready?'':' disabled')+'>Apply &amp; record</button><button class="cc-btn" id="st-cancel">Cancel</button></div></div>';
+  return h;
+}
+function srApply(){
+  var o=srCompute();if(!o.ready)return;
+  var s=SR.season,prev=ST.season||'spring',yr=ST.year||1,pop=steadingStat('population'),sur=steadingStat('surplus');
+  if(s==='spring'&&prev==='winter')yr+=1;
+  var dPop=o.d.population,notes=[];
+  if(s==='winter'){[SR.picks.conseq,SR.picks.conseq2].forEach(function(c){if(!c)return;var w=WINTER_CONSEQ.filter(function(x){return x[0]===c;})[0];if(c==='pop')dPop-=1;if(w)notes.push(w[1]);});
+    if(SR.picks.disaster){var dp=DISASTER_PICK.filter(function(x){return x[0]===SR.picks.disaster;})[0];if(SR.picks.disaster==='pop')dPop-=1;else{ST.debilities=ST.debilities||[];toggleIn(ST.debilities,SR.picks.disaster,true);}if(dp)notes.push(dp[1]);}}
+  ST.stats.surplus=Math.max(0,sur+o.d.surplus);
+  ST.stats.population=Math.max(-1,Math.min(3,pop+dPop));
+  ST.stats.fortunes=o.reset;
+  ST.season=s;ST.year=yr;
+  var summary=[];
+  if(s!=='winter'){summary.push('Rolled '+SR.rolls.main+' on +Fortunes');if(SR.picks.gains.length)summary.push('gains: '+SR.picks.gains.slice(0,o.gains).join(', '));if(o.threat)summary.push('a threat makes itself known or worsens');}
+  else{summary.push('consumed '+Math.max(0,SR.rolls.consume)+' Surplus');summary.push('rolled '+SR.rolls.second+' on +Fortunes');if(SR.rolls.extra!=null)summary.push('extra consumption '+SR.rolls.extra);}
+  summary=summary.concat(notes);summary.push('Fortunes reset to '+fmtMod(o.reset));
+  ledgerAdd(ST.stats.surplus-sur,'Seasons Change: '+summary.join('; ')+'.',s,yr);
+  SR={active:false};saveSteading();renderSteading();
+}
+function bindSeasons(){
+  var body=document.getElementById('steading-body');
+  body.querySelectorAll('[data-season]').forEach(function(b){b.addEventListener('click',function(){ST.season=b.dataset.season;saveSteading();renderSteading();});});
+  body.querySelectorAll('[data-year]').forEach(function(b){b.addEventListener('click',function(){ST.year=Math.max(1,(ST.year||1)+(+b.dataset.year));saveSteading();renderSteading();});});
+  var run=document.getElementById('st-run');if(run)run.addEventListener('click',function(){SR={active:true,season:seasonNext(),rolls:{},picks:{gains:[]}};renderSteading();var el=document.querySelector('.st-runner');if(el)el.scrollIntoView({block:'nearest'});});
+  var cancel=document.getElementById('st-cancel');if(cancel)cancel.addEventListener('click',function(){SR={active:false};renderSteading();});
+  var apply=document.getElementById('st-apply');if(apply)apply.addEventListener('click',srApply);
+  function d(n){return Math.floor(Math.random()*n)+1;}
+  body.querySelectorAll('[data-srroll]').forEach(function(b){b.addEventListener('click',function(){var k=b.dataset.srroll,f=steadingStat('fortunes'),pop=steadingStat('population'),v;
+    if(k==='main')v=d(6)+d(6)+f;else if(k==='second')v=d(6)+d(6)+f+(srCompute().d.fortunes);else if(k==='surplus')v=SR.season==='summer'?Math.max(0,d(4)-1):d(4);else v=Math.max(0,d(4)+pop);
+    SR.rolls[k]=v;renderSteading();});});
+  body.querySelectorAll('[data-srin]').forEach(function(inp){inp.addEventListener('change',function(){var v=parseInt(inp.value,10);SR.rolls[inp.dataset.srin]=isNaN(v)?null:v;renderSteading();});});
+  body.querySelectorAll('[data-srgain]').forEach(function(cb){cb.addEventListener('change',function(){var g=cb.dataset.srgain,i=SR.picks.gains.indexOf(g);if(cb.checked&&i<0)SR.picks.gains.push(g);if(!cb.checked&&i>=0)SR.picks.gains.splice(i,1);renderSteading();});});
+  body.querySelectorAll('[data-srconseq]').forEach(function(r){r.addEventListener('change',function(){SR.picks.conseq=r.dataset.srconseq;renderSteading();});});
+  body.querySelectorAll('[data-srconseq2]').forEach(function(r){r.addEventListener('change',function(){SR.picks.conseq2=r.dataset.srconseq2;renderSteading();});});
+  body.querySelectorAll('[data-srdis]').forEach(function(r){r.addEventListener('change',function(){SR.picks.disaster=r.dataset.srdis;renderSteading();});});
+}
+function renderLedger(){
+  var L=ST.ledger||[],h='';
+  h+='<div class="cc-sec">Surplus ledger <span class="pk-hn">Surplus now: '+steadingStat('surplus')+' · every change is recorded here</span></div>';
+  h+=L.length?L.map(function(e,i){var d=e.delta||0;return '<div class="st-led"><span class="st-led-when">'+esc((SEASON_INFO[e.season]||{}).name||'')+(e.year?' · Y'+e.year:'')+(e.ts?' · '+esc(e.ts):'')+'</span><span class="st-led-delta '+(d>0?'pos':d<0?'neg':'zero')+'">'+(d>0?'+'+d:d)+'</span><span class="st-led-text">'+esc(e.text||'')+'</span><button class="brm" data-rmled="'+i+'" title="remove entry (does not change Surplus)">✕</button></div>';}).join(''):'<div class="empty">No entries yet. Run Seasons Change, use the Surplus stepper, or add an entry below.</div>';
+  h+='<div class="st-led-add"><span class="cc-step"><button data-leddec>−</button><span class="cc-stepv" id="st-led-delta" style="font-size:16px">0</span><button data-ledinc>+</button></span><input class="cc-in" id="st-led-text" placeholder="what happened (traded for iron, fed the muster…)" style="flex:1;min-width:200px"><button class="cc-btn" id="st-led-add">Add</button></div>';
+  return h;
+}
+var ledDelta=0;
+function bindLedger(){
+  var body=document.getElementById('steading-body'),dv=document.getElementById('st-led-delta');if(!dv)return;ledDelta=0;
+  body.querySelector('[data-ledinc]').addEventListener('click',function(){ledDelta++;dv.textContent=(ledDelta>0?'+':'')+ledDelta;});
+  body.querySelector('[data-leddec]').addEventListener('click',function(){ledDelta--;dv.textContent=(ledDelta>0?'+':'')+ledDelta;});
+  var txt=document.getElementById('st-led-text');
+  function add(){var t=txt.value.trim();if(!t&&!ledDelta)return;ST.stats.surplus=Math.max(0,steadingStat('surplus')+ledDelta);ledgerAdd(ledDelta,t||'adjusted by hand');ledDelta=0;saveSteading();renderSteading();}
+  document.getElementById('st-led-add').addEventListener('click',add);txt.addEventListener('keydown',function(e){if(e.key==='Enter')add();});
+  body.querySelectorAll('[data-rmled]').forEach(function(b){b.addEventListener('click',function(){ST.ledger.splice(+b.dataset.rmled,1);saveSteading();renderSteading();});});
 }
 document.getElementById('steading-close').addEventListener('click',closeSteading);
 document.getElementById('steading-backdrop').addEventListener('click',closeSteading);

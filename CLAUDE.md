@@ -156,6 +156,22 @@ browser data wipes local edits.
 
 ---
 
+## Feature: Seasons Change runner + Surplus ledger (Village Sheet, built 2026-09-10)
+The steading doc gains `season` (`spring|summer|autumn|winter`), `year`, and `ledger[]`
+(`{ts, season, year, delta, text}`, newest first). The **Season** section (top of the sheet) has
+a segmented season control, a year stepper, and **Run Seasons Change → <next season>**, which
+opens an inline runner (`SR` state, `renderSeasonRunner`, `srCompute`, `srApply`). Every roll
+step has a Roll button *and* a number input, because the table rolls physical dice: spring/autumn
+roll +Fortunes (10+ one gain; 7–9 one gain + a threat; 6− threats abound), summer rolls +Fortunes
+(10+ two gains; 7–9 one) and 1d4−1 Surplus, autumn adds a 1d4 harvest, winter rolls 1d4+Population
+consumption with the shortfall rule (Surplus → 0, Meet with Disaster, a winter consequence pick,
+and the "GM picks instead" list when Fortunes would fall below −1), then a second +Fortunes roll
+with the 7–9/6− extra consumption. The preview shows every line and the resulting stats before
+**Apply & record** writes them: Surplus/Population/debilities updated, Fortunes reset to +1 (or +0
+if Malcontent), season advanced, year +1 when winter turns to spring, and a ledger entry with the
+net Surplus delta. The Surplus stepper and a manual "Add" row also write ledger entries
+(`ledgerAdd`). Verified through a full year in headless Chrome.
+
 ## Small features (2026-09-10)
 - **Chronicle → "+ End of session"** (edit mode) adds a recap pre-filled with `EOS_TEMPLATE`: the
   four End of Session XP questions (p.573) as `[ ]` boxes, the instinct/relationship prompt, and

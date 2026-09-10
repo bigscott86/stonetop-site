@@ -49,7 +49,7 @@ Value 1 (mundane special item) to 2–4 (magical/rare); an ignorant seller value
 (p.437). Transfers between PCs change both packs' load bands (p.87). Extends the Village Sheet's
 Treasury.
 
-### A3. Village stores — Surplus ledger
+### A3. Village stores — Surplus ledger — ✅ BUILT 2026-09-10 (Village Sheet)
 Surplus starts at 1, no cap, 1 Surplus = Value 2 (p.509, 542). It moves by rule every season
 (summer +1d4−1, autumn +1d4, winter −(1d4+Population)) and by trade, hunting, and seasonal gains
 (pp.516–523). Today it's a bare stepper; a dated ledger with a source label makes the running total
@@ -80,7 +80,7 @@ metal and tools, Marshedge for textiles, herbs, glass).
 
 ## B. The village over time
 
-### B1. Seasons Change runner
+### B1. Seasons Change runner — ✅ BUILT 2026-09-10 (Village Sheet)
 The biggest gap against the current static Village Sheet: it has no notion of time. The move
 (pp.516–523; summary p.84–85, p.32) names who rolls each season (spring: most hopeful; summer:
 most content; autumn: most determined; winter: weariest), rolls **+Fortunes**, and has a different
