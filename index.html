@@ -29,8 +29,14 @@
     --dur:240ms; --ease:cubic-bezier(.2,.7,.2,1);
     --shadow:0 12px 40px rgba(0,0,0,.5);
     --font:Georgia,'Times New Roman',serif;
+    --font-display:'IM Fell English',Georgia,'Times New Roman',serif; /* panel titles & section heads */
+    --font-body:'Crimson Pro',Georgia,'Times New Roman',serif;        /* panel text (the map keeps Georgia) */
     --ctl:36px; /* control height */
   }
+  @font-face{font-family:'IM Fell English';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/im-fell-english-normal.woff2) format('woff2');}
+  @font-face{font-family:'IM Fell English';font-style:italic;font-weight:400;font-display:swap;src:url(fonts/im-fell-english-italic.woff2) format('woff2');}
+  @font-face{font-family:'Crimson Pro';font-style:normal;font-weight:400 700;font-display:swap;src:url(fonts/crimson-pro-normal-400-700.woff2) format('woff2');}
+  @font-face{font-family:'Crimson Pro';font-style:italic;font-weight:400 700;font-display:swap;src:url(fonts/crimson-pro-italic-400-700.woff2) format('woff2');}
   *{margin:0;padding:0;box-sizing:border-box;}
   html{-webkit-text-size-adjust:100%;}
   body{background:#000;font-family:var(--font);overflow:hidden;width:100vw;height:100vh;color:var(--text-2);}
@@ -49,6 +55,13 @@
   .t-heading{font-size:15px;line-height:1.3;color:var(--text-1);font-weight:normal;}
   .t-meta{font-size:12px;line-height:1.5;letter-spacing:.5px;color:var(--text-3);}
   .t-label{font-size:11px;line-height:1;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);}
+  .modal-box .t-label{font-size:12px;} .modal-box .chip,.modal-box .rl-cat{font-size:11px;letter-spacing:1.5px;}
+  .modal-box .hint,.modal-box .cc-hint,.modal-box .cc-roster-hint,.modal-box .pk-note,.modal-box .cc-card-meta,.modal-box .sroll-note{font-size:14px;}
+  .modal-box .label,.modal-box .cc-field label,.modal-box .blog-ts,.modal-box .rl-meta,.modal-box .cc-card-sub,.modal-box .pk-cat{font-size:11.5px;}
+  .modal-box .btn,.modal-box .cc-btn,.modal-box .pk-btn,.modal-box .sm-btn-go,.modal-box .badd,.modal-box .cc-add,.modal-box .stab,.modal-box .tab,.modal-box .seg-btn,.modal-box .pk-tab,.modal-box .sstab,.modal-box .wt-tool{font-size:12px;letter-spacing:1.5px;}
+  .pk-login h3{font-family:var(--font-display);font-size:26px;letter-spacing:.2px;text-transform:none;color:var(--text-0);} .pk-login p{font-size:16px;} .pk-msg{font-size:14px;}
+  .cc-card{border-top:2px solid var(--accent);} .cc-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.35);}
+  .spb-cell:hover{color:var(--text-1);box-shadow:inset 0 2px 0 var(--accent);}
 
   /* ── Map screen ──────────────────────────────────────────────────────── */
   #cc{width:100%;height:100%;position:relative;overflow:hidden;background:var(--ink-0);}
@@ -174,15 +187,18 @@
   .modal.open .modal-box{opacity:1;transform:none;}
   .modal-close{position:absolute;top:var(--s3);right:var(--s3);width:36px;height:36px;border:1px solid var(--line-1);color:var(--text-3);font-size:16px;display:flex;align-items:center;justify-content:center;z-index:10;transition:border-color var(--dur),color var(--dur);}
   .modal-close:hover{border-color:var(--accent-text);color:var(--text-1);}
-  .modal-head{flex-shrink:0;display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2) var(--s4);min-height:60px;padding:var(--s3) 64px var(--s3) var(--s5);border-bottom:1px solid var(--line-0);}
-  .modal-title{display:flex;align-items:center;gap:var(--s3);font-size:18px;line-height:1.2;letter-spacing:3px;text-transform:uppercase;color:var(--text-1);font-weight:normal;}
-  .modal-title .ic,.modal-icon .ic{width:20px;height:20px;color:var(--accent-text);}
+  .modal-box{font-family:var(--font-body);}
+  .modal-box::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.05;mix-blend-mode:screen;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 .92 0 0 0 0 .75 0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");}
+  .modal-head{flex-shrink:0;display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2) var(--s4);min-height:84px;padding:var(--s4) 64px var(--s4) var(--s5);border-bottom:3px double var(--line-1);background:linear-gradient(180deg,var(--ink-1),var(--ink-0));}
+  .modal-title{display:flex;align-items:center;gap:var(--s4);font-family:var(--font-display);font-size:28px;line-height:1.1;letter-spacing:.3px;text-transform:none;color:var(--text-0);font-weight:normal;}
+  .modal-title .ic,.modal-icon .ic{width:46px;height:46px;padding:11px;border-radius:50%;background:var(--parchment);color:#2b2115;stroke-width:1.5;box-shadow:0 0 0 2px var(--ink-0),0 0 0 3px var(--accent);flex-shrink:0;vertical-align:middle;}
   .modal-icon{display:inline-flex;}
-  .modal-sub{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);margin-top:var(--s1);}
+  .modal-sub{font-family:var(--font-body);font-style:italic;font-size:16px;letter-spacing:0;text-transform:none;color:var(--text-2);margin:2px 0 0 62px;}
+  .modal-head>div>.modal-title+.modal-sub{margin-left:62px;}
   .modal-actions{display:flex;align-items:center;flex-wrap:wrap;gap:var(--s2);margin-left:auto;}
   .modal-hint{width:100%;font-size:12px;letter-spacing:.3px;color:var(--text-3);font-style:italic;}
   .modal-tabs{width:100%;margin-top:var(--s1);}
-  .modal-body{flex:1;overflow-y:auto;padding:var(--s5) var(--s6) var(--s7);color:var(--text-2);font-size:14px;line-height:1.6;position:relative;}
+  .modal-body{flex:1;overflow-y:auto;padding:var(--s5) var(--s6) var(--s7);color:var(--text-2);font-size:16px;line-height:1.6;position:relative;}
   .modal-body.panes{overflow:hidden;padding:0;}
   .modal-body::-webkit-scrollbar,.spanel::-webkit-scrollbar,#sm-editor::-webkit-scrollbar{width:4px;}
   .modal-body::-webkit-scrollbar-thumb,.spanel::-webkit-scrollbar-thumb,#sm-editor::-webkit-scrollbar-thumb{background:rgba(212,184,150,.2);}
@@ -232,13 +248,13 @@
   .cc-step button:hover,.pk-step button:hover{border-color:var(--accent-text);color:var(--text-1);}
   .pk-step span{min-width:20px;text-align:center;color:var(--text-1);}
   /* section headers */
-  .sec,.spanel h3,.cc-sec,.pk-h{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent-text);margin:var(--s5) 0 var(--s3);display:flex;align-items:center;gap:var(--s3);white-space:nowrap;font-weight:normal;}
-  .sec::after,.spanel h3::after,.cc-sec::after,.pk-h::after{content:'';flex:1;height:1px;background:var(--line-0);min-width:10px;}
+  .sec,.spanel h3,.cc-sec,.pk-h{font-family:var(--font-display);font-size:20px;letter-spacing:.2px;text-transform:none;color:var(--accent-hi);margin:var(--s6) 0 var(--s3);display:flex;align-items:center;gap:var(--s3);white-space:nowrap;font-weight:normal;}
+  .sec::after,.spanel h3::after,.cc-sec::after,.pk-h::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--accent) 0,var(--line-1) 45%,transparent);min-width:10px;}
   .spanel h3:first-child,.cc-sec:first-child,.pk-h:first-child{margin-top:0;}
   /* rows, cards, empty states, meta */
   .row{display:flex;align-items:center;gap:var(--s3);min-height:40px;padding:var(--s2) 0;border-bottom:1px solid var(--line-0);}
   .card,.cc-card,.rl-card,.cc-fol,.cc-stat,.scallout,.sroller,.spb-detail{border:1px solid var(--line-1);background:var(--ink-1);}
-  .empty,.bempty,.cc-empty,.rl-empty{color:var(--text-3);font-style:italic;font-size:14px;line-height:1.6;padding:var(--s4) 0;}
+  .empty,.bempty,.cc-empty,.rl-empty{color:var(--text-2);font-style:italic;font-size:17px;line-height:1.6;padding:var(--s6) var(--s5);text-align:center;border:1px dashed var(--line-1);margin:var(--s3) 0;max-width:62ch;margin-left:auto;margin-right:auto;}
   .cc-empty{grid-column:1/-1;}
   .hint,.cc-hint,.cc-roster-hint,.pk-note,.cc-card-meta,.spb-cell-epi,.spb-detail .spb-epi,.sroll-note,.cc-res-h small,.cc-debil small{font-size:12px;line-height:1.5;color:var(--text-3);font-style:italic;}
   .cc-hint{margin:var(--s1) 0 var(--s2);}
@@ -248,7 +264,7 @@
   .label,.blog-ts,.cc-field label,.pk-cat,.rl-meta,.pk-closet-head,.sroller .slabel,.scallout .slabel,.stalk .sspk,.sloop .sstep b,.spb-bg b,.spb-detail .spb-meta,.spanel .pageref,.cc-card-sub,.cc-card-edit,.gnode-kind,.pk-who small,.pk-login h3{font-size:11px;line-height:1.3;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);font-weight:normal;font-style:normal;}
 
   /* ── The Stone: guide prose, callouts, ladders, roller ───────────────── */
-  .spanel h2,.sm-roster-head h2{font-size:18px;font-weight:normal;letter-spacing:3px;color:var(--text-1);text-transform:uppercase;border-bottom:1px solid var(--line-1);padding-bottom:var(--s2);margin-bottom:var(--s1);}
+  .spanel h2,.sm-roster-head h2{font-family:var(--font-display);font-size:26px;font-weight:normal;letter-spacing:.2px;color:var(--text-0);text-transform:none;border-bottom:1px solid var(--line-1);padding-bottom:var(--s2);margin-bottom:var(--s1);}
   .spanel .pageref{display:block;margin-bottom:var(--s5);}
   .spanel p,.spanel li{max-width:72ch;}
   .spanel p{margin-bottom:var(--s3);}
@@ -367,7 +383,7 @@
   #sm-editor{position:absolute;inset:0;background:var(--ink-0);overflow-y:auto;padding:var(--s5) var(--s6) var(--s7);display:none;z-index:5;color:var(--text-2);}
   #sm-editor.open{display:block;}
   .cc-top{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s4);border-bottom:1px solid var(--line-1);padding-bottom:var(--s3);flex-wrap:wrap;}
-  .cc-top-title{color:var(--text-1);font-size:18px;letter-spacing:3px;text-transform:uppercase;}
+  .cc-top-title{font-family:var(--font-display);color:var(--text-0);font-size:26px;letter-spacing:.2px;text-transform:none;}
   .cc-top-btns{display:flex;gap:var(--s2);flex-shrink:0;}
   .cc-row{display:flex;flex-wrap:wrap;gap:var(--s4);margin-bottom:var(--s2);}
   .cc-field{display:flex;flex-direction:column;gap:var(--s1);flex:1;min-width:140px;}
@@ -609,6 +625,8 @@
   @media (pointer:coarse){:root{--ctl:40px;} .btn-icon,.brm,.cc-rm,.pk-x{width:40px;height:40px;} .place{min-height:48px;}}
   /* encyclopedia (the Old Wall) */
   #lore-box{width:min(1180px,90vw);}
+  .modal-box.md{width:min(920px,88vw);height:auto;min-height:340px;max-height:min(860px,88vh);}
+  .modal-box.sm{width:min(600px,92vw);height:auto;min-height:0;max-height:88vh;}
   .lo-wrap{display:grid;grid-template-columns:300px minmax(0,1fr);gap:var(--s6);align-items:start;}
   .lo-side{position:sticky;top:0;display:flex;flex-direction:column;gap:var(--s3);max-height:calc(min(860px,88vh) - 150px);}
   .lo-side .input{width:100%;}
@@ -689,7 +707,7 @@
       <div id="shrine-box" class="modal-box">
         <button id="shrine-close" class="modal-close" aria-label="Close">✕</button>
         <div id="shrine-header" class="modal-head">
-          <div id="shrine-title" class="modal-title"><svg class="ic"><use href="#i-stone"/></svg>The Stone — A New Player's Guide</div>
+          <div><div id="shrine-title" class="modal-title"><svg class="ic"><use href="#i-stone"/></svg>The Stone</div><div class="modal-sub">How to play: a new player's guide and the rules lookup</div></div>
           <div id="shrine-tabs" class="tabs modal-tabs">
             <button class="stab active" data-tab="s-lookup">Lookup</button>
             <button class="stab" data-tab="s-game">The Game</button>
@@ -827,7 +845,7 @@
       <div id="smithy-box" class="modal-box">
         <button id="smithy-close" class="modal-close" aria-label="Close">✕</button>
         <div id="smithy-header" class="modal-head">
-          <div id="smithy-title" class="modal-title"><svg class="ic"><use href="#i-forge"/></svg>The Smithy — Classes &amp; Characters</div>
+          <div><div id="smithy-title" class="modal-title"><svg class="ic"><use href="#i-forge"/></svg>The Smithy</div><div class="modal-sub">Classes &amp; characters: the roster and the playbooks</div></div>
         </div>
         <div id="smithy-body" class="modal-body panes">
           <div class="spanel active" id="sm-playbooks">
@@ -879,7 +897,7 @@
       <div id="graph-box" class="modal-box">
         <button id="graph-close" class="modal-close" aria-label="Close">✕</button>
         <div id="graph-header" class="modal-head">
-          <div id="graph-title" class="modal-title"><svg class="ic"><use href="#i-web"/></svg>Relationship Map</div>
+          <div><div id="graph-title" class="modal-title"><svg class="ic"><use href="#i-web"/></svg>Relationship Map</div><div class="modal-sub">Who is tied to whom, and how</div></div>
           <div id="graph-tools" class="modal-actions">
             <button class="cc-btn" id="g-add-npc"><svg class="ic"><use href="#i-plus"/></svg> NPC</button>
             <select class="cc-sel" id="g-add-pc"><option value="">+ Add character…</option></select>
@@ -899,7 +917,7 @@
       <div id="steading-backdrop" class="modal-backdrop"></div>
       <div id="steading-box" class="modal-box">
         <button id="steading-close" class="modal-close" aria-label="Close">✕</button>
-        <div id="steading-header" class="modal-head"><div id="steading-title" class="modal-title"><svg class="ic"><use href="#i-village"/></svg>The Village of Stonetop</div></div>
+        <div id="steading-header" class="modal-head"><div><div id="steading-title" class="modal-title"><svg class="ic"><use href="#i-village"/></svg>The Village of Stonetop</div><div class="modal-sub">The village sheet: seasons, stores, stats and improvements</div></div></div>
         <div id="steading-body" class="modal-body"></div>
       </div>
     </div>
@@ -919,15 +937,15 @@
       <div id="lore-backdrop" class="modal-backdrop"></div>
       <div id="lore-box" class="modal-box">
         <button id="lore-close" class="modal-close" aria-label="Close">✕</button>
-        <div id="lore-header" class="modal-head"><div id="lore-title" class="modal-title"><svg class="ic"><use href="#i-book"/></svg>Encyclopedia</div><div class="modal-sub">The World's End, as folk tell it</div><div class="modal-actions" id="lore-actions"><button id="lore-add" class="btn"><svg class="ic"><use href="#i-plus"/></svg> Add entry</button></div></div>
+        <div id="lore-header" class="modal-head"><div><div id="lore-title" class="modal-title"><svg class="ic"><use href="#i-book"/></svg>Encyclopedia</div><div class="modal-sub">The World's End, as folk tell it</div></div><div class="modal-actions" id="lore-actions"><button id="lore-add" class="btn"><svg class="ic"><use href="#i-plus"/></svg> Add entry</button></div></div>
         <div id="lore-body" class="modal-body"></div>
       </div>
     </div>
     <div id="arcana-modal" class="modal">
       <div id="arcana-backdrop" class="modal-backdrop"></div>
-      <div id="arcana-box" class="modal-box">
+      <div id="arcana-box" class="modal-box md">
         <button id="arcana-close" class="modal-close" aria-label="Close">✕</button>
-        <div id="arcana-header" class="modal-head"><div id="arcana-title" class="modal-title"><svg class="ic"><use href="#i-key"/></svg>Arcana Chest</div><div class="modal-actions gm-only" id="arcana-actions"></div></div>
+        <div id="arcana-header" class="modal-head"><div><div id="arcana-title" class="modal-title"><svg class="ic"><use href="#i-key"/></svg>Arcana Chest</div><div class="modal-sub">What the party has found, and what it has cost</div></div><div class="modal-actions gm-only" id="arcana-actions"></div></div>
         <div id="arcana-body" class="modal-body"></div>
       </div>
     </div>
@@ -1341,6 +1359,7 @@ function flashSaved(){
 }
 
 function openBuilding(k){
+  document.getElementById('building-box').className='modal-box'+((k==='Mesh_Well'||k==='Mesh_Market')?' md':'');
   curBldg=k; editMode=false;
   var b=BLDGS[k];
   document.getElementById('building-icon').innerHTML=ico(b.icon);
@@ -2968,6 +2987,7 @@ document.getElementById('pack-close').addEventListener('click',closePack);
 document.getElementById('pack-backdrop').addEventListener('click',closePack);
 
 function renderPackLogin(msg){
+  document.getElementById('pack-box').classList.add('sm');
   var body=document.getElementById('pack-body');
   var names=allChars().map(function(c){return c.name;}).filter(Boolean);
   body.innerHTML='<div class="pk-login"><h3>'+(pkWant==='closet'?'Whose closet is this?':'Whose pack is this?')+'</h3><p>Type your character\'s name to open their '+(pkWant==='closet'?'closet':'pack')+'. Characters are made in the Smithy.</p>'
@@ -2990,6 +3010,7 @@ function renderPackLogin(msg){
 }
 
 function renderPack(){
+  document.getElementById('pack-box').classList.remove('sm');
   var body=document.getElementById('pack-body'),p=PK.pack,pro=prosperity(),uses=pkUses(),tot=pkTotal(),band=pkBand(tot),small=pkSmall(),smallMax=Math.max(0,4+pro);
   var c=getChar(PK.charId)||pkChar||{},PB=(window.PBDATA||{})[c.playbook]||{};
   var h='<div class="pk-top"><div class="pk-who">'+esc(c.name||'?')+'<small>'+esc(PB.name||c.playbook||'')+' · Prosperity '+fmtMod(pro)+'</small></div>'

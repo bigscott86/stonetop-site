@@ -550,6 +550,17 @@ How it works:
   `.pk-tab`, `.cc-in`, `.pk-in`, `.badd`…) are grouped onto those shared rules as aliases — reuse
   the shared class on anything new. Font: Georgia only. Five type roles: display 18/3px caps,
   heading 15, body 14/1.6, meta 12, label 11/2px caps.
+- **Panel typography (2026-09-10).** The panels use two self-hosted faces from `fonts/` (OFL, latin
+  subsets): **IM Fell English** (`--font-display`) for panel titles, section heads (`.sec`/`.cc-sec`/
+  `.pk-h`/`.spanel h2`/`.cc-top-title`/`.pk-login h3`) and **Crimson Pro** (`--font-body`, variable
+  400–700 + italic) for everything else inside `.modal-box`. Body text in panels is 16px. The map
+  screen (cartouche, pins, Places, Sky, hint, pill) deliberately keeps Georgia and its own look —
+  the user likes it as is. Every panel head is a **header plate**: a 46px parchment badge with the
+  place icon (`.modal-title .ic`), a 28px display title, an italic `.modal-sub` line, a double rule
+  and a faint paper grain over the whole box (`.modal-box::before`). Titles that used to read
+  "The Smithy — Classes & Characters" are now split into title + `.modal-sub`. Boxes come in three
+  sizes: default (1280×860), `.modal-box.md` (920 wide, content height — Chronicle, Stables, Arcana
+  chest; `openBuilding` sets it) and `.modal-box.sm` (600 wide — the Pack & Closet login).
 - **Icons are an inline SVG sprite** (`<symbol id="i-…">` at the top of `<body>`; ~25 single-stroke
   24×24 glyphs). Use `ico('name')` in JS or `<svg class="ic"><use href="#i-name"/></svg>` in
   markup. **No emoji anywhere** — `BLDGS[k].icon` is a sprite id (`stone`, `longhouse`, `forge`,
