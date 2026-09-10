@@ -651,6 +651,7 @@
     #topright{top:var(--s3);right:var(--s3);} #sky-btn span{display:none;} #sky-menu{min-width:260px;}
     #inst{white-space:normal;text-align:center;width:calc(100% - 32px);bottom:var(--s3);}
     #sync-dot{bottom:auto;top:64px;right:var(--s4);}
+    body:has(.modal.open) #sync-dot{display:none;} /* on phones the pill would sit on the modal header */
     .cc-stats{grid-template-columns:repeat(3,1fr);}
     .bnpc-edit{flex-wrap:wrap;} .bnpc-edit .bedit-input.n{width:100%;}
     .bnpc-name{min-width:0;width:100%;}
