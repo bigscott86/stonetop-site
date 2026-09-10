@@ -217,6 +217,17 @@ net Surplus delta. The Surplus stepper and a manual "Add" row also write ledger 
   or a custom item with editable front/back; Reveal/Hide; remove. Holder is a roster character
   or "the party".
 
+## Map atmosphere (built 2026-09-10)
+- **Season tint:** `applySeason()` reads the Village Sheet's `season`/`year`, puts
+  `season-<name>` on `<body>` and writes "Spring · year 2" into `#brand-season`. `#map-tint`
+  (inside `#map-inner`, so it pans and zooms with the parchment) is a multiply-blended colour
+  layer per season; winter also desaturates `#map-img`. Re-applied after `saveSteading()` and
+  after every remote merge, so the whole table's screens change colour when the season turns.
+- **Settle-in:** `revealMap()` starts with the loading fade (+250 ms after the image loads),
+  eases the view from 1.07× the fitted scale down to the fit over 2.6 s, fades pins in with a
+  delay, stops the moment the user drags or zooms (`mapTouched`), and is skipped under
+  `prefers-reduced-motion`.
+
 ## Small features (2026-09-10)
 - **Chronicle → "+ End of session"** (edit mode) adds a recap pre-filled with `EOS_TEMPLATE`: the
   four End of Session XP questions (p.573) as `[ ]` boxes, the instinct/relationship prompt, and

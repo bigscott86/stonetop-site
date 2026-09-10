@@ -55,7 +55,19 @@
   #map.dragging{cursor:grabbing;}
   #map.placing{cursor:crosshair;}
   #map-inner{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform;}
-  #map-img{display:block;width:100%;height:100%;pointer-events:none;-webkit-user-drag:none;}
+  #map-img{display:block;width:100%;height:100%;pointer-events:none;-webkit-user-drag:none;transition:filter 1.4s var(--ease);}
+  #map-tint{position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;opacity:0;background:#fff;transition:opacity 1.4s var(--ease),background-color 1.4s var(--ease);}
+  body.season-spring #map-tint{background:#d2e2bc;opacity:.32;}
+  body.season-summer #map-tint{background:#f1d493;opacity:.34;}
+  body.season-autumn #map-tint{background:#e2ab6c;opacity:.36;}
+  body.season-winter #map-tint{background:#b9c9dc;opacity:.46;}
+  body.season-winter #map-img{filter:saturate(.5) brightness(1.03);}
+  #map-inner{opacity:0;transition:opacity 1.4s var(--ease);}
+  #map-inner.in{opacity:1;}
+  #pins{opacity:0;transition:opacity .9s var(--ease) .8s;}
+  #map-inner.in #pins{opacity:1;}
+  #brand-season{display:block;font-size:11px;letter-spacing:3px;text-transform:uppercase;margin-top:4px;color:var(--text-4);}
+  #brand-season:empty{display:none;}
   .pin{position:absolute;width:0;height:0;pointer-events:none;transform:scale(var(--inv,1));}
   .pin-badge{position:absolute;left:-18px;top:-18px;width:36px;height:36px;border-radius:50%;background:rgba(13,10,6,.9);border:1px solid var(--text-1);color:var(--text-0);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.45);cursor:pointer;pointer-events:auto;transition:transform var(--dur) var(--ease),background var(--dur),color var(--dur);}
   .pin-badge .ic{width:18px;height:18px;}
@@ -516,7 +528,7 @@
     .modal-title{font-size:15px;letter-spacing:2px;}
     .modal-body,.spanel,#sm-editor{padding:var(--s4) var(--s4) var(--s6);}
     .modal-actions{margin-left:0;width:100%;}
-    #brand b{font-size:16px;letter-spacing:5px;} #brand small{display:none;}
+    #brand b{font-size:16px;letter-spacing:5px;} #brand small{display:none;} #brand-season{display:block!important;font-size:9px;letter-spacing:2px;}
     #inst{white-space:normal;text-align:center;width:calc(100% - 32px);bottom:var(--s3);}
     #sync-dot{bottom:auto;top:64px;right:var(--s4);}
     .cc-stats{grid-template-columns:repeat(3,1fr);}
@@ -534,11 +546,12 @@
   <div id="map">
     <div id="map-inner">
       <img id="map-img" alt="Map of the village of Stonetop" draggable="false">
+      <div id="map-tint"></div>
       <div id="pins"></div>
     </div>
   </div>
   <div id="ui">
-    <div id="brand"><b>Stonetop</b><small>A hearth-fantasy campaign</small><small id="brand-gm" hidden>GM screen on</small></div>
+    <div id="brand"><b>Stonetop</b><small>A hearth-fantasy campaign</small><small id="brand-season"></small><small id="brand-gm" hidden>GM screen on</small></div>
     <div id="places"><button id="places-btn" aria-expanded="false" aria-controls="places-list"><svg class="ic"><use href="#i-list"/></svg> Places</button><div id="places-list" role="menu"></div></div>
     <div id="inst">Click a place &nbsp;·&nbsp; drag to pan &nbsp;·&nbsp; scroll or pinch to zoom</div>
     <div id="hl"></div>
@@ -893,7 +906,7 @@ var ptrs={}, drag=null, pinch=null;
 function ptrList(){return Object.keys(ptrs).map(function(id){return ptrs[id];});}
 function mid(l){return {x:(l[0].x+l[1].x)/2,y:(l[0].y+l[1].y)/2,d:Math.hypot(l[0].x-l[1].x,l[0].y-l[1].y)};}
 mapEl.addEventListener('pointerdown',function(e){
-  if(e.pointerType==='mouse'&&e.button!==0)return;
+  if(e.pointerType==='mouse'&&e.button!==0)return;mapTouched=true;
   ptrs[e.pointerId]={x:e.clientX,y:e.clientY};
   try{mapEl.setPointerCapture(e.pointerId);}catch(_){}
   var l=ptrList();
@@ -937,7 +950,7 @@ mapEl.addEventListener('pointerup',ptrEnd);
 mapEl.addEventListener('pointercancel',ptrEnd);
 mapEl.addEventListener('pointerleave',function(){if(!ptrList().length)hideHl();});
 mapEl.addEventListener('wheel',function(e){
-  e.preventDefault();
+  e.preventDefault();mapTouched=true;
   zoomAt(Math.exp(-e.deltaY*(e.deltaMode===1?0.05:0.0015)),e.clientX,e.clientY);
 },{passive:false});
 mapEl.addEventListener('dblclick',function(e){if(!placing&&!pinAt(e))zoomAt(1.6,e.clientX,e.clientY);});
@@ -982,14 +995,30 @@ function buildPlaces(){
   document.addEventListener('pointerdown',function(e){if(wrap.classList.contains('open')&&!wrap.contains(e.target))setOpen(false);});
   window.addEventListener('keydown',function(e){if(e.key==='Escape')setOpen(false);});
 }
+var SEASON_NAMES={spring:'Spring',summer:'Summer',autumn:'Autumn',winter:'Winter'};
+function applySeason(){ // the parchment takes the colour of the Village Sheet's current season
+  var st=null;try{st=stLoad();}catch(_){}
+  var season=(st&&st.season)||'',yr=(st&&st.year)||0;
+  ['spring','summer','autumn','winter'].forEach(function(k){document.body.classList.toggle('season-'+k,k===season);});
+  var el=document.getElementById('brand-season');if(el)el.textContent=season?(SEASON_NAMES[season]+(yr?' · year '+yr:'')):'';
+}
+var mapTouched=false;
+function revealMap(){ // ease in from slightly closer to the fitted view; skip under reduced motion or once the user takes hold
+  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  requestAnimationFrame(function(){mapInner.classList.add('in');});
+  if(reduce)return;
+  var s0=MV.fit*1.07,s1=MV.fit,cx=innerWidth/2,cy=innerHeight/2,t0=performance.now(),D=2600;
+  MV.s=s0;MV.tx=cx-FOCUS.x*MV.w*s0;MV.ty=cy-FOCUS.y*MV.h*s0;applyView();
+  (function step(now){if(mapTouched)return;var t=Math.min(1,(now-t0)/D),e=1-Math.pow(1-t,3),sc=s0+(s1-s0)*e;MV.s=sc;MV.tx=cx-FOCUS.x*MV.w*sc;MV.ty=cy-FOCUS.y*MV.h*sc;applyView();if(t<1)requestAnimationFrame(step);})(t0);
+}
 function initMap(){
-  buildPins();buildPlaces();
+  buildPins();buildPlaces();applySeason();
   mapImg.onload=function(){
     MV.w=mapImg.naturalWidth; MV.h=mapImg.naturalHeight; MV.ready=true;
     mapInner.style.width=MV.w+'px'; mapInner.style.height=MV.h+'px';
     layoutMap();
     clearInterval(iv); var lb=document.getElementById('lb'); if(lb)lb.style.width='100%';
-    setTimeout(fadeLoad,250);
+    setTimeout(function(){fadeLoad();revealMap();},250); // the settle-in runs while the loading screen thins
   };
   mapImg.onerror=function(){clearInterval(iv);loadFailed('Could not load the village map ('+MAP_SRC+'). Serve the site over HTTP and check the file is present.');};
   mapImg.src=MAP_SRC;
@@ -1064,6 +1093,7 @@ function applyRemote(remote){
   if(typeof threatsSyncRefresh==='function')threatsSyncRefresh();
   if(typeof fightSyncRefresh==='function')fightSyncRefresh();
   if(typeof arcanaSyncRefresh==='function')arcanaSyncRefresh();
+  if(typeof applySeason==='function')applySeason();
   applyingRemote=false;
 }
 function initSync(){
@@ -2217,7 +2247,7 @@ function seedSteading(){
   return s;
 }
 function stLoad(){var x=store.steading;if(x&&x.data){try{return JSON.parse(x.data);}catch(_){}}return seedSteading();}
-function saveSteading(){store.steading={data:JSON.stringify(ST),_t:Date.now()};persist();pushSteading();flashSaved();}
+function saveSteading(){store.steading={data:JSON.stringify(ST),_t:Date.now()};persist();pushSteading();flashSaved();if(typeof applySeason==='function')applySeason();}
 function pushSteading(){if(!syncRef||applyingRemote)return;syncRef.child('steading').set({data:store.steading.data,_t:store.steading._t}).catch(function(){setSyncState('error','offline · saved here');});}
 function mergeSteading(r){r=r||{};var l=store.steading;if(!l||(r._t||0)>=(l._t||0))store.steading={data:r.data||'',_t:r._t||0};}
 function steadingSyncRefresh(){if(!stOpen)return;var ae=document.activeElement,body=document.getElementById('steading-body');if(body&&ae&&body.contains(ae))return;ST=stLoad();renderSteading();}
