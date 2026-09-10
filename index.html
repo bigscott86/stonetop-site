@@ -430,7 +430,19 @@
   .pk-closet-row{padding:var(--s1) 0;border-bottom:1px dotted var(--line-0);}
   .pk-closet-row .pk-in{margin:0;min-height:32px;padding:var(--s1) var(--s2);font-size:13px;}
 
-  /* ── Watchtower route maps ───────────────────────────────────────────── */
+  /* ── Watchtower: plan + route maps ───────────────────────────────────── */
+  .wt-plan{padding-bottom:var(--s4);border-bottom:1px solid var(--line-0);margin-bottom:var(--s4);}
+  .wt-plan h3{margin-top:0;}
+  .wt-lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--s3) var(--s5);margin-top:var(--s3);}
+  .wt-item{display:flex;align-items:center;gap:var(--s2);padding:var(--s1) 0;}
+  .wt-item .cc-in{flex:1;min-width:0;min-height:32px;padding:var(--s1) var(--s2);}
+  .wt-item .cc-in.done{text-decoration:line-through;color:var(--text-3);}
+  .wt-item .brm{width:28px;height:28px;}
+  .wt-list .badd{margin-top:var(--s2);min-height:32px;}
+  .wt-supply{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2) var(--s3);margin-top:var(--s4);}
+  .wt-supply-out{flex-basis:100%;color:var(--text-2);font-size:13.5px;line-height:1.5;}
+  .wt-supply-out b{color:var(--text-1);} .wt-short{color:var(--danger-hi);}
+  input[type=radio]{accent-color:var(--accent);}
   .wt-toolbar{flex-shrink:0;display:flex;align-items:center;gap:var(--s2);padding:var(--s2) var(--s3);border-bottom:1px solid var(--line-0);background:var(--ink-1);}
   .wt-tool,.wt-clear{min-height:32px;padding:0 10px;letter-spacing:1px;}
   .wt-color{width:20px;height:20px;border:2px solid transparent;border-radius:50%;cursor:pointer;padding:0;flex-shrink:0;}
@@ -941,7 +953,8 @@ function setSyncState(s,msg){
 }
 function pushRemote(){
   if(!syncRef||applyingRemote)return;
-  syncRef.update(JSON.parse(JSON.stringify(store))).catch(function(){setSyncState('error','offline · saved here');});
+  var copy=JSON.parse(JSON.stringify(store));delete copy.routes; // routes are big and pushed on their own
+  syncRef.update(copy).catch(function(){setSyncState('error','offline · saved here');});
 }
 function applyRemote(remote){
   remote=remote||{};
@@ -951,9 +964,10 @@ function applyRemote(remote){
     if(k==='graph'){mergeGraph(remote.graph);return;}                 // relationship graph (string-encoded, whole-doc LWW)
     if(k==='steading'){mergeSteading(remote.steading);return;}         // village sheet (string-encoded, whole-doc LWW)
     if(k==='inventory'){mergeInventory(remote.inventory);return;}      // per-character packs (string-encoded per id, LWW)
+    if(k==='routes'){mergeRoutes(remote.routes);return;}               // Watchtower route drawings (string-encoded, whole-doc LWW)
     var r=remote[k]||{}, l=store[k];
     // per-building last-write-wins; Firebase drops empty arrays, so restore them
-    if(!l||(r._t||0)>=(l._t||0)) store[k]={npcs:r.npcs||[],log:r.log||[],_t:r._t||0};
+    if(!l||(r._t||0)>=(l._t||0)) store[k]=Object.assign({},r,{npcs:r.npcs||[],log:r.log||[],_t:r._t||0});
   });
   try{localStorage.setItem(STORE_KEY,JSON.stringify(store));}catch(e){}
   // refresh an open (non-editing) panel so other devices' edits appear live
@@ -962,6 +976,7 @@ function applyRemote(remote){
   if(typeof graphSyncRefresh==='function')graphSyncRefresh();
   if(typeof steadingSyncRefresh==='function')steadingSyncRefresh();
   if(typeof packSyncRefresh==='function')packSyncRefresh();
+  if(typeof routesSyncRefresh==='function')routesSyncRefresh();
   applyingRemote=false;
 }
 function initSync(){
@@ -1035,12 +1050,13 @@ function renderWatchtowerTabs(){
     +'<div id="wt-chart" class="wt-panel" style="display:none">'+wtChart()+'</div>';
 }
 
+var wtTab='', mtTab='';
 function bindWatchtowerTabs(){
   var btns=buildingPanel.querySelectorAll('[data-wtb]');
   btns.forEach(function(btn){
     btn.addEventListener('click',function(){
       btns.forEach(function(b){b.classList.remove('active');});
-      btn.classList.add('active');
+      btn.classList.add('active');wtTab=btn.dataset.wtb;
       buildingPanel.querySelectorAll('.wt-panel').forEach(function(p){p.style.display='none';});
       var panel=buildingPanel.querySelector('#'+btn.dataset.wtb);
       if(panel)panel.style.display='block';
@@ -1051,7 +1067,7 @@ function bindWatchtowerTabs(){
   mtabs.forEach(function(btn){
     btn.addEventListener('click',function(){
       mtabs.forEach(function(b){b.classList.remove('active');});
-      btn.classList.add('active');
+      btn.classList.add('active');mtTab=btn.dataset.mt;
       buildingPanel.querySelectorAll('.mt-panel').forEach(function(p){p.style.display='none';});
       var panel=buildingPanel.querySelector('#'+btn.dataset.mt);
       if(panel)panel.style.display='flex';
@@ -1059,6 +1075,8 @@ function bindWatchtowerTabs(){
   });
   // Bind whiteboard canvases
   bindWhiteboards();
+  if(wtTab){var rb=buildingPanel.querySelector('[data-wtb="'+wtTab+'"]');if(rb&&!rb.classList.contains('active'))rb.click();}
+  if(mtTab){var rm=buildingPanel.querySelector('[data-mt="'+mtTab+'"]');if(rm&&!rm.classList.contains('active'))rm.click();}
 }
 
 function wtTables(){
@@ -1109,8 +1127,47 @@ function wtLeaving(){
     +'</div>';
 }
 
+// ── Chart a Course plan + supply calculator (Book I pp.302–304) ─────────────
+function planOf(){var c=editable('Mesh_Watchtower');if(!c.course)c.course={dest:'',reqs:[],risks:[],party:4,messKit:true,days:3};var p=c.course;p.reqs=p.reqs||[];p.risks=p.risks||[];if(p.party==null)p.party=4;if(p.days==null)p.days=3;if(p.messKit==null)p.messKit=true;return p;}
+function partySupplies(){ // uses of supplies + provisions carried in everyone's packs
+  var per=Math.max(1,4+prosperity()),tot=0,who=[],inv=store.inventory||{};
+  Object.keys(inv).forEach(function(id){var e=inv[id];if(!e||!e.data)return;var o;try{o=JSON.parse(e.data);}catch(_){return;}var pk=o.pack||{},n=0;(pk.supplies||[]).forEach(function(x){if(x&&x.c)n+=Math.max(0,per-(x.u||0));});n+=pk.provisions||0;if(n>0){var c=getChar(id);who.push((c&&c.name||'?')+' '+n);tot+=n;}});
+  return {total:tot,who:who};
+}
+function renderPlan(){
+  var p=planOf(),sup=partySupplies(),perDay=p.messKit?Math.ceil(p.party/4):p.party,need=perDay*p.days;
+  function list(arr,kind,label,add,empty){return '<div class="wt-list"><div class="t-label" style="margin-bottom:6px">'+label+'</div>'+(arr.length?arr.map(function(it,i){return '<div class="wt-item"><input type="checkbox" data-pl="'+kind+'" data-i="'+i+'"'+(it.done?' checked':'')+'><input class="cc-in" data-plt="'+kind+'" data-i="'+i+'" value="'+esc(it.t||'')+'" placeholder="…"><button class="brm" data-plrm="'+kind+'" data-i="'+i+'" title="remove">✕</button></div>';}).join(''):'<div class="empty" style="padding:var(--s1) 0 var(--s2)">'+empty+'</div>')+'<button class="badd" data-pladd="'+kind+'">'+add+'</button></div>';}
+  return '<div class="wt-plan"><h3>The plan <span class="pk-hn">Chart a Course (p.302): say where you\'re going; the GM names what\'s required and the risks. Everyone sees this list — tick things off as you go.</span></h3>'
+    +'<input class="cc-in" id="wt-dest" style="width:100%" placeholder="Where are we going? (Gordin\'s Delve, the hagr\'s lair, wherever these tracks lead…)" value="'+esc(p.dest||'')+'">'
+    +'<div class="wt-lists">'+list(p.reqs,'reqs','Requirements','+ Add requirement','Nothing required yet.')+list(p.risks,'risks','Challenges &amp; risks','+ Add challenge','No challenges named yet.')+'</div>'
+    +'<div class="wt-supply"><span class="t-label">Supplies</span>'
+    +'<span class="cc-step"><button data-plparty="-1">−</button><span class="cc-stepv" style="font-size:15px">'+p.party+'</span><button data-plparty="1">+</button></span><span class="hint">in the party</span>'
+    +'<label class="g-pop-chk"><input type="checkbox" id="wt-messkit"'+(p.messKit?' checked':'')+'> mess kit (fire &amp; water)</label>'
+    +'<span class="cc-step"><button data-pldays="-1">−</button><span class="cc-stepv" style="font-size:15px">'+p.days+'</span><button data-pldays="1">+</button></span><span class="hint">days</span>'
+    +'<div class="wt-supply-out">'+perDay+' use'+(perDay===1?'':'s')+' a day'+(p.messKit?' (one use feeds up to four)':' (one per person)')+' → <b>'+need+' uses</b> for '+p.days+' day'+(p.days===1?'':'s')+'. Packs carry <b>'+sup.total+'</b>'+(sup.who.length?' ('+esc(sup.who.join(', '))+')':' — nothing marked in anyone\'s pack yet')+(sup.total>=need?' — enough.':' — <span class="wt-short">short by '+(need-sup.total)+'</span>.')+'</div>'
+    +'</div></div>';
+}
+function bindPlan(){
+  var p=planOf(),root=buildingPanel;
+  var dest=root.querySelector('#wt-dest');if(dest){dest.addEventListener('input',function(){p.dest=dest.value;});dest.addEventListener('change',saveStore);}
+  root.querySelectorAll('[data-pl]').forEach(function(cb){cb.addEventListener('change',function(){p[cb.dataset.pl][+cb.dataset.i].done=cb.checked;saveStore();var t=cb.nextElementSibling;if(t)t.classList.toggle('done',cb.checked);});});
+  root.querySelectorAll('[data-plt]').forEach(function(inp){inp.addEventListener('input',function(){p[inp.dataset.plt][+inp.dataset.i].t=inp.value;});inp.addEventListener('change',saveStore);});
+  root.querySelectorAll('[data-plrm]').forEach(function(b){b.addEventListener('click',function(){p[b.dataset.plrm].splice(+b.dataset.i,1);saveStore();renderBuilding();});});
+  root.querySelectorAll('[data-pladd]').forEach(function(b){b.addEventListener('click',function(){p[b.dataset.pladd].push({t:'',done:false});saveStore();renderBuilding();var f=buildingPanel.querySelectorAll('[data-plt="'+b.dataset.pladd+'"]');if(f.length)f[f.length-1].focus();});});
+  root.querySelectorAll('[data-plparty]').forEach(function(b){b.addEventListener('click',function(){p.party=Math.max(1,p.party+(+b.dataset.plparty));saveStore();renderBuilding();});});
+  root.querySelectorAll('[data-pldays]').forEach(function(b){b.addEventListener('click',function(){p.days=Math.max(1,p.days+(+b.dataset.pldays));saveStore();renderBuilding();});});
+  var mk=root.querySelector('#wt-messkit');if(mk)mk.addEventListener('change',function(){p.messKit=mk.checked;saveStore();renderBuilding();});
+  root.querySelectorAll('.wt-item').forEach(function(it){var cb=it.querySelector('[data-pl]'),t=it.querySelector('[data-plt]');if(cb&&t&&cb.checked)t.classList.add('done');});
+}
+// ── Route drawings: saved per map and synced as their own record ─────────────
+var wtDrawing=false, routesTimer=null;
+function routesLoad(){var x=store.routes;if(x&&x.data){try{return JSON.parse(x.data)||{};}catch(_){}}return {};}
+function routesSave(key,dataUrl){var r=routesLoad();r[key]=dataUrl||'';store.routes={data:JSON.stringify(r),_t:Date.now()};persist();clearTimeout(routesTimer);routesTimer=setTimeout(pushRoutes,400);flashSaved();}
+function pushRoutes(){if(!syncRef||applyingRemote)return;if(!store.routes)return;syncRef.child('routes').set({data:store.routes.data,_t:store.routes._t}).catch(function(){setSyncState('error','offline · saved here');});}
+function mergeRoutes(r){r=r||{};var l=store.routes;if(!l||(r._t||0)>=(l._t||0))store.routes={data:r.data||'',_t:r._t||0};}
+function routesSyncRefresh(){if(!buildingModal.classList.contains('open')||curBldg!=='Mesh_Watchtower'||wtDrawing)return;['wt-canvas-vic','wt-canvas-world'].forEach(function(id){var c=buildingPanel.querySelector('#'+id);if(c&&c._loadRoute)c._loadRoute();});}
 function wtChart(){
-  return '<div style="display:flex;flex-direction:column;height:100%;">'
+  return renderPlan()+'<div style="display:flex;flex-direction:column;">'
     +'<div class="sstabs" style="flex-shrink:0;">'
     +'<button class="sstab active" data-mt="mt-vic">The Vicinity</button>'
     +'<button class="sstab" data-mt="mt-world">The Wider World</button>'
@@ -1176,7 +1233,7 @@ function bindWhiteboards(){
   buildingPanel.querySelectorAll('.wt-clear').forEach(function(btn){
     btn.addEventListener('click',function(){
       var canvas=buildingPanel.querySelector('#'+btn.dataset.canvas);
-      if(canvas){var ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);}
+      if(canvas){var ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);routesSave(canvas._routeKey||btn.dataset.canvas.replace('wt-canvas-',''),'');}
     });
   });
 }
@@ -1201,7 +1258,11 @@ function setupCanvas(id){
   resize();
   // Re-size when the panel becomes visible (e.g. switching to the Wider World tab) or the window changes
   if(window.ResizeObserver){var ro=new ResizeObserver(function(){resize();});ro.observe(container);}
-  var drawing=false, lx=0, ly=0;
+  var key=id==='wt-canvas-vic'?'vic':'world';
+  function loadRoute(){var r=routesLoad()[key],w=container.clientWidth,h=container.clientHeight,ctx=canvas.getContext('2d');if(!w||!h)return;ctx.clearRect(0,0,w,h);if(!r)return;var img=new Image();img.onload=function(){ctx.drawImage(img,0,0,w,h);};img.src=r;}
+  canvas._loadRoute=loadRoute;canvas._routeKey=key;
+  if(container.clientWidth)loadRoute(); else if(window.ResizeObserver){var once=new ResizeObserver(function(){if(container.clientWidth){loadRoute();once.disconnect();}});once.observe(container);}
+  var drawing=false, drew=false, lx=0, ly=0;
   function getPos(e){
     var r=canvas.getBoundingClientRect();
     var src=e.touches?e.touches[0]:e;
@@ -1209,7 +1270,7 @@ function setupCanvas(id){
   }
   function startDraw(e){
     e.preventDefault();
-    drawing=true;
+    drawing=true;wtDrawing=true;
     var p=getPos(e); lx=p.x; ly=p.y;
   }
   function draw(e){
@@ -1232,9 +1293,9 @@ function setupCanvas(id){
     ctx.moveTo(lx,ly);
     ctx.lineTo(p.x,p.y);
     ctx.stroke();
-    lx=p.x; ly=p.y;
+    lx=p.x; ly=p.y;drew=true;
   }
-  function stopDraw(){drawing=false;}
+  function stopDraw(){if(!drawing)return;drawing=false;wtDrawing=false;if(drew){drew=false;try{routesSave(key,canvas.toDataURL('image/png'));}catch(_){}}}
   canvas.addEventListener('mousedown',startDraw);
   canvas.addEventListener('mousemove',draw);
   canvas.addEventListener('mouseup',stopDraw);
@@ -1276,7 +1337,7 @@ function renderBuilding(){
     html+=renderWatchtowerTabs();
     buildingPanel.innerHTML=html;
     bindBuilding();
-    bindWatchtowerTabs();bindTables();
+    bindWatchtowerTabs();bindTables();bindPlan();
     return;
   }
 

@@ -172,6 +172,23 @@ if Malcontent), season advanced, year +1 when winter turns to spring, and a ledg
 net Surplus delta. The Surplus stepper and a manual "Add" row also write ledger entries
 (`ledgerAdd`). Verified through a full year in headless Chrome.
 
+## Feature: Expedition kit (Watchtower → Chart Your Course, built 2026-09-10)
+- **The plan** (`renderPlan`/`bindPlan`, stored as `store.Mesh_Watchtower.course` =
+  `{dest, reqs:[{t,done}], risks:[{t,done}], party, messKit, days}`): destination, tick-box
+  Requirements and Challenges lists (Chart a Course, p.302), and a **supply calculator** — uses
+  per day = party (or ⌈party/4⌉ with a mess kit, p.304) × days, compared with what everyone's
+  Pack & Closet actually carries (`partySupplies()` sums carried supply boxes at 4+Prosperity
+  uses each, minus spent pips, plus provisions). `applyRemote` now keeps extra per-building keys
+  (`Object.assign`) so `course` survives a sync.
+- **Route drawings persist**: each canvas saves a PNG data URL after every stroke and on Clear
+  (`routesSave`) into `store.routes = {data: JSON {vic, world}, _t}`, synced whole-doc LWW via
+  `pushRoutes` (debounced) and **excluded from `pushRemote()`'s whole-store update** so the big
+  strings aren't re-sent on every keystroke. `setupCanvas` redraws the stored image scaled to
+  the current canvas (`canvas._loadRoute`); `routesSyncRefresh` redraws on remote change unless
+  someone is mid-stroke. Known limit: strokes are relative to the canvas box, so a device with a
+  very different panel aspect ratio sees them slightly offset from the map.
+- The Watchtower remembers its outer tab (`wtTab`) and map tab (`mtTab`) across re-renders.
+
 ## Small features (2026-09-10)
 - **Chronicle → "+ End of session"** (edit mode) adds a recap pre-filled with `EOS_TEMPLATE`: the
   four End of Session XP questions (p.573) as `[ ]` boxes, the instinct/relationship prompt, and

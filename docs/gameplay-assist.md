@@ -109,13 +109,13 @@ Village Sheet, visible to all on purpose.
 
 ## C. Expeditions
 
-### C1. Chart a Course checklist
+### C1. Chart a Course checklist — ✅ BUILT 2026-09-10 (Watchtower)
 The GM writes tick-box **Requirements** (go via X first, wait until, need a guide/map, "at least N
 days + supplies", bring ___) and **Challenges** (perilous, risk getting lost, treacherous terrain,
 grueling, draws attention) and the book says to put the list "someplace public" (pp.302–303).
 Nestable 2–3 legs deep. Natural home: the Watchtower, next to the route maps.
 
-### C2. Expedition supply tracker
+### C2. Expedition supply tracker — ✅ BUILT 2026-09-10 (Watchtower, reads the packs)
 Party size + mess kit + live Prosperity → uses per day (1–4 people: 1 use/day with a kit; 5–8: 2;
 9–12: 3) (p.304). Decrement on days travelled, Make Camp (p.334), Recover (p.328, heals
 4 + Prosperity), Forage (p.336: +WIS, disadvantage in winter, 1d6 uses of provisions per pick).
@@ -130,7 +130,7 @@ every region (Ferrier's Fen, Great Wood, Steplands, Ruined Tower, …; roughly 2
 book-wide), plus **waystone** and **Makers' Road** encounter tables (Book II PDF pp.478–479,
 270–273).
 
-### C4. Save the route drawings
+### C4. Save the route drawings — ✅ BUILT 2026-09-10
 Existing gap: Watchtower strokes are per-browser and lost on reload. Store canvas data in the
 synced store.
 
