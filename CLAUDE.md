@@ -217,6 +217,20 @@ net Surplus delta. The Surplus stepper and a manual "Add" row also write ledger 
   or a custom item with editable front/back; Reveal/Hide; remove. Holder is a roster character
   or "the party".
 
+## Townsfolk directory (Common House, built 2026-09-10)
+The Common House's People section is now a **directory built from the relationship map**: the
+graph's nodes are the single list of townsfolk (`renderDirectory`/`bindDirectory`, reading `G`
+via `dirGraph()` — the live graph when the map is open, else `gLoad()`). On first open,
+`migratePeople()` turns any entries in the old per-building `npcs` list into map nodes and
+empties that list. Each card shows name, trade, age, sex, and a connection count; expanding it
+gives editable profile fields (`label`, `note`, `age`, `sex`, `traits`, a new `bio` "More about
+them", a `secret` GM-notes field shown only on GM screens, and a deceased toggle), and lists
+**every connection from the map** with its label and history; clicking a connection jumps to
+that person's card, **Open in map** opens the graph centred on them with their popover
+(`gFocusNode`). Add person creates a node; Remove deletes the node and its edges. Edits save
+through `saveGraph()`, so the map and the directory never disagree; `dirSyncRefresh` re-renders
+the directory when the map closes or remote data lands (never while a field has focus).
+
 ## Map pins with notes on the Vicinity / World's End maps (built 2026-09-10)
 Watchtower → Chart Your Course: each map's toolbar has a **Pin** tool; with it active, a click or
 tap on the map drops a pin (`addWPin`) and opens its card (`openWPin`: name with a datalist of

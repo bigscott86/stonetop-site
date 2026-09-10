@@ -374,6 +374,24 @@
   .ar-edit{display:flex;flex-direction:column;gap:var(--s2);margin:var(--s2) 0;} .ar-edit .cc-area{min-height:56px;}
   .cc-check-name.done{text-decoration:line-through;color:var(--text-3);}
 
+  /* ── Townsfolk directory ─────────────────────────────────────────────── */
+  .dir-bar{display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center;margin-bottom:var(--s3);}
+  .dir-bar .cc-in{flex:1;min-width:220px;}
+  .dir-card{border:1px solid var(--line-1);background:var(--ink-1);margin-bottom:var(--s2);}
+  .dir-card.open{border-color:var(--accent);}
+  .dir-card.pc{border-left:3px solid #b89048;}
+  .dir-card.dead .dir-name{color:var(--text-3);}
+  .dir-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--s2) var(--s3);padding:var(--s2) var(--s4);min-height:44px;cursor:pointer;}
+  .dir-row:hover{background:var(--ink-2);}
+  .dir-name{color:var(--text-1);font-size:15px;}
+  .dir-sub{color:var(--text-3);font-size:12.5px;font-style:italic;flex:1;}
+  .dir-conn{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--text-3);}
+  .dir-form{padding:var(--s3) var(--s4) var(--s4);border-top:1px solid var(--line-0);}
+  .dir-link{padding:var(--s2) var(--s3);border-left:2px solid var(--accent);background:var(--ink-0);margin-bottom:var(--s2);cursor:pointer;}
+  .dir-link:hover{background:var(--ink-2);}
+  .dir-link b{color:var(--text-1);font-weight:normal;} .dir-link em{color:var(--accent-text);margin-left:var(--s2);font-size:13px;}
+  .dir-hist{color:var(--text-2);font-size:13px;line-height:1.5;margin-top:2px;white-space:pre-wrap;}
+
   /* ── GM screen (a per-device curtain) ─────────────────────────────────── */
   body:not(.gm) .gm-only{display:none!important;}
   .gm-badge{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--danger-hi);border:1px solid var(--danger);padding:1px 6px;margin-left:8px;vertical-align:middle;font-weight:normal;}
@@ -1106,7 +1124,7 @@ function applyRemote(remote){
   });
   try{localStorage.setItem(STORE_KEY,JSON.stringify(store));}catch(e){}
   // refresh an open (non-editing) panel so other devices' edits appear live
-  if(buildingModal.classList.contains('open')&&curBldg&&!editMode)renderBuilding();
+  if(buildingModal.classList.contains('open')&&curBldg&&!editMode){var bae=document.activeElement;if(!(bae&&buildingPanel.contains(bae)&&/INPUT|TEXTAREA|SELECT/.test(bae.tagName)))renderBuilding();}
   if(typeof renderRoster==='function'&&smithyModal.classList.contains('open')&&!editorOpen)renderRoster();
   if(typeof graphSyncRefresh==='function')graphSyncRefresh();
   if(typeof steadingSyncRefresh==='function')steadingSyncRefresh();
@@ -1267,6 +1285,64 @@ function wtLeaving(){
     +'<p>The return trip is usually glossed over unless something has changed — new dangers, an unusual route, or cargo that makes the journey harder. If you left in triumph, the GM will ask what the village looks like when you arrive. Who comes out to meet you? Who doesn\'t?</p>'
     +wtTables()
     +'</div>';
+}
+
+// ── Townsfolk directory (Common House) — every person on the relationship map ────
+var dirOpen=null, dirQ='';
+function dirGraph(){if(!gOpen)G=gLoad();return G;} // the map's data is the source of truth; when the map is closed, read the stored copy
+function migratePeople(){ // the old People list becomes nodes on the map (once), so there is one list of townsfolk
+  var c=content('Mesh_Longhouse');if(!c.npcs||!c.npcs.length)return;
+  var g=dirGraph(),have={};g.nodes.forEach(function(n){have[nodeLabel(n).trim().toLowerCase()]=1;});
+  var r={width:1200,height:700},added=0;
+  c.npcs.forEach(function(p,i){var nm=(p.name||'').trim();if(!nm||have[nm.toLowerCase()])return;g.nodes.push({id:uid(),kind:'npc',label:nm,note:p.role||'',x:r.width/2+Math.cos(i)*220,y:r.height/2+Math.sin(i)*160});have[nm.toLowerCase()]=1;added++;});
+  var e=editable('Mesh_Longhouse');e.npcs=[];
+  if(added)saveGraph();saveStore();
+}
+function dirConnections(id){var g=dirGraph();return g.edges.filter(function(e){return e.from===id||e.to===id;}).map(function(e){var other=nodeById(e.from===id?e.to:e.from);return other?{edge:e,other:other}:null;}).filter(Boolean);}
+function renderDirectory(){
+  var g=dirGraph(),q=dirQ.trim().toLowerCase(),gm=isGM();
+  var people=g.nodes.slice().sort(function(a,b){if((a.kind==='pc')!==(b.kind==='pc'))return a.kind==='pc'?-1:1;return nodeLabel(a).localeCompare(nodeLabel(b));});
+  var shown=people.filter(function(n){if(!q)return true;return [nodeLabel(n),n.note,n.traits,n.bio].join(' ').toLowerCase().indexOf(q)>=0;});
+  var h='<h3>Townsfolk <span class="pk-hn">'+people.length+' on the map · everyone here is a node on the Relationship Map, and their connections are listed on their card</span></h3>';
+  h+='<div class="dir-bar"><input class="cc-in" id="dir-q" placeholder="Find a name, trade, or trait…" value="'+esc(dirQ)+'" autocomplete="off"><button class="badd" id="dir-add" style="margin:0">+ Add person</button></div>';
+  if(!people.length)h+='<div class="bempty">No one yet. Add a person here, or open the Relationship Map and import the townsfolk register.</div>';
+  else if(!shown.length)h+='<div class="bempty">No one matches “'+esc(dirQ)+'”.</div>';
+  h+=shown.map(function(n){
+    var open=n.id===dirOpen,cons=dirConnections(n.id),isPc=n.kind==='pc',name=nodeLabel(n);
+    var sub=[n.note,n.age?'age '+n.age:'',n.sex||''].filter(Boolean).join(' · ');
+    var c='<div class="dir-card'+(open?' open':'')+(n.dead?' dead':'')+(isPc?' pc':'')+'" data-dirid="'+n.id+'"><div class="dir-row" data-diropen="'+n.id+'"><span class="dir-name">'+(n.dead?'† ':'')+esc(name)+'</span>'+(isPc?'<span class="th-type">PC</span>':'')+'<span class="dir-sub">'+esc(sub)+'</span><span class="dir-conn">'+(cons.length?cons.length+' connection'+(cons.length===1?'':'s'):'no connections')+'</span></div>';
+    if(open){
+      c+='<div class="dir-form"><div class="cc-row">'
+        +'<div class="cc-field"><label>Name</label><input class="cc-in" data-df="label" data-id="'+n.id+'" value="'+esc(isPc?name:(n.label||''))+'" placeholder="Name"'+(isPc?' disabled title="Names of player characters come from the roster"':'')+'></div>'
+        +'<div class="cc-field"><label>Trade / role</label><input class="cc-in" data-df="note" data-id="'+n.id+'" value="'+esc(n.note||'')+'" placeholder="farmer, midwife, elder…"></div>'
+        +'<div class="cc-field cc-num"><label>Age</label><input class="cc-in" type="number" data-df="age" data-id="'+n.id+'" value="'+(n.age||'')+'"></div>'
+        +'<div class="cc-field cc-num" style="width:110px"><label>Sex</label><input class="cc-in" data-df="sex" data-id="'+n.id+'" value="'+esc(n.sex||'')+'"></div></div>'
+        +'<div class="cc-row"><div class="cc-field"><label>Traits</label><input class="cc-in" data-df="traits" data-id="'+n.id+'" value="'+esc(n.traits||'')+'" placeholder="stubborn, beloved by everyone, hears voices…"></div></div>'
+        +'<div class="cc-field"><label>More about them</label><textarea class="cc-area" data-df="bio" data-id="'+n.id+'" placeholder="Family, history, what they want, what they fear, how they talk — anything worth remembering.">'+esc(n.bio||'')+'</textarea></div>'
+        +(gm?'<div class="cc-field gm-only" style="margin-top:var(--s2)"><label>GM notes <span class="gm-badge">GM only</span></label><textarea class="cc-area" data-df="secret" data-id="'+n.id+'" placeholder="Secrets, plans, what they really did.">'+esc(n.secret||'')+'</textarea></div>':'')
+        +(isPc?'':'<label class="g-pop-chk" style="margin-top:var(--s2)"><input type="checkbox" data-dfdead="'+n.id+'"'+(n.dead?' checked':'')+'> deceased</label>')
+        +'<div class="t-label" style="margin:var(--s3) 0 6px">Connections</div>'
+        +(cons.length?cons.map(function(x){return '<div class="dir-link" data-dirgo="'+x.other.id+'"><b>'+esc(nodeLabel(x.other))+'</b>'+(x.edge.label?'<em>'+esc(x.edge.label)+'</em>':'<em class="hint">unlabeled</em>')+(x.edge.note?'<div class="dir-hist">'+esc(x.edge.note)+'</div>':'')+'</div>';}).join(''):'<div class="hint">No connections yet — draw them on the Relationship Map.</div>')
+        +'<div class="th-btns"><button class="cc-btn" data-dirmap="'+n.id+'">'+ico('web')+' Open in map</button>'+(isPc?'':'<button class="cc-btn danger" data-dirdel="'+n.id+'">Remove from map</button>')+'<button class="cc-btn" data-dirclose="1">Close</button></div></div>';
+    }
+    return c+'</div>';
+  }).join('');
+  return h;
+}
+function bindDirectory(){
+  var root=buildingPanel;
+  function rerender(){renderBuilding();}
+  var q=root.querySelector('#dir-q');if(q){q.addEventListener('input',function(){dirQ=q.value;var pos=q.selectionStart;rerender();var nq=buildingPanel.querySelector('#dir-q');if(nq){nq.focus();try{nq.setSelectionRange(pos,pos);}catch(_){}}});}
+  var add=root.querySelector('#dir-add');if(add)add.addEventListener('click',function(){var g=dirGraph(),n={id:uid(),kind:'npc',label:'',note:'',x:600+Math.random()*100-50,y:350+Math.random()*80-40};g.nodes.push(n);saveGraph();dirOpen=n.id;dirQ='';rerender();var f=buildingPanel.querySelector('[data-df="label"]');if(f)f.focus();if(gOpen)renderGraph();});
+  root.querySelectorAll('[data-diropen]').forEach(function(r){r.addEventListener('click',function(){var id=r.dataset.diropen;dirOpen=dirOpen===id?null:id;rerender();});});
+  root.querySelectorAll('[data-df]').forEach(function(el){var n=nodeById(el.dataset.id);if(!n)return;var f=el.dataset.df;
+    el.addEventListener('input',function(){n[f]=el.type==='number'?(parseInt(el.value,10)||'')  :el.value;if(f==='label'){var nm=root.querySelector('.dir-card.open .dir-name');if(nm)nm.textContent=(n.dead?'† ':'')+(el.value||'(unnamed)');}});
+    el.addEventListener('change',function(){saveGraph();if(gOpen)renderGraph();});});
+  root.querySelectorAll('[data-dfdead]').forEach(function(cb){cb.addEventListener('change',function(){var n=nodeById(cb.dataset.dfdead);if(!n)return;n.dead=cb.checked;saveGraph();if(gOpen)renderGraph();rerender();});});
+  root.querySelectorAll('[data-dirgo]').forEach(function(el){el.addEventListener('click',function(){dirOpen=el.dataset.dirgo;rerender();var card=buildingPanel.querySelector('.dir-card.open');if(card)card.scrollIntoView({block:'nearest'});});});
+  root.querySelectorAll('[data-dirmap]').forEach(function(b){b.addEventListener('click',function(){var id=b.dataset.dirmap;openGraph();setTimeout(function(){gFocusNode(id);},350);});});
+  root.querySelectorAll('[data-dirdel]').forEach(function(b){b.addEventListener('click',function(){var n=nodeById(b.dataset.dirdel);if(!n)return;if(!confirm('Remove '+nodeLabel(n)+' from the map and the directory? Their connections go too.'))return;var g=dirGraph();g.nodes=g.nodes.filter(function(x){return x.id!==n.id;});g.edges=g.edges.filter(function(x){return x.from!==n.id&&x.to!==n.id;});saveGraph();dirOpen=null;rerender();if(gOpen)renderGraph();});});
+  root.querySelectorAll('[data-dirclose]').forEach(function(b){b.addEventListener('click',function(){dirOpen=null;rerender();});});
 }
 
 // ── Threat tracker (GM only; Book I pp.277–298) ──────────────────────────────
@@ -1558,8 +1634,13 @@ function renderBuilding(){
     +'<button id="bedit-toggle" class="'+(editMode?'on':'')+'">'+(editMode?ico('check')+' Done':ico('pen')+' Edit')+'</button>';
   var html='';
 
-  // People
-  if(editMode || (c.npcs && c.npcs.length)){
+  // The Common House: the townsfolk directory, built from the relationship map
+  if(k==='Mesh_Longhouse'){
+    migratePeople();
+    html+=renderDirectory();
+  }
+  // People (other buildings)
+  else if(editMode || (c.npcs && c.npcs.length)){
     html+='<h3>People</h3>';
     if(editMode){
       if(!c.npcs.length)html+='<div class="bempty">No one listed yet. Add the folk who matter to this place.</div>';
@@ -1601,6 +1682,7 @@ function renderBuilding(){
 
   buildingPanel.innerHTML=html;
   bindBuilding();
+  if(k==='Mesh_Longhouse')bindDirectory();
 }
 
 function bindBuilding(){
@@ -2035,6 +2117,7 @@ var graphModal=document.getElementById('graph-modal');
 
 function gLoad(){var s=store.graph;if(s&&s.data){try{var o=JSON.parse(s.data);return {nodes:o.nodes||[],edges:o.edges||[]};}catch(_){}}return {nodes:[],edges:[]};}
 function saveGraph(){gLastSaved=JSON.stringify(G);store.graph={data:gLastSaved,_t:Date.now()};persist();pushGraph();flashSaved();}
+function dirSyncRefresh(){if(!buildingModal.classList.contains('open')||curBldg!=='Mesh_Longhouse')return;var ae=document.activeElement;if(ae&&buildingPanel.contains(ae)&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName))return;renderBuilding();}
 function pushGraph(){if(!syncRef||applyingRemote)return;syncRef.child('graph').set({data:store.graph.data,_t:store.graph._t}).catch(function(){setSyncState('error','offline · saved here');});}
 function mergeGraph(r){r=r||{};var l=store.graph;if(!l||(r._t||0)>=(l._t||0))store.graph={data:r.data||'',_t:r._t||0};}
 function graphSyncRefresh(){
@@ -2056,7 +2139,7 @@ function gEnsurePositions(){ // nodes without coordinates (e.g. added elsewhere)
 }
 
 function openGraph(){graphModal.classList.add('open');G=gLoad();gOpen=true;gConnectFrom=null;gSelId=null;closePop();populatePcDropdown();var fresh=gEnsurePositions();gView={s:1,tx:0,ty:0};renderGraph();setHint();if(fresh){gFitAfter=true;gReheat(1);}else gFit();}
-function closeGraph(){gOpen=false;closePop();gStop();graphModal.classList.remove('open');}
+function closeGraph(){gOpen=false;closePop();gStop();graphModal.classList.remove('open');dirSyncRefresh();}
 function populatePcDropdown(){
   var sel=document.getElementById('g-add-pc');if(!sel)return;
   var on={};G.nodes.forEach(function(n){if(n.pcId)on[n.pcId]=true;});
@@ -2281,6 +2364,9 @@ function importTownsfolk(){
   saveGraph();populatePcDropdown();renderGraph();gFitAfter=true;gReheat(1);
   setHint('Added '+added+' people and '+linked+' connections — settling the map… Labels ending in "?" were hard to read on the photo; click a line to fix it.');
 }
+function gCentreOn(n){var r=gcanvas();gView.tx=r.width/2-n.x*gView.s;gView.ty=r.height/2-n.y*gView.s;gApplyView();if(gSelId||gSelEdge)positionPop();
+  document.querySelectorAll('.gnode.hit').forEach(function(el){el.classList.remove('hit');});var el=document.querySelector('.gnode[data-nid="'+n.id+'"]');if(el){el.classList.add('hit');setTimeout(function(){el.classList.remove('hit');},1600);}}
+function gFocusNode(id){if(!gOpen)openGraph();var n=nodeById(id);if(!n)return;gCentreOn(n);openPop(id);}
 // wiring
 document.getElementById('graph-close').addEventListener('click',closeGraph);
 document.getElementById('graph-backdrop').addEventListener('click',closeGraph);
@@ -2290,8 +2376,8 @@ document.getElementById('g-tidy').addEventListener('click',function(){G.nodes.fo
 document.getElementById('g-fit').addEventListener('click',gFit);
 (function(){var f=document.getElementById('g-find');if(!f)return;
   function match(){var q=f.value.trim().toLowerCase();if(!q)return null;var hit=null;G.nodes.forEach(function(n){if(!hit&&nodeLabel(n).toLowerCase().indexOf(q)>=0)hit=n;});return hit;}
-  function centre(n){var r=gcanvas();gView.tx=r.width/2-n.x*gView.s;gView.ty=r.height/2-n.y*gView.s;gApplyView();if(gSelId||gSelEdge)positionPop();
-    document.querySelectorAll('.gnode.hit').forEach(function(el){el.classList.remove('hit');});var el=document.querySelector('.gnode[data-nid="'+n.id+'"]');if(el){el.classList.add('hit');setTimeout(function(){el.classList.remove('hit');},1600);}}
+  function centre(n){gCentreOn(n);
+}
   f.addEventListener('input',function(){var n=match();if(n)centre(n);});
   f.addEventListener('keydown',function(e){if(e.key==='Enter'){var n=match();if(n){centre(n);openPop(n.id);}}if(e.key==='Escape'){f.value='';f.blur();}});
 })();
