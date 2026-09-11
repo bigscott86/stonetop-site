@@ -468,6 +468,18 @@ reference browser.
   Revenant / Thrall** (`window.STATES` in `playbooks.js`, from Book I pp.148–153) — each
   with its instinct, Terrible Purpose/Impulse choices, moves, and Consequences/Marks track
   as checklists. Stored in `stateInsert` + `stateData`.
+- **Audited against the book (2026-09-11):** see [docs/playbook-audit.md](docs/playbook-audit.md) —
+  ~100 findings across the nine playbooks, applied to `playbooks.js` (gists that misstated who
+  chooses, garbled "Armored" lines where the book's ◆ load glyph had become a "4", a Blessed
+  sacred pouch and Stock track copied into the Fox, missing trackers such as the Blessed's Favor
+  and the Marshal's Surprise, use counts, level-2 flags, background follower names). Two model
+  additions: moves in an **either/or starting pair** carry `either:"A"|"B"` and stay `starting:true`
+  (badge "start · pick one of A"; `seedPlaybook` does not pre-check them — before this a new Fox
+  started with four moves and a new Heavy with four instead of three); and `extras` (`{title,
+  text, lists:[{prompt, options[]}]}`) hold the rest of the playbook sheet — the Blessed's sacred
+  pouch and shrine choices, the Judge's Chronicle and Lawkeeper, the Lightbearer's invocation
+  rules, the Seeker's starting collection, the Hero's fear and anger — rendered read-only as
+  "From the playbook" above Bonds.
 - **Still not modeled:** full per-arcanum/invocation rules *text* (names + gists only).
 
 ### 4. The Steading (village) sheet — ✅ BUILT

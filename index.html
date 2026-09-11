@@ -79,6 +79,7 @@
   .jump-bar{position:sticky;top:calc(-1*var(--s5));z-index:3;display:flex;flex-wrap:wrap;gap:var(--s1);margin:calc(-1*var(--s5)) 0 var(--s4);padding:var(--s3) 0 var(--s2);background:var(--ink-0);border-bottom:1px solid var(--line-0);}
   .jump-bar .chip{min-height:26px;font-size:10.5px;}
   .cc-sec,.sec,.pk-h{scroll-margin-top:64px;}
+  .cc-extra{margin:0 0 var(--s5);max-width:76ch;} .cc-extra>b{display:block;font-size:17px;color:var(--text-1);font-weight:normal;} .cc-extra p{margin:var(--s1) 0 var(--s2);} .cc-extra-l i{display:block;margin-top:var(--s3);color:var(--text-2);} .cc-extra ul{margin:var(--s1) 0 0 var(--s5);columns:2;column-gap:var(--s5);} .cc-extra li{font-size:14px;color:var(--text-2);break-inside:avoid;padding:1px 0;}
 
   /* ── Map screen ──────────────────────────────────────────────────────── */
   #cc{width:100%;height:100%;position:relative;overflow:hidden;background:var(--ink-0);}
@@ -1982,15 +1983,186 @@ document.querySelectorAll('.sstab').forEach(function(btn){
 
 // Playbook selector
 var SPBS={
-  blessed:{name:'The Blessed',page:'p. 105',epithet:"Danu's chosen, keeper of the Old Ways",desc:"A devotee of Danu, the Earth Mother. The Blessed speaks with spirits, brews remedies, and channels the raw power of the land.",bgs:[['Initiate','Trained from childhood by Danu\'s circle in Stonetop, with a mentor and fellow devotees as followers.'],['Raised by Wolves','You grew up in the wild itself — beasts for siblings, wind and wood for teachers.'],['Vessel','A seed of the goddess\'s own power has taken root in your soul, filling your dreams with signs.']]},
-  fox:{name:'The Fox',page:'p. 109',epithet:'trickster, scoundrel, problem-solver',desc:"The charming rogue. Quick hands, quicker wits, and a flexible relationship with rules.",bgs:[['The Natural','Homegrown talent: you\'ve always been good at everything, and you spot opportunities no one else sees.'],['A Life of Crime','Walked away from a shady past, bringing a burglar\'s skills along.'],['The Prodigal Returned','Left long ago, lived by your wits across the known world, came home a minor legend.']]},
-  heavy:{name:'The Heavy',page:'p. 113',epithet:"the village's muscle and shield",desc:"Good people sometimes need someone willing to get bloody on their behalf.",bgs:[['Sheriff','Nothing official, but you keep order here — a cool head, a heavy presence, and a word people obey.'],['Blood-Soaked Past','Walked away from a life of violence and a name people still fear.'],['Storm-Marked','Touched by Tor, the thunder god, bearing runic marks of power.']]},
-  judge:{name:'The Judge',page:'p. 117',epithet:"Aratis's hammer, keeper of the Chronicle",desc:"A warrior-priest of Aratis, goddess of law and civilization.",bgs:[['Legacy','Latest in Stonetop\'s long, unbroken line of Judges, raised on a Chronicle stuffed with lore.'],['Missionary','Sent by a wider order of Judges to tend a young Chronicle and a precarious position.'],['Prophet','The old line was broken; Aratis called you herself, through dreams and omens.']]},
-  lightbearer:{name:'The Lightbearer',page:'p. 121',epithet:"Helior's flame against the dark",desc:"A holy vessel of Helior, the God of Light. The Lightbearer works miracles of flame and radiance.",bgs:[['Auspicious Birth','Born under an unmistakable sign of the Light — honored in Stonetop, and quietly unsettling to some.'],['Itinerant Mystic','A wandering riddle-speaker the town half-dismisses, who returns from the road exactly when needed.'],['Soul on Fire','Saved from a low, bitter life by a single moment of blazing grace.']]},
-  marshal:{name:'The Marshal',page:'p. 125',epithet:"commander of Stonetop's defenders",desc:"Hoping for peace isn't a plan. The Marshal runs the drills, mans the towers, and takes charge when trouble comes.",bgs:[['Scion','Heir to one of Stonetop\'s storied families; your authority is a given and your veteran crew an institution.'],['Penitent','You once led raiders or mercenaries; a moment of truth turned you to better work.'],['Luminary','A natural-born leader whose words inspire and whose deeds are retold.']]},
-  ranger:{name:'The Ranger',page:'p. 129',epithet:'guide and guardian of the wild places',desc:"Your true home lies beyond the Ringwall. The Ranger is the expedition specialist.",bgs:[['Mighty Hunter','The finest hunter the town has produced in generations.'],['Wide Wanderer','You\'ve traveled the breadth of the known world — and perhaps a little past its edge.'],['Beast-Bonded','Soul-bound to a wild animal companion who fights and travels at your side.']]},
-  seeker:{name:'The Seeker',page:'p. 133',epithet:'scholar of perilous secrets and arcana',desc:"While the village huddles behind its walls, the Seeker plunges into the unknown.",bgs:[['Patriot','These people are family, and you\'ve taken up dark power to keep them from harm.'],['Antiquarian','Years of study led you here, convinced Stonetop holds the key to your greatest discoveries.'],['Witch Hunter','You\'ve devoted your life to rooting out horrors and their servants.']]},
-  hero:{name:'The Would-Be Hero',page:'p. 137',epithet:'untested, unproven, undaunted',desc:"Everyone else in town worries about crops and roofs; you dream of greatness.",bgs:[['Impetuous Youth','A reckless kid who can push a near-miss into a success — always at a painful price.'],['Driven','Something terrible happened, and it left you burdened with purpose you can\'t put down.'],['Destined','Fate has marked you; pieces of your part in things have already been foretold.']]}
+  "blessed": {
+    "name": "The Blessed",
+    "page": "p. 105",
+    "epithet": "Danu's chosen, keeper of the Old Ways",
+    "desc": "A devotee of Danu, the Earth Mother. The Blessed speaks with spirits, brews remedies, and channels the raw power of the land.",
+    "bgs": [
+      [
+        "Initiate",
+        "One of Stonetop's sacred order, keepers of the old ways and speakers for Danu - the most gifted in generations, with 2-3 fellow initiates as followers."
+      ],
+      [
+        "Raised by Wolves",
+        "You grew up in the wild itself — beasts for siblings, wind and wood for teachers."
+      ],
+      [
+        "Vessel",
+        "A seed of the goddess's own power has taken root in your soul, filling your dreams with signs."
+      ]
+    ]
+  },
+  "fox": {
+    "name": "The Fox",
+    "page": "p. 109",
+    "epithet": "trickster, scoundrel, problem-solver",
+    "desc": "The charming rogue. Quick hands, quicker wits, and a flexible relationship with rules.",
+    "bgs": [
+      [
+        "The Natural",
+        "Homegrown talent: you've always been good at everything, and you spot opportunities no one else sees."
+      ],
+      [
+        "A Life of Crime",
+        "Walked away from a shady past, bringing a burglar's skills along."
+      ],
+      [
+        "The Prodigal Returned",
+        "Left long ago, lived by your wits across the known world, came home a minor legend."
+      ]
+    ]
+  },
+  "heavy": {
+    "name": "The Heavy",
+    "page": "p. 113",
+    "epithet": "the village's muscle and shield",
+    "desc": "Good people sometimes need someone willing to get bloody on their behalf.",
+    "bgs": [
+      [
+        "Sheriff",
+        "Nothing official, but you keep order here — a cool head, a heavy presence, and a word people obey."
+      ],
+      [
+        "Blood-Soaked Past",
+        "Walked away from a life of violence and a name people still fear."
+      ],
+      [
+        "Storm-Marked",
+        "Touched by Tor, the thunder god, bearing runic marks of power."
+      ]
+    ]
+  },
+  "judge": {
+    "name": "The Judge",
+    "page": "p. 117",
+    "epithet": "Aratis's hammer, keeper of the Chronicle",
+    "desc": "A warrior-priest of Aratis, goddess of law and civilization.",
+    "bgs": [
+      [
+        "Legacy",
+        "Latest in Stonetop's long, unbroken line of Judges, raised on a Chronicle stuffed with lore."
+      ],
+      [
+        "Missionary",
+        "Sent by a wider order of Judges to tend a young Chronicle and a precarious position."
+      ],
+      [
+        "Prophet",
+        "The old line was broken; Aratis called you herself, through dreams and omens."
+      ]
+    ]
+  },
+  "lightbearer": {
+    "name": "The Lightbearer",
+    "page": "p. 121",
+    "epithet": "Helior's flame against the dark",
+    "desc": "A holy vessel of Helior, the God of Light. The Lightbearer works miracles of flame and radiance.",
+    "bgs": [
+      [
+        "Auspicious Birth",
+        "Born under an unmistakable sign of the Light — honored in Stonetop, and quietly unsettling to some."
+      ],
+      [
+        "Itinerant Mystic",
+        "A wandering riddle-speaker the town half-dismisses, who returns from the road exactly when needed."
+      ],
+      [
+        "Soul on Fire",
+        "Saved from a low, bitter life by a single moment of blazing grace."
+      ]
+    ]
+  },
+  "marshal": {
+    "name": "The Marshal",
+    "page": "p. 125",
+    "epithet": "commander of Stonetop's defenders",
+    "desc": "Hoping for peace isn't enough. The Marshal runs the drills, mans the towers, and takes charge when trouble comes knocking.",
+    "bgs": [
+      [
+        "Scion",
+        "Heir to one of Stonetop's storied families; your authority is a given and your veteran crew an institution."
+      ],
+      [
+        "Penitent",
+        "You once led raiders or mercenaries; a moment of truth turned you to better work."
+      ],
+      [
+        "Luminary",
+        "A natural-born leader whose words inspire and whose deeds are retold."
+      ]
+    ]
+  },
+  "ranger": {
+    "name": "The Ranger",
+    "page": "p. 129",
+    "epithet": "guide and guardian of the wild places",
+    "desc": "Your true home lies beyond the Ringwall. The Ranger is the expedition specialist.",
+    "bgs": [
+      [
+        "Mighty Hunter",
+        "The finest hunter the town has produced in generations."
+      ],
+      [
+        "Wide Wanderer",
+        "You've traveled the breadth of the known world — and perhaps a little past its edge."
+      ],
+      [
+        "Beast-Bonded",
+        "Soul-bound to a wild animal companion who fights and travels at your side."
+      ]
+    ]
+  },
+  "seeker": {
+    "name": "The Seeker",
+    "page": "p. 133",
+    "epithet": "scholar of perilous secrets and arcana",
+    "desc": "While the village huddles behind its walls, the Seeker plunges into the unknown.",
+    "bgs": [
+      [
+        "Patriot",
+        "These people are family, and you've taken up dark power to keep them from harm."
+      ],
+      [
+        "Antiquarian",
+        "Years of study led you here, convinced Stonetop holds the key to your greatest discoveries."
+      ],
+      [
+        "Witch Hunter",
+        "You've devoted your life to rooting out horrors and their servants."
+      ]
+    ]
+  },
+  "hero": {
+    "name": "The Would-be Hero",
+    "page": "p. 137",
+    "epithet": "untested, unproven, undaunted",
+    "desc": "Everyone else in town worries about crops and roofs; you dream of greatness.",
+    "bgs": [
+      [
+        "Impetuous Youth",
+        "A reckless kid who can push a near-miss into a success — always at a painful price."
+      ],
+      [
+        "Driven",
+        "Something terrible happened, and it left you burdened with purpose you can't put down."
+      ],
+      [
+        "Destined",
+        "Fate has marked you; pieces of your part in things have already been foretold."
+      ]
+    ]
+  }
 };
 document.querySelectorAll('.spb-cell').forEach(function(btn){
   btn.addEventListener('click',function(){
@@ -2008,15 +2180,132 @@ document.querySelectorAll('.spb-cell').forEach(function(btn){
 // ============================================================
 // Per-playbook mechanical defaults. Keys match SPBS (note: Would-Be Hero = 'hero').
 var PBX={
-  blessed:{hp:18,die:'d6',weak:false,instincts:['Delight','Detachment','Nurture','Preservation','Reverence'],moves:'Spirit Tongue, Call the Spirits, +1 Background move, +1 of your choice',gear:'Sacred pouch (holds 3 Stock) + pick 2 possessions'},
-  fox:{hp:16,die:'d8',weak:false,instincts:['Conscience','Freedom','Comfort','Prestige','Trickery'],moves:'Ambush OR Skill at Arms; Danger Sense OR Perceptive; +1 of your choice',gear:'Pick 2 possessions'},
-  heavy:{hp:20,die:'d10',weak:false,instincts:['Peace','Pride','Recklessness','Trouble','Violence'],moves:'Dangerous, Hard to Kill, + (Armored OR Uncanny Reflexes)',gear:'Pick 2 possessions (incl. Weapons of war)'},
-  judge:{hp:20,die:'d6',weak:false,instincts:['Ambition','Dispassion','Harmony','Orthodoxy','Zeal'],moves:'Censure, Chronicler of Stonetop, +2 of your choice',gear:"Symbol of authority + scribe's tools + pick 1"},
-  lightbearer:{hp:18,die:'d4',weak:false,instincts:['Charity','Hope','Mercy','Praise','Righteousness'],moves:'Consecrated Flame, Invoke the Sun God, +1 of your choice',gear:'Pick 2 possessions'},
-  marshal:{hp:20,die:'d8',weak:false,instincts:['Authority','Caution','Drive','Honor','Ruthlessness'],moves:'Crew, Logistics, your Background moves, +1 of your choice',gear:'Pick 2 possessions (incl. Weapons of war)'},
-  ranger:{hp:18,die:'d8',weak:false,instincts:['Adventure','Independence','Stewardship','Tenacity','Wonder'],moves:'Home on the Range, your Background moves, +1 of your choice',gear:'Composite bow + pick 2 possessions'},
-  seeker:{hp:16,die:'d6',weak:false,instincts:['Cunning','Curiosity','Hubris','Mystery','Vision'],moves:"Well Versed, Work With What You've Got, +1 Background move",gear:"Scribe's tools + pick 2 possessions"},
-  hero:{hp:16,die:'d6',weak:true,instincts:['Defiance','Doubt','Earnestness','Optimism','Sacrifice'],moves:'Anger is a Gift, Potential for Greatness, +2 of your choice',gear:'Pick 2 possessions'}
+  "blessed": {
+    "hp": 18,
+    "die": "d6",
+    "weak": false,
+    "instincts": [
+      "Delight",
+      "Detachment",
+      "Nurture",
+      "Preservation",
+      "Reverence"
+    ],
+    "moves": "Spirit Tongue, Call the Spirits, +1 Background move, +1 of your choice",
+    "gear": "Sacred pouch (holds 3 Stock) + pick 2 possessions"
+  },
+  "fox": {
+    "hp": 16,
+    "die": "d8",
+    "weak": false,
+    "instincts": [
+      "Conscience",
+      "Freedom",
+      "Comfort",
+      "Prestige",
+      "Trickery"
+    ],
+    "moves": "Ambush OR Skill at Arms; Danger Sense OR Perceptive; +1 of your choice",
+    "gear": "Pick 2 possessions"
+  },
+  "heavy": {
+    "hp": 20,
+    "die": "d10",
+    "weak": false,
+    "instincts": [
+      "Peace",
+      "Pride",
+      "Recklessness",
+      "Trouble",
+      "Violence"
+    ],
+    "moves": "Dangerous, Hard to Kill, + (Armored OR Uncanny Reflexes)",
+    "gear": "Pick 2 special possessions (one option, Weapons of war, gives up to 3 weapons)"
+  },
+  "judge": {
+    "hp": 20,
+    "die": "d6",
+    "weak": false,
+    "instincts": [
+      "Ambition",
+      "Dispassion",
+      "Harmony",
+      "Orthodoxy",
+      "Zeal"
+    ],
+    "moves": "Censure, Chronicler of Stonetop, +2 of your choice",
+    "gear": "Symbol of authority + scribe's tools + pick 1"
+  },
+  "lightbearer": {
+    "hp": 18,
+    "die": "d4",
+    "weak": false,
+    "instincts": [
+      "Charity",
+      "Hope",
+      "Mercy",
+      "Praise",
+      "Righteousness"
+    ],
+    "moves": "Consecrated Flame, Invoke the Sun God, +1 of your choice",
+    "gear": "Pick 2 possessions"
+  },
+  "marshal": {
+    "hp": 20,
+    "die": "d8",
+    "weak": false,
+    "instincts": [
+      "Authority",
+      "Caution",
+      "Drive",
+      "Honor",
+      "Ruthlessness"
+    ],
+    "moves": "Crew, Logistics, your Background moves, +1 of your choice",
+    "gear": "Pick 2 special possessions (Weapons of war is one option: choose up to 3 weapons, now or later)"
+  },
+  "ranger": {
+    "hp": 18,
+    "die": "d8",
+    "weak": false,
+    "instincts": [
+      "Adventure",
+      "Independence",
+      "Stewardship",
+      "Tenacity",
+      "Wonder"
+    ],
+    "moves": "Home on the Range, your Background moves, +1 of your choice",
+    "gear": "Composite bow + pick 2 possessions"
+  },
+  "seeker": {
+    "hp": 16,
+    "die": "d6",
+    "weak": false,
+    "instincts": [
+      "Cunning",
+      "Curiosity",
+      "Hubris",
+      "Mystery",
+      "Vision"
+    ],
+    "moves": "Well Versed, Work With What You've Got, +1 Background move",
+    "gear": "Scribe's tools + pick 2 possessions"
+  },
+  "hero": {
+    "hp": 16,
+    "die": "d6",
+    "weak": true,
+    "instincts": [
+      "Defiance",
+      "Doubt",
+      "Earnestness",
+      "Optimism",
+      "Sacrifice"
+    ],
+    "moves": "Anger is a Gift, Potential for Greatness, +2 of your choice",
+    "gear": "Pick 2 possessions"
+  }
 };
 var STAT_KEYS=['STR','DEX','CON','INT','WIS','CHA'];
 var STD_ARRAY=[2,1,1,0,0,-1], HERO_ARRAY=[1,0,0,0,0,-1];
@@ -2083,7 +2372,7 @@ function seedPlaybook(c){
   c.damageDie=P?P.damageDie:(x.die||'d6');
   c.maxHp=P?P.maxHp:(x.hp||16); c.hp=c.maxHp; c.armor=(P&&P.baseArmor)||0;
   c.background='';
-  c.moves=P?P.moves.filter(function(m){return m.starting;}).map(function(m){return m.name;}):[];
+  c.moves=P?P.moves.filter(function(m){return m.starting&&!m.either;}).map(function(m){return m.name;}):[]; // either/or starting pairs are the player's pick
   c.possessions=[]; c.invocations=[]; c.arcana=[];
   c.resources={}; if(P&&P.resources)P.resources.forEach(function(r){c.resources[r.key]=0;});
   c.followers=c.followers||[];
@@ -2132,7 +2421,7 @@ function moveChecklist(c){
   var known={};
   var rows=P.moves.slice().sort(function(a,b){return (b.starting?1:0)-(a.starting?1:0)||(a.level||1)-(b.level||1);}).map(function(m){
     known[m.name]=true;
-    var badge=(m.starting?'<em class="cc-tag start">start</em>':'')+(((m.level||1)>=6)?'<em class="cc-tag l6">L6</em>':'');
+    var badge=(m.starting?'<em class="cc-tag start">'+(m.either?'start · pick one of '+esc(m.either):'start')+'</em>':'')+(((m.level||1)>=6)?'<em class="cc-tag l6">L6</em>':'');
     return '<label class="cc-check"><input type="checkbox" data-move="'+esc(m.name)+'"'+(sel[m.name]?' checked':'')+'><span class="cc-check-name">'+esc(m.name)+badge+'</span><span class="cc-check-gist">'+esc(m.gist||'')+'</span></label>';
   }).join('');
   var ch=''; c.moves.forEach(function(n,idx){if(!known[n])ch+='<div class="cc-list-row"><input class="cc-in" data-cmove="'+idx+'" value="'+esc(n)+'" placeholder="custom move"><button class="cc-rm" data-rmcmove="'+idx+'">✕</button></div>';});
@@ -2277,6 +2566,7 @@ function renderEditor(){
 
   h+=stateBlock(c);
 
+  if(P&&P.extras&&P.extras.length){h+='<div class="cc-sec">From the playbook</div><div class="cc-hint">The rest of the playbook sheet: things to decide and tell the table.</div>'+P.extras.map(function(x){return '<div class="cc-extra"><b>'+esc(x.title)+'</b>'+(x.text?'<p>'+esc(x.text)+'</p>':'')+(x.lists||[]).map(function(l){return '<div class="cc-extra-l"><i>'+esc(l.prompt)+'</i><ul>'+l.options.map(function(o){return '<li>'+esc(o)+'</li>';}).join('')+'</ul></div>';}).join('')+'</div>';}).join('');}
   h+='<div class="cc-sec">Bonds & Relationships</div>'
     +'<textarea class="cc-area" id="cc-bonds" placeholder="Who you protect, who wants you dead, ties to other PCs and townsfolk…">'+esc(c.bonds)+'</textarea>';
   h+='<div class="cc-sec">Notes</div>'
